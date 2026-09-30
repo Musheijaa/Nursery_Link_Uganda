@@ -1,19 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Sidebar } from '../Sidebar';
-import { 
-  ShieldCheck, 
-  Truck, 
-  CheckCircle2, 
-  Clock, 
-  KeyRound, 
-  FileText, 
-  AlertCircle 
-} from 'lucide-react';
+import { Truck, CheckCircle2, KeyRound, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export const OrderTrackingView: React.FC = () => {
-  const { orders, verifyAndReleaseEscrow, setActiveTab, showToast } = useApp();
+  const { orders, verifyAndReleaseEscrow, setActiveTab } = useApp();
   const [selectedOrderId, setSelectedOrderId] = useState<string>(orders[0]?.id || '');
   const [enteredPin, setEnteredPin] = useState<{ [orderId: string]: string }>({});
   const [errorMessage, setErrorMessage] = useState<{ [orderId: string]: string }>({});
@@ -32,15 +24,13 @@ export const OrderTrackingView: React.FC = () => {
         spread: 80,
         origin: { y: 0.6 }
       });
-      showToast('Escrow funds disbursed to nursery wallet!');
     }
   };
 
   return (
     <div className="flex bg-slate-50 min-h-[calc(100vh-4rem)]">
       
-      {/* Left Navigation Sidebar */}
-      <Sidebar activeSidebarTab="escrow" />
+      <Sidebar activeSection="escrow" />
 
       {/* Main Content Area */}
       <div className="flex-1 p-6 lg:p-10 space-y-8 max-w-6xl">
@@ -58,7 +48,7 @@ export const OrderTrackingView: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('map')}
-            className="py-2.5 px-4 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs shadow-xs transition-all"
+            className="py-2.5 px-4 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs shadow-sm transition-all"
           >
             Order More Seedlings
           </button>
@@ -87,7 +77,7 @@ export const OrderTrackingView: React.FC = () => {
                     onClick={() => setSelectedOrderId(order.id)}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white ${
                       isSelected
-                        ? 'border-[#007A33] ring-1 ring-[#007A33] shadow-xs'
+                        ? 'border-[#007A33] ring-1 ring-[#007A33] shadow-sm'
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
@@ -116,7 +106,7 @@ export const OrderTrackingView: React.FC = () => {
             {activeOrder && (
               <div className="lg:col-span-8 space-y-6">
                 
-                <div className="p-6 rounded-3xl bg-white border border-slate-200 space-y-6 shadow-xs">
+                <div className="p-6 rounded-3xl bg-white border border-slate-200 space-y-6 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-xs text-slate-400">Selected Order</span>
@@ -161,7 +151,7 @@ export const OrderTrackingView: React.FC = () => {
                         />
                         <button
                           onClick={() => handleReleaseEscrow(activeOrder.id)}
-                          className="w-full sm:flex-1 py-2.5 px-5 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs shadow-xs transition-all"
+                          className="w-full sm:flex-1 py-2.5 px-5 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs shadow-sm transition-all"
                         >
                           Verify & Disburse UGX {activeOrder.totalAmountUGX.toLocaleString()}
                         </button>
@@ -175,21 +165,12 @@ export const OrderTrackingView: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-slate-800 text-xs flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle2 className="w-5 h-5 text-[#007A33] shrink-0" />
-                        <div>
-                          <strong>Escrow Released Successfully</strong>
-                          <p className="text-[11px] text-slate-500">Funds disbursed to nursery's mobile money wallet.</p>
-                        </div>
+                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-slate-800 text-xs flex items-center space-x-2">
+                      <CheckCircle2 className="w-5 h-5 text-[#007A33] shrink-0" />
+                      <div>
+                        <strong>Escrow Released Successfully</strong>
+                        <p className="text-[11px] text-slate-500">Funds disbursed to nursery's mobile money wallet.</p>
                       </div>
-
-                      <button
-                        onClick={() => showToast('Receipt downloaded!')}
-                        className="px-3 py-1.5 rounded-xl bg-white text-[#007A33] font-bold text-[11px] border border-emerald-200"
-                      >
-                        Receipt PDF
-                      </button>
                     </div>
                   )}
 

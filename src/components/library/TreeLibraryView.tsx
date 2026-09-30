@@ -1,16 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Sidebar } from '../Sidebar';
-import { 
-  Search, 
-  SlidersHorizontal, 
-  MapPin, 
-  Info, 
-  Check, 
-  Compass, 
-  X
-} from 'lucide-react';
-import { TreeSpecies } from '../../types';
+import { Search, SlidersHorizontal, MapPin, Check, Compass } from 'lucide-react';
 
 export const TreeLibraryView: React.FC = () => {
   const { 
@@ -46,28 +36,10 @@ export const TreeLibraryView: React.FC = () => {
   };
 
   return (
-    <div className="flex bg-slate-50 min-h-[calc(100vh-4rem)]">
-      
-      {/* Left Navigation Sidebar - Matches Screenshot 4 */}
-      <Sidebar />
+    <div className="bg-slate-50 min-h-[calc(100vh-4rem)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-7">
 
-      {/* Main Content Area */}
-      <div className="flex-1 p-6 lg:p-10 space-y-7 max-w-6xl">
-        
-        {/* Redesign Context Alert Banner - Matches Screenshot 4 */}
-        <div className="p-4 px-5 rounded-2xl bg-slate-100/80 border border-slate-200 flex items-start space-x-3.5 shadow-xs">
-          <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-[#007A33] shrink-0 mt-0.5">
-            <Info className="w-3.5 h-3.5" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-slate-900 leading-none">Redesign Context</h4>
-            <p className="text-xs text-slate-500 mt-1">
-              Transitioning from dense lists to immersive, card-based registries.
-            </p>
-          </div>
-        </div>
-
-        {/* Header & Search Bar - Matches Screenshot 4 */}
+        {/* Header & Search Bar */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 font-display tracking-tight">
@@ -87,13 +59,13 @@ export const TreeLibraryView: React.FC = () => {
                 placeholder="Search species..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-full text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#007A33] shadow-xs"
+                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-full text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#007A33] shadow-sm"
               />
             </div>
 
             <button
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="py-2 px-4 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 shadow-xs hover:bg-slate-50 transition-colors shrink-0"
+              className="py-2 px-4 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 shadow-sm hover:bg-slate-50 transition-colors shrink-0"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
               <span>Filters</span>
@@ -103,7 +75,7 @@ export const TreeLibraryView: React.FC = () => {
 
         {/* Optional Filter Pills if toggled */}
         {showFilterDropdown && (
-          <div className="flex items-center space-x-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-xs text-xs">
+          <div className="flex items-center space-x-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-xs">
             <span className="text-slate-500 font-semibold pl-2">Category:</span>
             {['All', 'Native', 'Compatible'].map((cat) => (
               <button
@@ -121,7 +93,7 @@ export const TreeLibraryView: React.FC = () => {
           </div>
         )}
 
-        {/* 3 Column Grid for Species Cards - Matches Screenshot 4 */}
+        {/* Species Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSpecies.map((sp) => {
             const isNative = sp.isNative;
@@ -129,7 +101,7 @@ export const TreeLibraryView: React.FC = () => {
             return (
               <div
                 key={sp.id}
-                className="rounded-3xl bg-white border border-slate-200 overflow-hidden flex flex-col justify-between shadow-xs hover:border-slate-300 transition-all"
+                className="rounded-3xl bg-white border border-slate-200 overflow-hidden flex flex-col justify-between shadow-sm hover:border-slate-300 transition-all"
               >
                 {/* Photo & Badge */}
                 <div>
@@ -140,14 +112,14 @@ export const TreeLibraryView: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
 
-                    {/* Native / Compatible Badge (Top Left - Matches Screenshot 4) */}
+                    {/* Native / Compatible Badge */}
                     <div className="absolute top-3 left-3">
                       {isNative ? (
-                        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#007A33] text-white flex items-center gap-1 shadow-xs">
+                        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#007A33] text-white flex items-center gap-1 shadow-sm">
                           <Check className="w-3 h-3 text-white" /> Native
                         </span>
                       ) : (
-                        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 flex items-center gap-1 shadow-xs">
+                        <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 flex items-center gap-1 shadow-sm">
                           <Compass className="w-3 h-3 text-blue-700" /> Compatible
                         </span>
                       )}
@@ -165,7 +137,7 @@ export const TreeLibraryView: React.FC = () => {
                       </p>
                     </div>
 
-                    {/* 2 Stat Boxes Side-by-Side - Matches Screenshot 4 */}
+                    {/* Growth & Water Stats */}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
                         <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">
@@ -193,11 +165,11 @@ export const TreeLibraryView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Bottom Action Button - Matches Screenshot 4 */}
+                {/* Find in Stock */}
                 <div className="p-6 pt-0">
                   <button
                     onClick={() => handleFindInMukono(sp.id)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
                   >
                     <MapPin className="w-3.5 h-3.5" />
                     <span>Find in Mukono</span>

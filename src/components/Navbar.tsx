@@ -1,120 +1,140 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp, ActiveTab } from '../context/AppContext';
-import { 
-  Search, 
-  Bell, 
-  User, 
-  ShoppingBag 
-} from 'lucide-react';
+import { Search, ArrowRight, ShoppingBag, Truck, LayoutDashboard, Menu, X } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { 
-    activeTab, 
-    setActiveTab, 
-    cartTotalQuantity, 
-    setIsCheckoutOpen 
-  } = useApp();
+  const { activeTab, setActiveTab, cartTotalQuantity, setIsCheckoutOpen } = useApp();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const goTo = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+  };
 
   const navLinks: { id: ActiveTab; label: string }[] = [
-    { id: 'map', label: 'GIS Map' },
+    { id: 'home', label: 'Home' },
+    { id: 'map', label: 'Nursery Map' },
     { id: 'library', label: 'Tree Library' },
-    { id: 'shadow', label: 'Analytics' },
+    { id: 'shadow', label: 'Impact' },
     { id: 'campaigns', label: 'Free Seedlings' },
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          
-          {/* Left: Logo & Search Bar */}
-          <div className="flex items-center space-x-6">
-            
-            {/* Nursery Link Logo */}
-            <div 
-              onClick={() => setActiveTab('map')}
-              className="cursor-pointer group flex items-center"
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur-md">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-4">
+          <div className="flex items-center gap-5">
+            <div
+              onClick={() => goTo('home')}
+              className="flex cursor-pointer items-center gap-2"
             >
-              <span className="font-display font-extrabold text-2xl tracking-tight text-[#007A33]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-[#007A33]">
+                <span className="text-lg font-black">N</span>
+              </div>
+              <span className="font-display text-2xl font-extrabold tracking-tight text-[#007A33]">
                 Nursery Link
               </span>
             </div>
 
-            {/* Top Search Bar (Pill) */}
-            <div className="relative hidden md:block w-64 lg:w-72">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+            <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 md:flex">
+              <Search className="h-4 w-4" />
               <input
                 type="text"
-                placeholder="Search..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-100/80 border border-transparent rounded-full text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-300 transition-all"
+                placeholder="Search species or nursery"
+                className="w-52 border-0 bg-transparent text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none"
               />
             </div>
           </div>
 
-          {/* Center/Right: Navigation Tabs */}
-          <nav className="flex items-center space-x-6 sm:space-x-8 text-xs font-semibold">
+          <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 lg:flex">
             {navLinks.map((item) => {
               const isActive = activeTab === item.id;
 
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`relative py-5 transition-colors ${
-                    isActive
-                      ? 'text-[#007A33] font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                  onClick={() => goTo(item.id)}
+                  className={`relative py-2 transition-colors ${
+                    isActive ? 'text-[#007A33]' : 'hover:text-slate-900'
                   }`}
                 >
                   <span>{item.label}</span>
                   {isActive && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#007A33] rounded-full"></span>
+                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#007A33]" />
                   )}
                 </button>
               );
             })}
           </nav>
 
-          {/* Far Right: Icons & Actions */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            
-            {/* Cart Button */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button
+              onClick={() => setActiveTab('map')}
+              className="mr-1 hidden items-center gap-2 rounded-full bg-[#007A33] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#00652d] xl:inline-flex"
+            >
+              Explore map
+              <ArrowRight className="h-4 w-4" />
+            </button>
+
+            <button
+              onClick={() => goTo('orders')}
+              className={`rounded-full p-2 transition-colors hover:bg-slate-100 ${
+                activeTab === 'orders' ? 'text-[#007A33]' : 'text-slate-700'
+              }`}
+              title="My orders & escrow"
+            >
+              <Truck className="h-5 w-5" />
+            </button>
+
+            <button
+              onClick={() => goTo('dashboard')}
+              className={`rounded-full p-2 transition-colors hover:bg-slate-100 ${
+                activeTab === 'dashboard' ? 'text-[#007A33]' : 'text-slate-700'
+              }`}
+              title="Nursery manager dashboard"
+            >
+              <LayoutDashboard className="h-5 w-5" />
+            </button>
+
             <button
               onClick={() => setIsCheckoutOpen(true)}
-              className="relative p-2 rounded-full hover:bg-slate-100 text-slate-700 transition-colors"
-              title="Cart & Escrow Checkout"
+              className="relative rounded-full p-2 text-slate-700 transition-colors hover:bg-slate-100"
+              title="Cart & escrow checkout"
             >
-              <ShoppingBag className="w-5 h-5 text-slate-700" />
+              <ShoppingBag className="h-5 w-5" />
               {cartTotalQuantity > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#007A33] text-white font-bold text-[10px] flex items-center justify-center">
-                  {cartTotalQuantity}
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[#007A33] px-1 text-[10px] font-bold text-white">
+                  {cartTotalQuantity > 999 ? '999+' : cartTotalQuantity}
                 </span>
               )}
             </button>
 
-            {/* Notifications Bell */}
-            <button 
-              className="p-2 rounded-full hover:bg-slate-100 text-slate-700 transition-colors"
-              title="Notifications"
+            <button
+              onClick={() => setIsMobileMenuOpen((open) => !open)}
+              className="rounded-full p-2 text-slate-700 transition-colors hover:bg-slate-100 lg:hidden"
+              title="Menu"
             >
-              <Bell className="w-5 h-5 text-slate-700" />
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
-
-            {/* User Profile Avatar */}
-            <button 
-              onClick={() => setActiveTab('dashboard')}
-              className="p-1 rounded-full hover:ring-2 hover:ring-[#007A33] transition-all"
-              title="Mukono District Manager"
-            >
-              <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-700">
-                <User className="w-4 h-4" />
-              </div>
-            </button>
-
           </div>
-
         </div>
       </div>
+
+      {isMobileMenuOpen && (
+        <nav className="absolute inset-x-0 top-full border-b border-slate-200 bg-white px-4 py-2 shadow-md lg:hidden">
+          {navLinks.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => goTo(item.id)}
+              className={`block w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold ${
+                activeTab === item.id ? 'bg-emerald-50 text-[#007A33]' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      )}
     </header>
   );
 };

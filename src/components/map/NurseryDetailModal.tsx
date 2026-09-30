@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Nursery, SeedlingBatch } from '../../types';
 import { useApp } from '../../context/AppContext';
+import { distanceKm as getDistanceKm } from '../../utils/geo';
 import { 
   X, 
   MapPin, 
@@ -28,24 +29,7 @@ export const NurseryDetailModal: React.FC<NurseryDetailModalProps> = ({ nursery,
   const { addToCart, setIsCheckoutOpen, userLocation } = useApp();
   const [quantities, setQuantities] = useState<{ [batchId: string]: number }>({});
 
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return (R * c).toFixed(1);
-  };
-
-  const distanceKm = calculateDistance(
-    userLocation[0],
-    userLocation[1],
-    nursery.coordinates[0],
-    nursery.coordinates[1]
-  );
+  const distanceKm = getDistanceKm(userLocation, nursery.coordinates).toFixed(1);
 
   const handleQtyChange = (batchId: string, delta: number, max: number) => {
     const current = quantities[batchId] || 50;
@@ -66,7 +50,7 @@ export const NurseryDetailModal: React.FC<NurseryDetailModalProps> = ({ nursery,
         <div className="relative p-6 bg-slate-50 border-b border-slate-200">
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2 rounded-xl bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-900 border border-slate-200 transition-colors shadow-xs"
+            className="absolute top-5 right-5 p-2 rounded-xl bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-900 border border-slate-200 transition-colors shadow-sm"
           >
             <X className="w-5 h-5" />
           </button>
@@ -193,7 +177,7 @@ export const NurseryDetailModal: React.FC<NurseryDetailModalProps> = ({ nursery,
                       <div className="flex items-center space-x-1 bg-slate-100 border border-slate-200 rounded-xl p-1">
                         <button
                           onClick={() => handleQtyChange(batch.id, -25, batch.quantityAvailable)}
-                          className="w-7 h-7 rounded-lg bg-white hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors shadow-xs"
+                          className="w-7 h-7 rounded-lg bg-white hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors shadow-sm"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
@@ -205,7 +189,7 @@ export const NurseryDetailModal: React.FC<NurseryDetailModalProps> = ({ nursery,
                         />
                         <button
                           onClick={() => handleQtyChange(batch.id, 25, batch.quantityAvailable)}
-                          className="w-7 h-7 rounded-lg bg-white hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors shadow-xs"
+                          className="w-7 h-7 rounded-lg bg-white hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors shadow-sm"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
@@ -214,7 +198,7 @@ export const NurseryDetailModal: React.FC<NurseryDetailModalProps> = ({ nursery,
                       {/* Add Button */}
                       <button
                         onClick={() => handleAddBatch(batch)}
-                        className="px-4 py-2.5 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all whitespace-nowrap"
+                        className="px-4 py-2.5 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap"
                       >
                         <ShoppingBag className="w-3.5 h-3.5" />
                         Add to Cart
@@ -246,7 +230,7 @@ export const NurseryDetailModal: React.FC<NurseryDetailModalProps> = ({ nursery,
                 onClose();
                 setIsCheckoutOpen(true);
               }}
-              className="px-5 py-2.5 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all"
+              className="px-5 py-2.5 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
             >
               <ShieldCheck className="w-4 h-4" />
               Proceed to Mobile Money Escrow

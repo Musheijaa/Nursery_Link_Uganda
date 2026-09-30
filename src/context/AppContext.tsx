@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useRef, useState } from 'react';
 import { 
   Nursery, 
   TreeSpecies, 
@@ -13,8 +13,9 @@ import { UGANDA_NURSERIES } from '../data/ugandaNurseries';
 import { TREE_SPECIES } from '../data/treeSpecies';
 import { FREE_CAMPAIGNS } from '../data/campaigns';
 import { DEFORESTATION_HOTSPOTS, DISTRICT_SHADOW_DEFICITS } from '../data/shadowAnalytics';
+import { deliveryFeeUGX } from '../utils/geo';
 
-export type ActiveTab = 'map' | 'shadow' | 'library' | 'campaigns' | 'orders' | 'dashboard';
+export type ActiveTab = 'home' | 'map' | 'shadow' | 'library' | 'campaigns' | 'orders' | 'dashboard';
 
 interface AppContextType {
   // Navigation & View
@@ -87,11 +88,20 @@ interface AppContextType {
   showToast: (msg: string) => void;
 }
 
+const sumBatchStock = (batches: SeedlingBatch[]) =>
+  batches.reduce((sum, b) => sum + b.quantityAvailable, 0);
+
+// Stock totals are always derived from batches so the two can never drift apart.
+const withDerivedStock = (nursery: Nursery): Nursery => ({
+  ...nursery,
+  currentStockTotal: sumBatchStock(nursery.batches)
+});
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('map');
-  const [nurseries, setNurseries] = useState<Nursery[]>(UGANDA_NURSERIES);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const [nurseries, setNurseries] = useState<Nursery[]>(() => UGANDA_NURSERIES.map(withDerivedStock));
   const [species] = useState<TreeSpecies[]>(TREE_SPECIES);
   const [campaigns, setCampaigns] = useState<FreeCampaign[]>(FREE_CAMPAIGNS);
   const [hotspots] = useState<DeforestationHotspot[]>(DEFORESTATION_HOTSPOTS);
@@ -99,7 +109,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [selectedNursery, setSelectedNursery] = useState<Nursery | null>(null);
   const [targetSpeciesFilter, setTargetSpeciesFilter] = useState<string | null>(null);
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('Mukono'); // Defaults to Mukono!
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('Mukono');
   const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
   const [selectedCertification, setSelectedCertification] = useState<string>('All Certifications');
   const [serviceRadiusKm, setServiceRadiusKm] = useState<number>(10);
@@ -119,7 +129,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   >([
     {
       code: 'NFA-MKN-9481',
-      campaignId: 'nfa-national-community-2024',
+      campaignId: 'community-tree-planting-mukono',
       farmerName: 'Kato Emmanuel',
       district: 'Mukono (Nama)',
       seedlingsCount: 300,
@@ -139,8 +149,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       deliverySubCounty: 'Goma (Misindye)',
       deliveryCoordinates: [0.3842, 32.7218],
       distanceKm: 5.2,
-      nurseryId: 'nfa-nursery-mukono',
-      nurseryName: 'National Forestry Authority (NFA) Central Nursery Mukono',
+      nurseryId: 'ecoroots-hub-mukono',
+      nurseryName: 'EcoRoots Hub',
       items: [
         {
           speciesName: 'African Teak / Mvule',
@@ -181,8 +191,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       deliverySubCounty: 'Nakisunga (Wabaale)',
       deliveryCoordinates: [0.2980, 32.7845],
       distanceKm: 8.5,
-      nurseryId: 'goma-agroforestry-nursery',
-      nurseryName: 'Goma Sub-County Agroforestry & Fruit Tree Hub',
+      nurseryId: 'nakisunga-agro-nursery',
+      nurseryName: 'Nakisunga Agro-Botanical Center',
       items: [
         {
           speciesName: 'Grafted Hass Avocado',
@@ -208,11 +218,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   ]);
 
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
   const showToast = (msg: string) => {
+    // Restart the timer so a new toast is never dismissed early by an older one
+    clearTimeout(toastTimerRef.current);
     setToastNotification(msg);
-    setTimeout(() => {
-      setToastNotification(null);
-    }, 4000);
+    toastTimerRef.current = setTimeout(() => setToastNotification(null), 4000);
   };
 
   // Cart operations
@@ -280,7 +292,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     const seedlingSubtotal = cartTotalAmountUGX;
-    const deliveryFee = Math.max(15000, Math.round(10000 + (orderData.distanceKm * 2000)));
+    const deliveryFee = deliveryFeeUGX(orderData.distanceKm);
     const totalAmount = seedlingSubtotal + deliveryFee;
 
     const randomPin = Math.floor(1000 + Math.random() * 9000).toString();
@@ -361,12 +373,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           unitPriceUGX: newPriceUGX !== undefined ? newPriceUGX : b.unitPriceUGX
         };
       });
-      const newTotal = updatedBatches.reduce((s, b) => s + b.quantityAvailable, 0);
-      return {
-        ...nur,
-        batches: updatedBatches,
-        currentStockTotal: newTotal
-      };
+      return withDerivedStock({ ...nur, batches: updatedBatches });
     }));
     showToast('Batch inventory updated successfully');
   };
@@ -380,12 +387,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setNurseries(prev => prev.map(nur => {
       if (nur.id !== nurseryId) return nur;
-      const updatedBatches = [newBatch, ...nur.batches];
-      return {
-        ...nur,
-        batches: updatedBatches,
-        currentStockTotal: nur.currentStockTotal + newBatch.quantityAvailable
-      };
+      return withDerivedStock({ ...nur, batches: [newBatch, ...nur.batches] });
     }));
     showToast(`New batch for ${batchData.speciesName} registered!`);
   };

@@ -1,73 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { useApp } from '../../context/AppContext';
+import { Nursery } from '../../types';
 import { NurseryDetailModal } from './NurseryDetailModal';
-import { 
-  Plus, 
-  MapPin, 
-  Trees, 
-  Flame, 
-  Sliders, 
-  Crosshair, 
-  ShieldCheck,
-  Check
+import {
+  Plus,
+  MapPin,
+  Crosshair,
+  Check,
+  X
 } from 'lucide-react';
 
-// Custom Marker Icons for Stitch Green + White theme
-const createNurseryIcon = (stock: number) => {
-  return L.divIcon({
-    className: 'custom-nursery-pin',
-    html: `
-      <div class="relative flex items-center justify-center cursor-pointer">
-        <div class="w-8 h-8 rounded-full bg-[#007A33] border-2 border-white shadow-md flex items-center justify-center text-white">
-          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22v-7"/><path d="M12 2a5 5 0 0 0-5 5c0 1.5.6 2.8 1.5 3.8C6.6 12 5 14 5 16.5A5.5 5.5 0 0 0 10.5 22h3a5.5 5.5 0 0 0 5.5-5.5c0-2.5-1.6-4.5-3.5-5.7.9-1 1.5-2.3 1.5-3.8a5 5 0 0 0-5-5z"/>
-          </svg>
-        </div>
-      </div>
-    `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -18]
-  });
-};
+// Sentinel values shared with the defaults in AppContext
+const ALL_DISTRICTS = 'All Districts';
+const ALL_CATEGORIES = 'All Categories';
+const ALL_CERTIFICATIONS = 'All Certifications';
+const SERVICE_RADII_KM = [5, 10, 20];
 
-const createHotspotIcon = (priorityScore: number) => {
-  return L.divIcon({
-    className: 'custom-hotspot-pin',
-    html: `
-      <div class="relative flex items-center justify-center cursor-pointer">
-        <div class="w-7 h-7 rounded-full bg-red-600 border-2 border-white shadow-md flex items-center justify-center text-white">
-          <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/>
-          </svg>
-        </div>
-      </div>
-    `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -16]
-  });
-};
+const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
-const createUserLocationIcon = () => {
-  return L.divIcon({
-    className: 'custom-user-pin',
-    html: `
-      <div class="relative flex items-center justify-center">
-        <div class="w-7 h-7 rounded-full bg-[#007A33] border-2 border-white shadow-md flex items-center justify-center text-white">
-          <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="12" r="5"/>
-          </svg>
-        </div>
+// Marker icons are built once at module load rather than on every render
+const NURSERY_ICON = L.divIcon({
+  className: 'custom-nursery-pin',
+  html: `
+    <div class="relative flex items-center justify-center cursor-pointer">
+      <div class="w-8 h-8 rounded-full bg-[#007A33] border-2 border-white shadow-md flex items-center justify-center text-white">
+        <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22v-7"/><path d="M12 2a5 5 0 0 0-5 5c0 1.5.6 2.8 1.5 3.8C6.6 12 5 14 5 16.5A5.5 5.5 0 0 0 10.5 22h3a5.5 5.5 0 0 0 5.5-5.5c0-2.5-1.6-4.5-3.5-5.7.9-1 1.5-2.3 1.5-3.8a5 5 0 0 0-5-5z"/>
+        </svg>
       </div>
-    `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14]
-  });
-};
+    </div>
+  `,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -18]
+});
+
+const HOTSPOT_ICON = L.divIcon({
+  className: 'custom-hotspot-pin',
+  html: `
+    <div class="relative flex items-center justify-center cursor-pointer">
+      <div class="w-7 h-7 rounded-full bg-red-600 border-2 border-white shadow-md flex items-center justify-center text-white">
+        <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/>
+        </svg>
+      </div>
+    </div>
+  `,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -16]
+});
+
+const USER_LOCATION_ICON = L.divIcon({
+  className: 'custom-user-pin',
+  html: `
+    <div class="relative flex items-center justify-center">
+      <div class="w-7 h-7 rounded-full bg-[#007A33] border-2 border-white shadow-md flex items-center justify-center text-white">
+        <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="5"/>
+        </svg>
+      </div>
+    </div>
+  `,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -14]
+});
 
 // Map controller helper to fly to target coordinates
 const MapFlyTo: React.FC<{ coords: [number, number] | null }> = ({ coords }) => {
@@ -93,9 +93,24 @@ const MapClickHandler: React.FC<{ onLocationSelect: (latlng: [number, number]) =
 export const NurseryMap: React.FC = () => {
   const {
     nurseries,
+    species,
     hotspots,
     selectedNursery,
     setSelectedNursery,
+    targetSpeciesFilter,
+    setTargetSpeciesFilter,
+    selectedDistrict,
+    setSelectedDistrict,
+    selectedCategory,
+    setSelectedCategory,
+    selectedCertification,
+    setSelectedCertification,
+    serviceRadiusKm,
+    setServiceRadiusKm,
+    showDeforestationLayer,
+    setShowDeforestationLayer,
+    showServiceZones,
+    setShowServiceZones,
     userLocation,
     setUserLocation,
     focusedMapCoords,
@@ -104,8 +119,53 @@ export const NurseryMap: React.FC = () => {
     showToast
   } = useApp();
 
-  const [activeDetailNursery, setActiveDetailNursery] = useState<typeof nurseries[0] | null>(null);
-  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [map, setMap] = useState<L.Map | null>(null);
+  const [activeDetailNursery, setActiveDetailNursery] = useState<Nursery | null>(null);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+
+  const districtOptions = useMemo(
+    () => Array.from(new Set(nurseries.map(n => n.district))).sort(),
+    [nurseries]
+  );
+  const categoryOptions = useMemo(
+    () => Array.from(new Set(nurseries.flatMap(n => n.batches.map(b => b.category)))).sort(),
+    [nurseries]
+  );
+  const certificationOptions = useMemo(
+    () => Array.from(new Set(nurseries.map(n => n.certification))).sort(),
+    [nurseries]
+  );
+
+  const batchMatchesFilters = (batch: Nursery['batches'][number]) =>
+    batch.quantityAvailable > 0 &&
+    (selectedCategory === ALL_CATEGORIES || batch.category === selectedCategory) &&
+    (!targetSpeciesFilter || batch.speciesId === targetSpeciesFilter);
+
+  const filteredNurseries = nurseries.filter(n =>
+    (selectedDistrict === ALL_DISTRICTS || n.district === selectedDistrict) &&
+    (selectedCertification === ALL_CERTIFICATIONS || n.certification === selectedCertification) &&
+    n.batches.some(batchMatchesFilters)
+  );
+
+  // Only count stock from batches that match the active species/category filters
+  const matchingStockTotal = filteredNurseries.reduce(
+    (sum, n) => sum + n.batches.filter(batchMatchesFilters).reduce((s, b) => s + b.quantityAvailable, 0),
+    0
+  );
+
+  const targetSpecies = species.find(s => s.id === targetSpeciesFilter);
+  const hasActiveFilters =
+    selectedDistrict !== ALL_DISTRICTS ||
+    selectedCategory !== ALL_CATEGORIES ||
+    selectedCertification !== ALL_CERTIFICATIONS ||
+    targetSpeciesFilter !== null;
+
+  const resetFilters = () => {
+    setSelectedDistrict(ALL_DISTRICTS);
+    setSelectedCategory(ALL_CATEGORIES);
+    setSelectedCertification(ALL_CERTIFICATIONS);
+    setTargetSpeciesFilter(null);
+  };
 
   const handleLocateUser = () => {
     if (navigator.geolocation) {
@@ -123,18 +183,20 @@ export const NurseryMap: React.FC = () => {
     }
   };
 
+  const selectClassName = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#007A33]';
+
   return (
     <div className="relative w-full h-[calc(100vh-4rem)] flex flex-col md:flex-row overflow-hidden bg-slate-50">
-      
-      {/* Left Sidebar Panel - Matches Screenshot 1 */}
-      <div className="w-full md:w-[360px] lg:w-[380px] bg-white border-r border-slate-200 flex flex-col justify-between p-6 z-20 overflow-y-auto shrink-0 shadow-xs">
-        
+
+      {/* Left Sidebar Panel */}
+      <div className="w-full md:w-[360px] lg:w-[380px] bg-white border-r border-slate-200 flex flex-col justify-between p-6 z-20 overflow-y-auto shrink-0 shadow-sm">
+
         <div className="space-y-6">
-          
+
           {/* Header Title */}
           <div>
             <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-display tracking-tight">
-              Mukono District
+              {selectedDistrict === ALL_DISTRICTS ? 'All Districts' : `${selectedDistrict} District`}
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
               Regional Reforestation Hub
@@ -144,34 +206,146 @@ export const NurseryMap: React.FC = () => {
           {/* Top 2 Metric Cards */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-4 rounded-2xl border border-slate-200 bg-white">
-              <span className="text-[11px] text-slate-500 font-semibold block">Active Nurseries</span>
+              <span className="text-[11px] text-slate-500 font-semibold block">Matching Nurseries</span>
               <div className="text-3xl font-extrabold text-[#007A33] font-display mt-1">
-                24
+                {filteredNurseries.length}
               </div>
             </div>
 
             <div className="p-4 rounded-2xl border border-slate-200 bg-white">
               <span className="text-[11px] text-slate-500 font-semibold block">Seedlings Avail.</span>
               <div className="text-3xl font-extrabold text-[#007A33] font-display mt-1">
-                120k
+                {compactNumber.format(matchingStockTotal)}
               </div>
             </div>
           </div>
 
           {/* Nurseries Section Header */}
-          <div className="flex items-center justify-between pt-2">
-            <h2 className="text-base font-bold text-slate-900">Nurseries</h2>
-            <button 
-              onClick={() => setShowFilterModal(!showFilterModal)}
-              className="text-xs font-bold text-[#007A33] hover:underline"
-            >
-              Filter
-            </button>
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900">Nurseries</h2>
+              <div className="flex items-center gap-3">
+                {hasActiveFilters && (
+                  <button
+                    onClick={resetFilters}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                  >
+                    Reset
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowFilterPanel(!showFilterPanel)}
+                  className="text-xs font-bold text-[#007A33] hover:underline"
+                >
+                  {showFilterPanel ? 'Hide filters' : 'Filter'}
+                </button>
+              </div>
+            </div>
+
+            {/* Active species filter chip (set from the Tree Library) */}
+            {targetSpecies && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-[#007A33]">
+                Stocking: {targetSpecies.commonName}
+                <button onClick={() => setTargetSpeciesFilter(null)} title="Clear species filter">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {/* Filter Panel */}
+            {showFilterPanel && (
+              <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-3 text-xs">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">District</label>
+                  <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} className={selectClassName}>
+                    <option value={ALL_DISTRICTS}>{ALL_DISTRICTS}</option>
+                    {districtOptions.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Species in stock</label>
+                  <select
+                    value={targetSpeciesFilter ?? ''}
+                    onChange={(e) => setTargetSpeciesFilter(e.target.value || null)}
+                    className={selectClassName}
+                  >
+                    <option value="">Any species</option>
+                    {species.map(s => <option key={s.id} value={s.id}>{s.commonName}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Category</label>
+                  <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className={selectClassName}>
+                    <option value={ALL_CATEGORIES}>{ALL_CATEGORIES}</option>
+                    {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Certification</label>
+                  <select value={selectedCertification} onChange={(e) => setSelectedCertification(e.target.value)} className={selectClassName}>
+                    <option value={ALL_CERTIFICATIONS}>{ALL_CERTIFICATIONS}</option>
+                    {certificationOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Service radius</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {SERVICE_RADII_KM.map(km => (
+                      <button
+                        key={km}
+                        onClick={() => setServiceRadiusKm(km)}
+                        className={`py-1.5 rounded-xl font-bold transition-colors ${
+                          serviceRadiusKm === km
+                            ? 'bg-[#007A33] text-white'
+                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        {km} km
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <label className="flex items-center gap-2 font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showServiceZones}
+                      onChange={(e) => setShowServiceZones(e.target.checked)}
+                      className="accent-[#007A33]"
+                    />
+                    Show service zones
+                  </label>
+                  <label className="flex items-center gap-2 font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showDeforestationLayer}
+                      onChange={(e) => setShowDeforestationLayer(e.target.checked)}
+                      className="accent-red-600"
+                    />
+                    Show deforestation hotspots
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* List of Nursery Cards (Matches Screenshot 1) */}
+          {/* List of Nursery Cards */}
           <div className="space-y-3">
-            {nurseries.map((nursery) => (
+            {filteredNurseries.length === 0 && (
+              <div className="p-6 rounded-2xl border border-dashed border-slate-300 text-center text-xs text-slate-500 space-y-2">
+                <p className="font-semibold">No nurseries match these filters.</p>
+                <button onClick={resetFilters} className="font-bold text-[#007A33] hover:underline">
+                  Reset filters
+                </button>
+              </div>
+            )}
+
+            {filteredNurseries.map((nursery) => (
               <div
                 key={nursery.id}
                 onClick={() => {
@@ -231,18 +405,16 @@ export const NurseryMap: React.FC = () => {
       </div>
 
       {/* Right Map Canvas */}
-      <div className="relative flex-1 h-full w-full">
-        
-        {/* Floating Zoom & Geolocation Controls (Bottom Right - Matches Screenshot 1) */}
-        <div className="absolute bottom-6 right-6 z-20 flex flex-col items-center space-y-3">
-          
+      {/* `isolate` keeps Leaflet's high z-index panes from painting over app modals */}
+      <div className="relative isolate flex-1 h-full w-full">
+
+        {/* Floating Zoom & Geolocation Controls */}
+        <div className="absolute bottom-6 right-6 z-[1000] flex flex-col items-center space-y-3">
+
           {/* Zoom Buttons Box */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-1 flex flex-col items-center">
             <button
-              onClick={() => {
-                const mapEl = document.querySelector('.leaflet-container') as any;
-                if (mapEl && mapEl._leaflet_map) mapEl._leaflet_map.zoomIn();
-              }}
+              onClick={() => map?.zoomIn()}
               className="w-9 h-9 flex items-center justify-center text-slate-700 hover:text-[#007A33] hover:bg-slate-50 rounded-xl font-bold text-lg"
               title="Zoom in"
             >
@@ -250,10 +422,7 @@ export const NurseryMap: React.FC = () => {
             </button>
             <div className="w-5 h-[1px] bg-slate-200"></div>
             <button
-              onClick={() => {
-                const mapEl = document.querySelector('.leaflet-container') as any;
-                if (mapEl && mapEl._leaflet_map) mapEl._leaflet_map.zoomOut();
-              }}
+              onClick={() => map?.zoomOut()}
               className="w-9 h-9 flex items-center justify-center text-slate-700 hover:text-[#007A33] hover:bg-slate-50 rounded-xl font-bold text-lg"
               title="Zoom out"
             >
@@ -273,6 +442,7 @@ export const NurseryMap: React.FC = () => {
 
         {/* Leaflet Map Engine */}
         <MapContainer
+          ref={setMap}
           center={[0.3542, 32.7538]}
           zoom={11}
           zoomControl={false}
@@ -292,7 +462,7 @@ export const NurseryMap: React.FC = () => {
           }} />
 
           {/* User Planting Site Marker */}
-          <Marker position={userLocation} icon={createUserLocationIcon()}>
+          <Marker position={userLocation} icon={USER_LOCATION_ICON}>
             <Popup>
               <div className="p-3 text-xs bg-white text-slate-900 rounded-lg font-sans">
                 <span className="font-bold text-[#007A33] block mb-1">📍 Selected Planting Site</span>
@@ -304,11 +474,11 @@ export const NurseryMap: React.FC = () => {
           </Marker>
 
           {/* Service Radius Buffers (Green translucent circles) */}
-          {nurseries.map((nursery) => (
+          {showServiceZones && filteredNurseries.map((nursery) => (
             <Circle
               key={`buffer-${nursery.id}`}
               center={nursery.coordinates}
-              radius={8000}
+              radius={serviceRadiusKm * 1000}
               pathOptions={{
                 color: '#007A33',
                 fillColor: '#10B981',
@@ -319,7 +489,7 @@ export const NurseryMap: React.FC = () => {
           ))}
 
           {/* Deforestation Hotspots (Red translucent circles) */}
-          {hotspots.map((hotspot) => (
+          {showDeforestationLayer && hotspots.map((hotspot) => (
             <React.Fragment key={hotspot.id}>
               <Circle
                 center={hotspot.coordinates}
@@ -331,10 +501,7 @@ export const NurseryMap: React.FC = () => {
                   weight: 1.5
                 }}
               />
-              <Marker
-                position={hotspot.coordinates}
-                icon={createHotspotIcon(hotspot.priorityScore)}
-              >
+              <Marker position={hotspot.coordinates} icon={HOTSPOT_ICON}>
                 <Popup>
                   <div className="p-3 text-xs bg-white text-slate-900 rounded-xl min-w-[200px] font-sans">
                     <span className="font-bold text-red-600 block mb-1">{hotspot.name}</span>
@@ -349,11 +516,11 @@ export const NurseryMap: React.FC = () => {
           ))}
 
           {/* Nursery Markers */}
-          {nurseries.map((nursery) => (
+          {filteredNurseries.map((nursery) => (
             <Marker
               key={nursery.id}
               position={nursery.coordinates}
-              icon={createNurseryIcon(nursery.currentStockTotal)}
+              icon={NURSERY_ICON}
               eventHandlers={{
                 click: () => {
                   setSelectedNursery(nursery);
@@ -369,7 +536,7 @@ export const NurseryMap: React.FC = () => {
                     <span className="text-slate-600 font-bold">⭐ {nursery.rating}</span>
                   </div>
                   <h3 className="font-bold text-slate-900 text-sm mt-1">{nursery.name}</h3>
-                  <p className="text-slate-500 text-[11px] mb-2">{nursery.village}, Mukono</p>
+                  <p className="text-slate-500 text-[11px] mb-2">{nursery.village}, {nursery.district}</p>
 
                   <button
                     onClick={() => setActiveDetailNursery(nursery)}

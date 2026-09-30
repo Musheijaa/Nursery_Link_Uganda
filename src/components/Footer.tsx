@@ -1,6 +1,15 @@
 import React from 'react';
-import { Trees, ShieldCheck, Phone, Mail, MapPin } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Trees, ShieldCheck, Mail, MapPin } from 'lucide-react';
+import { useApp, ActiveTab } from '../context/AppContext';
+
+const PLATFORM_LINKS: { tab: ActiveTab; label: string }[] = [
+  { tab: 'map', label: 'Nursery Map' },
+  { tab: 'library', label: 'Tree Library' },
+  { tab: 'shadow', label: 'Impact Analytics' },
+  { tab: 'campaigns', label: 'Free Seedling Campaigns' },
+  { tab: 'orders', label: 'Orders & Escrow' },
+  { tab: 'dashboard', label: 'Nursery Manager Portal' },
+];
 
 export const Footer: React.FC = () => {
   const { setActiveTab } = useApp();
@@ -8,7 +17,7 @@ export const Footer: React.FC = () => {
   return (
     <footer className="bg-white border-t border-slate-200 text-slate-600 text-xs">
       
-      {/* Uganda Flag Accent Line */}
+      {/* Uganda flag accent line */}
       <div className="h-1 w-full flex">
         <div className="flex-1 bg-slate-900"></div>
         <div className="flex-1 bg-yellow-400"></div>
@@ -42,63 +51,24 @@ export const Footer: React.FC = () => {
           <div className="space-y-2.5">
             <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider">Platform Modules</h4>
             <ul className="space-y-2">
-              <li>
-                <button onClick={() => setActiveTab('map')} className="hover:text-emerald-700 font-medium transition-colors">
-                  🗺️ Mukono Web-GIS Map
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setActiveTab('library')} className="hover:text-emerald-700 font-medium transition-colors">
-                  🌲 Digital Tree Library
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setActiveTab('shadow')} className="hover:text-emerald-700 font-medium transition-colors">
-                  📉 Mukono Nursery Shadow Analytics
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setActiveTab('campaigns')} className="hover:text-emerald-700 font-medium transition-colors">
-                  🎁 Free Seedling Grant Giveaways
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setActiveTab('orders')} className="hover:text-emerald-700 font-medium transition-colors">
-                  🛡️ Mobile Money Escrow Tracking
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setActiveTab('dashboard')} className="hover:text-emerald-700 font-medium transition-colors">
-                  ⚙️ Nursery Operator Portal
-                </button>
-              </li>
+              {PLATFORM_LINKS.map(({ tab, label }) => (
+                <li key={tab}>
+                  <button onClick={() => setActiveTab(tab)} className="hover:text-emerald-700 font-medium transition-colors">
+                    {label}
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Col 3: Institutional Partners */}
+          {/* Col 3: Standards & Data Sources */}
           <div className="space-y-2.5">
-            <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider">Institutional Data & Standards</h4>
+            <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider">Standards & Data Sources</h4>
             <ul className="space-y-2 text-[11px]">
-              <li className="flex items-center justify-between">
-                <span>National Forestry Authority (NFA)</span>
-                <span className="text-emerald-700 font-bold">Certified</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Ministry of Agriculture (MAAIF)</span>
-                <span className="text-emerald-700 font-bold">Verified</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>MTN Mobile Money (*165#)</span>
-                <span className="text-slate-800 font-bold">Escrow API</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Airtel Money Uganda (*185#)</span>
-                <span className="text-slate-800 font-bold">Escrow API</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Global Forest Watch (Hansen GFC)</span>
-                <span className="text-slate-800 font-bold">Satellite GIS</span>
-              </li>
+              <li>National Forestry Authority (NFA) nursery standards</li>
+              <li>MAAIF seedling quality guidelines</li>
+              <li>Global Forest Watch (Hansen GFC) forest-loss data</li>
+              <li>MTN MoMo &amp; Airtel Money (planned integration)</li>
             </ul>
           </div>
 
@@ -106,13 +76,9 @@ export const Footer: React.FC = () => {
           <div className="space-y-3">
             <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider">Help & Forestry Desk</h4>
             <p className="text-[11px] text-slate-500">
-              Need assistance with bulk procurement or nursery certification in Mukono?
+              Need help with bulk procurement or nursery listing?
             </p>
             <div className="space-y-1.5 text-xs text-slate-600 font-medium">
-              <div className="flex items-center space-x-2 text-emerald-800">
-                <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                <span>+256 (0) 414 286 450 (NFA Mukono)</span>
-              </div>
               <div className="flex items-center space-x-2 text-slate-600">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
                 <span>mukono@nurserylink.ug</span>
@@ -128,9 +94,9 @@ export const Footer: React.FC = () => {
 
         {/* Bottom copyright */}
         <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-500">
-          <p>© {new Date().getFullYear()} Nursery Link Uganda. Dedicated to Mukono Reforestation & Agroforestry.</p>
+          <p>© {new Date().getFullYear()} Nursery Link Uganda. All rights reserved.</p>
           <div className="flex items-center space-x-4">
-            <span className="text-emerald-700 font-bold">🇺🇬 Powered by Open Forestry Data</span>
+            <span className="text-emerald-700 font-bold">Powered by Open Forestry Data</span>
             <span>•</span>
             <span className="text-slate-500 font-medium">Coordinate-Accurate GIS</span>
           </div>

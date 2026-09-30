@@ -1,31 +1,30 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Sidebar } from '../Sidebar';
-import { 
-  History, 
-  SlidersHorizontal, 
-  ArrowUpDown, 
-  Check, 
-  Clock, 
-  Plus, 
-  X, 
-  Sparkles, 
-  CreditCard,
-  ShieldCheck
-} from 'lucide-react';
+import { History, Check, Clock, X, Sprout } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { PottingType } from '../../types';
+import { EscrowStatus, PottingType } from '../../types';
+
+// Statuses where the buyer has paid but funds have not yet been released to the nursery
+const HELD_ESCROW_STATUSES: EscrowStatus[] = [
+  'Escrow Funded',
+  'Batch Preparation',
+  'In Transit',
+  'Delivered - Inspection Period',
+  'Dispute Raised'
+];
+
+const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
 export const ManagerDashboard: React.FC = () => {
   const { 
     nurseries, 
     species, 
+    orders, 
     addNewBatch, 
-    showToast,
     setActiveTab 
   } = useApp();
 
-  const [activeSidebarTab, setActiveSidebarTab] = useState<'inventory' | 'escrow' | 'accreditation'>('inventory');
   const [isAddBatchOpen, setIsAddBatchOpen] = useState(false);
   const [newSpeciesId, setNewSpeciesId] = useState(species[0]?.id || '');
   const [newPottingType, setNewPottingType] = useState<PottingType>('Poly-tube Potted');
@@ -33,7 +32,12 @@ export const ManagerDashboard: React.FC = () => {
   const [newStock, setNewStock] = useState<number>(50000);
   const [newUnitPrice, setNewUnitPrice] = useState<number>(1000);
 
-  const activeNursery = nurseries[0]; // Green Canopy Co.
+  // No auth yet: the manager view is scoped to the first nursery in the registry
+  const activeNursery = nurseries[0];
+
+  const heldEscrowUGX = orders
+    .filter(o => o.nurseryId === activeNursery.id && HELD_ESCROW_STATUSES.includes(o.escrowStatus))
+    .reduce((sum, o) => sum + o.totalAmountUGX, 0);
 
   const handleCreateBatch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,41 +68,35 @@ export const ManagerDashboard: React.FC = () => {
       spread: 70,
       origin: { y: 0.6 }
     });
-    showToast('New seedling batch registered in live inventory!');
   };
 
   return (
     <div className="flex bg-slate-50 min-h-[calc(100vh-4rem)]">
       
-      {/* Left Navigation Sidebar - Matches Screenshot 2 */}
-      <Sidebar 
-        onOpenAddBatch={() => setIsAddBatchOpen(true)}
-        activeSidebarTab={activeSidebarTab}
-        onSelectSidebarTab={setActiveSidebarTab}
-      />
+      <Sidebar activeSection="inventory" onOpenAddBatch={() => setIsAddBatchOpen(true)} />
 
       {/* Main Content Area */}
       <div className="flex-1 p-6 lg:p-10 space-y-8 max-w-6xl">
         
-        {/* Top Header & Total Escrow Card - Matches Screenshot 2 */}
+        {/* Header & Escrow Summary */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-display tracking-tight">
               Inventory & Escrow
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Manage your seedling stock and monitor escrow disbursements.
+              {activeNursery.name} · Manage your seedling stock and monitor escrow disbursements.
             </p>
           </div>
 
           {/* Total Escrow Card */}
-          <div className="p-4 px-6 rounded-3xl bg-white border border-slate-200 shadow-xs flex items-center space-x-6">
+          <div className="p-4 px-6 rounded-3xl bg-white border border-slate-200 shadow-sm flex items-center space-x-6">
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
-                TOTAL ESCROW
+                HELD IN ESCROW
               </span>
               <div className="text-2xl lg:text-3xl font-extrabold text-[#007A33] font-display">
-                UGX 14.5M
+                UGX {compactNumber.format(heldEscrowUGX)}
               </div>
             </div>
 
@@ -114,46 +112,14 @@ export const ManagerDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Previous System Snapshot Card - Matches Screenshot 2 */}
-        <div className="rounded-3xl bg-white border border-slate-200 overflow-hidden shadow-xs">
-          <div className="relative h-44 bg-slate-100 overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80"
-              alt="System Overview"
-              className="w-full h-full object-cover opacity-60 filter blur-[1px]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent"></div>
-          </div>
-          <div className="p-4 px-6 bg-white flex items-center justify-between">
-            <span className="text-xs italic text-slate-500 font-serif">
-              Previous System Snapshot
-            </span>
-            <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100">
-              Legacy View
-            </span>
-          </div>
+        {/* Live Seedling Batches */}
+        <div className="flex items-center space-x-2 pt-2 border-b border-slate-200 pb-4">
+          <Sprout className="w-5 h-5 text-[#007A33]" />
+          <h2 className="text-lg font-bold text-slate-900 font-display">
+            Live Seedling Batches ({activeNursery.batches.length})
+          </h2>
         </div>
 
-        {/* Live Seedling Batches Section Header - Matches Screenshot 2 */}
-        <div className="flex items-center justify-between pt-2 border-b border-slate-200 pb-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-lg">🌱</span>
-            <h2 className="text-lg font-bold text-slate-900 font-display">
-              Live Seedling Batches
-            </h2>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <button className="p-2 rounded-xl text-slate-500 hover:bg-slate-100">
-              <SlidersHorizontal className="w-4 h-4" />
-            </button>
-            <button className="p-2 rounded-xl text-slate-500 hover:bg-slate-100">
-              <ArrowUpDown className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* 3 Column Batches Cards - Matches Screenshot 2 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activeNursery.batches.map((batch) => {
             const isVerified = batch.status === 'Verified';
@@ -161,7 +127,7 @@ export const ManagerDashboard: React.FC = () => {
             return (
               <div
                 key={batch.id}
-                className="rounded-3xl bg-white border border-slate-200 p-6 flex flex-col justify-between space-y-6 shadow-xs hover:border-slate-300 transition-all"
+                className="rounded-3xl bg-white border border-slate-200 p-6 flex flex-col justify-between space-y-6 shadow-sm hover:border-slate-300 transition-all"
               >
                 {/* Top Badge & ID */}
                 <div>
@@ -192,9 +158,7 @@ export const ManagerDashboard: React.FC = () => {
                       Stock Available
                     </span>
                     <div className="text-2xl font-extrabold text-[#007A33] font-display mt-1">
-                      {batch.quantityAvailable >= 1000 
-                        ? `${(batch.quantityAvailable / 1000).toFixed(0)},000` 
-                        : batch.quantityAvailable.toLocaleString()}
+                      {batch.quantityAvailable.toLocaleString()}
                     </div>
                   </div>
 
@@ -305,7 +269,7 @@ export const ManagerDashboard: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs mt-2 transition-all shadow-xs"
+                className="w-full py-3 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs mt-2 transition-all shadow-sm"
               >
                 Register in Live Batches
               </button>

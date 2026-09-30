@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Sidebar } from '../Sidebar';
-import { 
-  TrendingDown, 
-  Flame, 
-  Trees, 
-  ShieldAlert, 
-  Download, 
-  ArrowUpRight, 
-  Layers, 
-  Sliders 
-} from 'lucide-react';
+import { Flame, Trees, ShieldAlert, Download, ArrowUpRight } from 'lucide-react';
+import { DeforestationHotspot, DistrictShadowDeficit } from '../../types';
+
+const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+
+const buildShadowReportCsv = (hotspots: DeforestationHotspot[], deficits: DistrictShadowDeficit[]) => {
+  const rows: (string | number)[][] = [
+    ['Deforestation hotspots'],
+    ['Name', 'District', 'Forest loss (ha, 3 yrs)', 'Nearest nursery (km)', 'Priority score', 'Primary drivers'],
+    ...hotspots.map(h => [h.name, h.district, h.forestLossHectaresPast3Yrs, h.nearestNurseryDistanceKm, h.priorityScore, h.primaryDrivers.join('; ')]),
+    [],
+    ['Sub-county opportunity index'],
+    ['Sub-county', 'Forest cover loss (ha)', 'Active nurseries', 'Annual seedling deficit', 'Opportunity score', 'Recommended capacity'],
+    ...deficits.map(d => [d.district, d.forestCoverLossHectares, d.activeNurseriesCount, d.annualSeedlingDeficit, d.opportunityScore, d.recommendedNurseryCapacity]),
+  ];
+  return rows.map(r => r.map(csvCell).join(',')).join('\n');
+};
 
 export const NurseryShadowView: React.FC = () => {
   const {
@@ -18,7 +24,6 @@ export const NurseryShadowView: React.FC = () => {
     districtDeficits,
     nurseries,
     serviceRadiusKm,
-    setServiceRadiusKm,
     setActiveTab,
     setFocusedMapCoords,
     showToast
@@ -29,17 +34,19 @@ export const NurseryShadowView: React.FC = () => {
   const totalDeficit = districtDeficits.reduce((s, d) => s + d.annualSeedlingDeficit, 0);
 
   const handleExportBrief = () => {
-    showToast('Downloaded Mukono District Nursery Shadow Report (.txt)');
+    const blob = new Blob([buildShadowReportCsv(hotspots, districtDeficits)], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `nursery-shadow-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('Nursery Shadow report downloaded');
   };
 
   return (
-    <div className="flex bg-slate-50 min-h-[calc(100vh-4rem)]">
-      
-      {/* Left Navigation Sidebar */}
-      <Sidebar />
-
-      {/* Main Analytics Content */}
-      <div className="flex-1 p-6 lg:p-10 space-y-8 max-w-6xl">
+    <div className="bg-slate-50 min-h-[calc(100vh-4rem)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -55,17 +62,17 @@ export const NurseryShadowView: React.FC = () => {
           <div className="flex items-center space-x-3">
             <button
               onClick={handleExportBrief}
-              className="py-2.5 px-4 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all"
+              className="py-2.5 px-4 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
             >
               <Download className="w-4 h-4" />
-              <span>Export Policy Brief</span>
+              <span>Export Report (CSV)</span>
             </button>
           </div>
         </div>
 
         {/* 3 Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-1">
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
             <span className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
               <Flame className="w-4 h-4 text-red-600" /> Forest Loss in Mukono
             </span>
@@ -75,7 +82,7 @@ export const NurseryShadowView: React.FC = () => {
             <p className="text-[11px] text-slate-400">Mabira fringe & Lake Victoria basin</p>
           </div>
 
-          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-1">
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
             <span className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
               <ShieldAlert className="w-4 h-4 text-amber-600" /> Seedling Deficit
             </span>
@@ -85,7 +92,7 @@ export const NurseryShadowView: React.FC = () => {
             <p className="text-[11px] text-slate-400">Unmet agroforestry planting demand</p>
           </div>
 
-          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-1">
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
             <span className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
               <Trees className="w-4 h-4 text-[#007A33]" /> Active Nurseries
             </span>
@@ -112,7 +119,7 @@ export const NurseryShadowView: React.FC = () => {
                   onClick={() => setSelectedHotspot(h)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white ${
                     selectedHotspot?.id === h.id
-                      ? 'border-red-500 ring-1 ring-red-500 shadow-xs'
+                      ? 'border-red-500 ring-1 ring-red-500 shadow-sm'
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
@@ -154,7 +161,7 @@ export const NurseryShadowView: React.FC = () => {
               Sub-County Opportunity Index
             </h2>
 
-            <div className="rounded-3xl bg-white border border-slate-200 overflow-hidden shadow-xs">
+            <div className="rounded-3xl bg-white border border-slate-200 overflow-hidden shadow-sm">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-100">
                   <tr>

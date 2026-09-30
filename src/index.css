@@ -46,45 +46,6 @@
   color: #16a34a !important;
 }
 
-/* Glowing Pulsers for Light Theme */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 14px rgba(22, 163, 74, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
-  }
-}
-
-@keyframes pulse-danger {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 14px rgba(220, 38, 38, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
-  }
-}
-
-.marker-nursery-glow {
-  animation: pulse-ring 2.5s infinite cubic-bezier(0.45, 0, 0.55, 1);
-}
-
-.marker-hotspot-glow {
-  animation: pulse-danger 2s infinite cubic-bezier(0.45, 0, 0.55, 1);
-}
-
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -102,11 +63,4 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
-}
-
-/* Clean White & Green Surfaces */
-.card-clean {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }

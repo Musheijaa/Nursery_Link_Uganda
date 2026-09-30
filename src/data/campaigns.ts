@@ -12,7 +12,6 @@ export const FREE_CAMPAIGNS: FreeCampaign[] = [
     targetEcologicalZones: ['Lake Victoria Crescent'],
     totalSeedlingsFunded: 250000,
     seedlingsClaimed: 187500,
-    fundingClaimedPercent: 75,
     maxPerFarmer: 500,
     eligibleSpecies: [
       'African Teak (Milicia excelsa)',
@@ -38,7 +37,6 @@ export const FREE_CAMPAIGNS: FreeCampaign[] = [
     targetEcologicalZones: ['Lake Victoria Crescent'],
     totalSeedlingsFunded: 150000,
     seedlingsClaimed: 63000,
-    fundingClaimedPercent: 42,
     maxPerFarmer: 250,
     eligibleSpecies: [
       'Grevillea Robusta',

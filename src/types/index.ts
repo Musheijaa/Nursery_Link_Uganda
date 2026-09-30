@@ -154,7 +154,6 @@ export interface FreeCampaign {
   targetEcologicalZones: EcologicalZone[];
   totalSeedlingsFunded: number;
   seedlingsClaimed: number;
-  fundingClaimedPercent: number;
   maxPerFarmer: number;
   eligibleSpecies: string[];
   requirements: string[];

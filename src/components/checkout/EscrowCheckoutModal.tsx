@@ -1,25 +1,15 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { 
-  X, 
-  Trash2, 
-  Phone, 
-  MapPin, 
-  CheckCircle2, 
-  Lock, 
-  Truck, 
-  Smartphone, 
-  ArrowRight,
-  ShieldCheck
-} from 'lucide-react';
+import { X, Trash2, CheckCircle2, Smartphone, ArrowRight, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { Order } from '../../types';
+import { deliveryFeeUGX, distanceKm } from '../../utils/geo';
 
 export const EscrowCheckoutModal: React.FC = () => {
   const { 
     cart, 
     cartTotalAmountUGX, 
     removeFromCart, 
-    clearCart, 
     isCheckoutOpen, 
     setIsCheckoutOpen,
     createOrder,
@@ -28,19 +18,22 @@ export const EscrowCheckoutModal: React.FC = () => {
   } = useApp();
 
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'delivery' | 'payment_prompt' | 'success'>('cart');
-  const [buyerName, setBuyerName] = useState('Emmanuel Kato');
-  const [buyerPhone, setBuyerPhone] = useState('0772458920');
+  const [buyerName, setBuyerName] = useState('');
+  const [buyerPhone, setBuyerPhone] = useState('');
   const [subCounty, setSubCounty] = useState('Mukono (Nama Sub-County)');
   const [paymentMethod, setPaymentMethod] = useState<'MTN Mobile Money' | 'Airtel Money'>('MTN Mobile Money');
-  const [momoNumber, setMomoNumber] = useState('0772458920');
+  const [momoNumber, setMomoNumber] = useState('');
   const [ussdPinInput, setUssdPinInput] = useState('');
   const [createdOrderNumber, setCreatedOrderNumber] = useState('');
   const [createdReleasePin, setCreatedReleasePin] = useState('');
 
   if (!isCheckoutOpen) return null;
 
-  const estimatedDeliveryDistanceKm = 14.5; // Average in Mukono
-  const deliveryFee = 10000 + Math.round(estimatedDeliveryDistanceKm * 2000);
+  // Orders are fulfilled by the first nursery in the cart; distance is measured to the selected planting site
+  const estimatedDeliveryDistanceKm = cart.length > 0
+    ? Number(distanceKm(cart[0].nurseryCoordinates, userLocation).toFixed(1))
+    : 0;
+  const deliveryFee = deliveryFeeUGX(estimatedDeliveryDistanceKm);
   const finalTotal = cartTotalAmountUGX + (cart.length > 0 ? deliveryFee : 0);
 
   const handleStartPayment = (e: React.FormEvent) => {
@@ -127,8 +120,8 @@ export const EscrowCheckoutModal: React.FC = () => {
               ) : (
                 <>
                   <div className="space-y-3 max-h-60 overflow-y-auto divide-y divide-slate-100">
-                    {cart.map((item, idx) => (
-                      <div key={idx} className="pt-3 flex items-center justify-between text-xs">
+                    {cart.map((item) => (
+                      <div key={`${item.nurseryId}-${item.batch.id}`} className="pt-3 flex items-center justify-between text-xs">
                         <div>
                           <h4 className="font-bold text-slate-900 text-sm">{item.batch.speciesName}</h4>
                           <p className="text-slate-500 text-[11px]">{item.nurseryName} • {item.batch.pottingType}</p>
@@ -155,7 +148,7 @@ export const EscrowCheckoutModal: React.FC = () => {
                       <span className="font-mono font-bold">UGX {cartTotalAmountUGX.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-slate-600">
-                      <span>Mukono Dispatch Transport (~{estimatedDeliveryDistanceKm} km):</span>
+                      <span>Delivery (~{estimatedDeliveryDistanceKm} km to planting site):</span>
                       <span className="font-mono font-bold">UGX {deliveryFee.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
@@ -166,7 +159,7 @@ export const EscrowCheckoutModal: React.FC = () => {
 
                   <button
                     onClick={() => setCheckoutStep('delivery')}
-                    className="w-full py-3 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
+                    className="w-full py-3 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
                   >
                     <span>Proceed to Delivery & Payment</span>
                     <ArrowRight className="w-4 h-4" />
@@ -222,7 +215,7 @@ export const EscrowCheckoutModal: React.FC = () => {
                   <label className="block text-slate-700 font-bold mb-1">Payment Method</label>
                   <select
                     value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value as any)}
+                    onChange={(e) => setPaymentMethod(e.target.value as Order['paymentMethod'])}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium"
                   >
                     <option value="MTN Mobile Money">MTN MoMo (*165#)</option>
@@ -243,7 +236,7 @@ export const EscrowCheckoutModal: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all mt-4"
+                className="w-full py-3 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all mt-4"
               >
                 <span>Authorize Escrow of UGX {finalTotal.toLocaleString()}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -280,7 +273,7 @@ export const EscrowCheckoutModal: React.FC = () => {
 
               <button
                 onClick={handleConfirmUssdPin}
-                className="w-full py-3 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs shadow-xs transition-all"
+                className="w-full py-3 rounded-xl bg-[#007A33] hover:bg-[#00662A] text-white font-bold text-xs shadow-sm transition-all"
               >
                 Confirm Payment & Lock Escrow
               </button>

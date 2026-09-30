@@ -10,8 +10,9 @@ import { OrderTrackingView } from './components/orders/OrderTrackingView';
 import { ManagerDashboard } from './components/dashboard/ManagerDashboard';
 import { EscrowCheckoutModal } from './components/checkout/EscrowCheckoutModal';
 import { CheckCircle2 } from 'lucide-react';
+import { LandingPage } from './components/LandingPage';
 
-export const AppContent: React.FC = () => {
+export const App: React.FC = () => {
   const { activeTab, toastNotification } = useApp();
 
   return (
@@ -22,6 +23,7 @@ export const AppContent: React.FC = () => {
 
       {/* Main View Router */}
       <main className="flex-1">
+        {activeTab === 'home' && <LandingPage />}
         {activeTab === 'map' && <NurseryMap />}
         {activeTab === 'library' && <TreeLibraryView />}
         {activeTab === 'shadow' && <NurseryShadowView />}
@@ -35,7 +37,7 @@ export const AppContent: React.FC = () => {
 
       {/* Global Toast Notification */}
       {toastNotification && (
-        <div className="fixed bottom-6 right-6 z-50 animate-bounce">
+        <div role="status" aria-live="polite" className="fixed bottom-6 right-6 z-50">
           <div className="flex items-center space-x-2.5 px-4 py-3 rounded-2xl bg-white border-2 border-emerald-600 text-slate-900 shadow-xl text-xs backdrop-blur-md">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="font-bold">{toastNotification}</span>
@@ -47,10 +49,6 @@ export const AppContent: React.FC = () => {
       {activeTab !== 'map' && <Footer />}
     </div>
   );
-};
-
-export const App: React.FC = () => {
-  return <AppContent />;
 };
 
 export default App;
