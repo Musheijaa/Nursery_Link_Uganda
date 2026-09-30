@@ -8,13 +8,14 @@ Nursery Link Uganda replaces the paper logbooks and scattered spreadsheets curre
 
 ## Features
 
-- **Nursery map:** Leaflet map with filtering by district, species, category, and certification, adjustable service-zone radius (5/10/20 km), and a deforestation hotspot layer
-- **Order & delivery checkout:** multi-step cart → delivery details → Mobile Money authorisation, with distance-based delivery pricing and an escrow release PIN
-- **Order tracking:** escrow status per order, released to the nursery once the buyer confirms delivery with their PIN
-- **Nursery manager dashboard:** live seedling batches, held-escrow total, and registration of new batches
-- **Nursery Shadow analytics:** hotspot list, sub-county opportunity index, and CSV report export
-- **Free seedling campaigns:** campaign directory, grant applications, and voucher issuance
-- **Digital Tree Library:** searchable species registry that links through to nurseries stocking each species
+- **Find seedlings:** search by tree and planting district; nurseries are sorted by road distance and shown on an OpenStreetMap map with an optional forest-loss layer
+- **Checkout per nursery:** collect, boda boda or truck delivery priced by distance and load, Ugandan phone validation, and MTN MoMo / Airtel Money approval on the buyer's phone
+- **Held payments:** money is released to the nursery only when the buyer confirms delivery or gives the rider their 4-digit delivery code
+- **Tree guide:** 14 native and introduced species with local names, regions, altitude, uses and planting tips
+- **Planting calendar:** good planting months for each region of Uganda
+- **Free seedling programmes:** eligibility, applications and voucher codes for collection at partner nurseries
+- **Planting gaps:** district supply vs. estimated demand, forest-loss areas, and CSV export
+- **Nursery owner tools:** handle orders (prepare → dispatch → confirm with the buyer's code), edit stock and prices, add batches
 
 ## Tech stack
 
@@ -37,22 +38,30 @@ npm run preview   # serve the production build locally
 ## Project structure
 
 ```
+public/images/            # Photos from Wikimedia Commons, resized for low bandwidth (credited in-app)
 src/
-├── App.tsx               # Top-level layout; switches views on the active tab
-├── context/AppContext.tsx # Application state and actions (cart, orders, escrow, inventory, vouchers)
+├── App.tsx               # Layout and page switching
+├── context/AppContext.tsx # State and actions: cart, orders, stock, vouchers
 ├── types/index.ts        # Domain models
-├── data/                 # Seed data: nurseries, tree species, campaigns, forest-loss analytics
+├── data/                 # Sample nurseries, species, districts, programmes, forest data, image credits
+├── utils/                # Formatting, distance and delivery pricing, phone validation
 └── components/
-    ├── LandingPage.tsx
-    ├── Navbar.tsx, Footer.tsx, Sidebar.tsx
-    ├── map/              # Nursery map and nursery detail / add-to-cart modal
-    ├── checkout/         # Mobile Money escrow checkout
-    ├── orders/           # Order tracking and escrow release
-    ├── dashboard/        # Nursery manager inventory dashboard
-    ├── shadow/           # Nursery Shadow supply-gap analytics
-    ├── campaigns/        # Free seedling campaigns and vouchers
-    └── library/          # Digital Tree Library
+    ├── ui.tsx            # Shared buttons, badges, fields, modal, photo
+    ├── layout/           # Header, footer, logo
+    ├── home/             # Home page
+    ├── seedlings/        # Search, map and nursery detail
+    ├── cart/             # Cart and checkout
+    ├── trees/            # Tree guide
+    ├── programmes/       # Free seedling programmes
+    ├── gaps/             # Planting gaps analysis
+    ├── orders/           # Buyer order tracking
+    ├── nursery/          # Nursery owner tools
+    └── credits/          # Photo credits
 ```
+
+## Sample data
+
+Nurseries, people, phone numbers, programmes and sponsors are fictional. Forest-loss and demand figures are illustrative. Tree information and planting seasons are general guidance and should be checked with local extension officers.
 
 ## Roadmap
 

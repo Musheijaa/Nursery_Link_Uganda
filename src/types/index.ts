@@ -1,187 +1,199 @@
-export type EcologicalZone = 
-  | 'Lake Victoria Crescent'
-  | 'Albertine Rift'
-  | 'Mt. Elgon Highlands'
-  | 'South-Western Highlands'
-  | 'Northern Grasslands'
-  | 'Central Savannah'
-  | 'West Nile Plateau'
-  | 'Karamoja Semi-Arid';
+// Shapes returned by the Nursery Link API (see server/src/routes).
 
-export type CertificationLevel = 
-  | 'NFA Certified (National Forest Authority)'
-  | 'MAAIF Verified (Ministry of Agriculture)'
-  | 'Community Seedling Producer'
-  | 'Carbon Standard Audited (Plan Vivo / Gold Standard)';
+export type Region = 'Central' | 'Eastern' | 'Northern' | 'Western';
 
-export type SpeciesCategory = 
-  | 'Indigenous Hardwood'
-  | 'Fast-Growing Timber'
-  | 'High-Value Fruit & Nut'
-  | 'Agroforestry & Soil Fertility'
-  | 'Medicinal & Botanical'
-  | 'Bamboo & Biomass';
+export interface District {
+  name: string;
+  region: Region;
+  coordinates: [number, number];
+}
 
-export type PottingType = 'Poly-tube Potted' | 'Bare-Root Seedling' | 'Root-Trainer Plug' | 'Grafted Bare-Root' | 'Potted Clonal Cutting';
+export type SpeciesCategory =
+  | 'Indigenous timber'
+  | 'Fast-growing timber'
+  | 'Fruit tree'
+  | 'Shade & agroforestry'
+  | 'Medicinal & cultural';
 
 export interface TreeSpecies {
   id: string;
-  botanicalName: string;
   commonName: string;
-  localNames: { [language: string]: string };
+  botanicalName: string;
+  localNames: { language: string; name: string }[];
   category: SpeciesCategory;
-  description: string;
-  benefits: string[];
-  ecologicalZones: EcologicalZone[];
-  elevationRangeMeters: [number, number];
-  annualRainfallMm: [number, number];
-  growthRate: 'Fast' | 'Moderate' | 'Slow';
-  waterNeed: 'Low' | 'Medium' | 'High';
   isNative: boolean;
-  maturityYears: number;
-  carbonSequestrationKgPerYear: number;
-  agroforestryCompatibility: 1 | 2 | 3 | 4 | 5;
-  soilTypes: string[];
-  timberValueGrade: 'A+ High Luxury' | 'A Commercial' | 'B Utility' | 'Fuelwood / Non-timber';
+  description: string;
+  uses: string[];
+  regions: Region[];
+  altitudeM: [number, number];
+  growthRate: 'Fast' | 'Moderate' | 'Slow';
+  timeToHarvest: string;
+  plantingTip: string;
+  /** Key into src/data/images.ts */
   image: string;
+  nurseryCount: number;
+  lowestPriceUGX: number | null;
 }
+
+export type SeedlingType = 'Potted seedling' | 'Root trainer' | 'Grafted' | 'Cutting';
 
 export interface SeedlingBatch {
   id: string;
   speciesId: string;
-  speciesName: string;
-  botanicalName: string;
-  category: SpeciesCategory;
-  pottingType: PottingType;
+  seedlingType: SeedlingType;
   ageMonths: number;
   heightCm: number;
-  germinationRatePercent: number;
   unitPriceUGX: number;
   quantityAvailable: number;
-  batchCode: string;
-  status: 'Verified' | 'Pending' | 'Audited';
-  escrowCommitmentPercent: number;
-  certifiedMotherTree: boolean;
-  readyForPlanting: boolean;
+  status: 'Ready' | 'Ready soon';
 }
+
+export type Registration = 'NFA registered' | 'MAAIF certified' | 'District registered' | 'Community group';
+export type DeliveryMethod = 'Collect from nursery' | 'Boda boda' | 'Truck';
+export type PaymentNetwork = 'MTN MoMo' | 'Airtel Money';
 
 export interface Nursery {
   id: string;
+  slug: string;
   name: string;
-  zone: string;
   operatorName: string;
   phone: string;
-  email: string;
   district: string;
+  region: Region;
   subCounty: string;
   village: string;
   coordinates: [number, number];
-  elevationMeters: number;
-  certification: CertificationLevel;
-  accreditationNumber: string;
-  ecologicalZone: EcologicalZone;
-  annualCapacity: number;
-  currentStockTotal: number;
-  rating: number;
-  reviewsCount: number;
-  waterSource: 'Gravity Piped' | 'Borehole' | 'River/Stream' | 'Rainwater Harvesting Reservoir';
-  specialties: string[];
+  registration: Registration;
+  registrationNumber: string;
+  established: number;
+  description: string;
+  deliveryMethods: DeliveryMethod[];
+  openingHours: string;
+  status: 'pending' | 'active' | 'suspended';
+  distanceKm: number | null;
   batches: SeedlingBatch[];
-  photos: string[];
-  verifiedSince: string;
 }
 
-export interface CartItem {
-  nurseryId: string;
-  nurseryName: string;
-  nurseryCoordinates: [number, number];
-  nurseryDistrict: string;
-  batch: SeedlingBatch;
-  quantity: number;
+export interface ManagedNursery extends Nursery {
+  payoutPhone: string;
+  payoutNetwork: PaymentNetwork;
+  stats: { openOrders: number; heldUGX: number; paidUGX: number };
 }
 
-export type EscrowStatus = 
-  | 'Awaiting Payment'
-  | 'Escrow Funded'
-  | 'Batch Preparation'
-  | 'In Transit'
-  | 'Delivered - Inspection Period'
-  | 'Released to Nursery'
-  | 'Dispute Raised';
+export interface DeliveryQuote {
+  method: DeliveryMethod;
+  available: boolean;
+  feeUGX: number;
+  distanceKm: number;
+  note: string;
+}
+
+export type OrderStatus =
+  | 'awaiting_payment'
+  | 'payment_failed'
+  | 'payment_held'
+  | 'being_prepared'
+  | 'on_the_way'
+  | 'delivered'
+  | 'problem_reported'
+  | 'cancelled';
 
 export interface Order {
   id: string;
   orderNumber: string;
   createdAt: string;
-  buyerName: string;
-  buyerPhone: string;
+  status: OrderStatus;
+  nursery: { id: string; name: string; phone: string; district: string };
+  buyer: { name: string; phone: string };
+  deliveryMethod: DeliveryMethod;
   deliveryDistrict: string;
-  deliverySubCounty: string;
-  deliveryCoordinates: [number, number];
+  deliveryArea: string;
+  deliveryLandmark: string;
   distanceKm: number;
-  nurseryId: string;
-  nurseryName: string;
-  items: {
-    speciesName: string;
-    botanicalName: string;
-    quantity: number;
-    unitPriceUGX: number;
-    pottingType: string;
-  }[];
-  seedlingSubtotalUGX: number;
+  items: { speciesId: string; speciesName: string; seedlingType: SeedlingType; quantity: number; unitPriceUGX: number }[];
+  seedlingsTotalUGX: number;
   deliveryFeeUGX: number;
-  totalAmountUGX: number;
-  paymentMethod: 'MTN Mobile Money' | 'Airtel Money';
-  momoNumber: string;
-  momoTransactionRef: string;
-  escrowStatus: EscrowStatus;
-  escrowReleasePin: string;
-  driverName?: string;
-  driverPhone?: string;
-  vehicleType?: string;
-  estimatedDeliveryDate: string;
-  plantingGuideDownloaded: boolean;
+  totalUGX: number;
+  payment: { status: 'pending' | 'successful' | 'failed'; network: PaymentNetwork; phone: string; failureReason: string | null } | null;
+  payout: { status: 'pending' | 'successful' | 'failed'; amountUGX: number } | null;
+  events: { status: OrderStatus; at: string; note: string | null }[];
+  /** Only present for the buyer, once the order is paid */
+  deliveryCode?: string;
 }
 
-export interface FreeCampaign {
+export interface SeedlingProgramme {
   id: string;
   title: string;
   sponsorName: string;
-  sponsorType: 'Local Gov' | 'NGO' | 'Carbon Project' | 'Corporate CSR';
-  logoType: 'tree' | 'leaf' | 'shield';
+  sponsorType: 'NGO' | 'Company' | 'Community organisation' | 'Government';
   description: string;
-  targetDistricts: string[];
-  targetEcologicalZones: EcologicalZone[];
-  totalSeedlingsFunded: number;
+  /** Empty means open to applicants in any district */
+  districts: string[];
+  speciesIds: string[];
+  maxPerApplicant: number;
+  totalSeedlings: number;
   seedlingsClaimed: number;
-  maxPerFarmer: number;
-  eligibleSpecies: string[];
   requirements: string[];
   deadline: string;
-  status: 'Active & Accepting Applications' | 'Quota Full' | 'Coming Soon';
-  partnerNurseryIds: string[];
+  status: 'Open' | 'Opening soon' | 'Closed';
+  collectionNurseries: { id: string; name: string; district: string }[];
 }
 
-export interface DeforestationHotspot {
+export interface Voucher {
+  code: string;
+  programmeId: string;
+  seedlings: number;
+  status: 'issued' | 'redeemed' | 'cancelled';
+  issuedAt: string;
+  redeemedAt: string | null;
+  district: string;
+}
+
+export interface PlantingGaps {
+  isIllustrative: boolean;
+  districts: {
+    district: string;
+    region: Region;
+    annualDemand: number;
+    forestLossHa: number;
+    nurseryCount: number;
+    supply: number;
+    coveragePercent: number;
+  }[];
+  areas: {
+    id: string;
+    name: string;
+    district: string;
+    coordinates: [number, number];
+    radiusKm: number;
+    forestLossHa: number;
+    drivers: string[];
+    recommendedSpeciesIds: string[];
+    nearestNursery: { name: string; distanceKm: number } | null;
+  }[];
+}
+
+export interface SiteStats {
+  nurseries: number;
+  districts: number;
+  species: number;
+  seedlingsInStock: number;
+}
+
+export type Role = 'buyer' | 'nursery_owner' | 'admin';
+
+export interface User {
   id: string;
-  name: string;
-  district: string;
-  coordinates: [number, number];
-  radiusKm: number;
-  forestLossHectaresPast3Yrs: number;
-  primaryDrivers: string[];
-  nearestNurseryDistanceKm: number;
-  priorityScore: number;
-  recommendedSpecies: string[];
+  phone: string;
+  name: string | null;
+  role: Role;
 }
 
-export interface DistrictShadowDeficit {
-  district: string;
-  region: 'Central' | 'Eastern' | 'Western' | 'Northern';
-  forestCoverLossHectares: number;
-  activeNurseriesCount: number;
-  annualSeedlingDeficit: number;
-  opportunityScore: number;
-  recommendedNurseryCapacity: number;
-  coordinates: [number, number];
+export interface AdminOverview {
+  pendingNurseries: number;
+  disputes: number;
+  failedPayouts: number;
+  orders30d: number;
+  sales30dUGX: number;
+  heldUGX: number;
 }

@@ -13,5 +13,9 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    // In development the API runs separately; in production it serves this site itself
+    proxy: {
+      '/api': 'http://localhost:4000',
+    },
   },
 })

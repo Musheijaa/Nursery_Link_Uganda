@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: nurserylink-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nurserylink
+      POSTGRES_USER: nurserylink
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nurserylink_dev}
+    ports:
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./server/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nurserylink -d nurserylink"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:

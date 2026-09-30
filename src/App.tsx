@@ -1,52 +1,56 @@
 import React from 'react';
-import { useApp } from './context/AppContext';
-import { Navbar } from './components/Navbar';
-import { Footer } from './components/Footer';
-import { NurseryMap } from './components/map/NurseryMap';
-import { TreeLibraryView } from './components/library/TreeLibraryView';
-import { NurseryShadowView } from './components/shadow/NurseryShadowView';
-import { CampaignsView } from './components/campaigns/CampaignsView';
-import { OrderTrackingView } from './components/orders/OrderTrackingView';
-import { ManagerDashboard } from './components/dashboard/ManagerDashboard';
-import { EscrowCheckoutModal } from './components/checkout/EscrowCheckoutModal';
 import { CheckCircle2 } from 'lucide-react';
-import { LandingPage } from './components/LandingPage';
+import { Page, useApp } from './context/AppContext';
+import { Header } from './components/layout/Header';
+import { Footer } from './components/layout/Footer';
+import { HomePage } from './components/home/HomePage';
+import { FindSeedlingsPage } from './components/seedlings/FindSeedlingsPage';
+import { TreeGuidePage } from './components/trees/TreeGuidePage';
+import { ProgrammesPage } from './components/programmes/ProgrammesPage';
+import { PlantingGapsPage } from './components/gaps/PlantingGapsPage';
+import { OrdersPage } from './components/orders/OrdersPage';
+import { NurseryPortalPage } from './components/nursery/NurseryPortalPage';
+import { CreditsPage } from './components/credits/CreditsPage';
+import { AdminPage } from './components/admin/AdminPage';
+import { CartPanel } from './components/cart/CartPanel';
+
+const PAGES: Record<Page, React.FC> = {
+  home: HomePage,
+  seedlings: FindSeedlingsPage,
+  trees: TreeGuidePage,
+  programmes: ProgrammesPage,
+  gaps: PlantingGapsPage,
+  orders: OrdersPage,
+  nursery: NurseryPortalPage,
+  admin: AdminPage,
+  credits: CreditsPage,
+};
 
 export const App: React.FC = () => {
-  const { activeTab, toastNotification } = useApp();
+  const { page, toast } = useApp();
+  const CurrentPage = PAGES[page];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col text-slate-900 selection:bg-emerald-600 selection:text-white">
-      
-      {/* Top Navigation */}
-      <Navbar />
+    <div className="flex min-h-screen flex-col">
+      <Header />
 
-      {/* Main View Router */}
       <main className="flex-1">
-        {activeTab === 'home' && <LandingPage />}
-        {activeTab === 'map' && <NurseryMap />}
-        {activeTab === 'library' && <TreeLibraryView />}
-        {activeTab === 'shadow' && <NurseryShadowView />}
-        {activeTab === 'campaigns' && <CampaignsView />}
-        {activeTab === 'orders' && <OrderTrackingView />}
-        {activeTab === 'dashboard' && <ManagerDashboard />}
+        <CurrentPage />
       </main>
 
-      {/* Global Escrow Checkout Modal */}
-      <EscrowCheckoutModal />
+      {/* The map page fills the viewport, so it has no footer */}
+      {page !== 'seedlings' && <Footer />}
 
-      {/* Global Toast Notification */}
-      {toastNotification && (
-        <div role="status" aria-live="polite" className="fixed bottom-6 right-6 z-50">
-          <div className="flex items-center space-x-2.5 px-4 py-3 rounded-2xl bg-white border-2 border-emerald-600 text-slate-900 shadow-xl text-xs backdrop-blur-md">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span className="font-bold">{toastNotification}</span>
+      <CartPanel />
+
+      {toast && (
+        <div role="status" aria-live="polite" className="fixed bottom-20 left-1/2 z-[60] -translate-x-1/2 lg:bottom-6">
+          <div className="flex items-center gap-2 rounded-md bg-stone-900 px-4 py-3 text-sm text-white shadow-lg">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-300" />
+            <span>{toast}</span>
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      {activeTab !== 'map' && <Footer />}
     </div>
   );
 };
