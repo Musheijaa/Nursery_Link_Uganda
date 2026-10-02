@@ -411,6 +411,33 @@ export const en = {
     older: 'Older posts',
     newer: 'Newer posts',
     page: (n: number, of: number) => `Page ${String(n)} of ${String(of)}`,
+    latest: 'Latest',
+    readingTime: (min: number) => `${String(min)} min read`,
+    more: 'More advice',
+    calendar: {
+      heading: 'Planting calendar',
+      intro: 'Mukono has two rainy seasons a year. Plant in the rains, so young roots settle before the dry months.',
+      monthsLabel: 'Seasons month by month',
+      now: (month: string) => `Now: ${month}`,
+      seasons: { rains: 'Planting season', prep: 'Get ready', dry: 'Dry season' },
+      todo: {
+        rains: 'Plant once the ground is soaked through. Order seedlings now if you haven’t yet.',
+        prep: 'The rains are coming. Order seedlings two to four weeks ahead and dig the planting holes.',
+        dry: 'Water young trees early or late in the day, mulch around them, and keep goats and cattle away.',
+      },
+    },
+    links: {
+      heading: 'Get planting',
+      nurseries: 'Find seedlings near you',
+      free: 'Free seedlings',
+      library: 'Which tree should I plant?',
+    },
+    nextStep: {
+      weather: { title: 'Ready to plant?', body: 'Find a nursery near you with the trees you want in stock, and have them delivered by boda boda.', cta: 'Find nurseries' },
+      market: { title: 'Compare prices yourself', body: 'Every nursery lists its trees and prices, so you can see who has the best deal near you.', cta: 'Find nurseries' },
+      policy: { title: 'Choose the right tree', body: 'The tree library shows where each tree grows well, how fast it grows and what it is good for.', cta: 'Open the tree library' },
+      grant: { title: 'Free seedlings', body: 'See which giveaways are open near you and check whether you qualify.', cta: 'See free seedlings' },
+    } satisfies Record<NewsCategory, { title: string; body: string; cta: string }>,
   },
   nurseries: {
     clusterLabel: (count: number, gift: boolean) => `${String(count)} nurseries here${gift ? ', some with free seedlings' : ''}. Zoom in`,

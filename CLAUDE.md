@@ -446,3 +446,8 @@ Interpretations where the spec was silent or ambiguous. Anything touching the da
   - **Where it's used:** Home's sky wash under the hero and the sky "three steps" band, weather pills, a lake stripe in the woven band, the trial note at checkout, and "Delivered" in the Insights delivery chart.
 - **Home hero photo:** a shade-net tree nursery at Kiige, Kamuli District ("Greenhouse in Uganda" by Phionah Boonabaana, CC BY-SA 4.0), straightened and cropped as the credits page says. The "three steps" band shows seedlings being unloaded from a truck ("Off-Loading Seedlings" by Surge2016, CC BY-SA 4.0).
 
+- **News & advice page** (user request, October 2026):
+  - **List:** the newest post on page 1 is the large lead story. Every card has a photo: the post's cover, or a photo for its category (`features/news/photos.ts`).
+  - **Side panel** (beside the list on wide screens, after it on phones): a planting calendar and links to nurseries, free seedlings and the library.
+  - **Planting calendar:** the seasons are hard-coded for central Uganda: rains March–May and September–November, "get ready" the month before each, dry otherwise. It marks the current month in Kampala time and says what to do now.
+  - **Articles:** reading time (200 words a minute), the cover or category photo, a next step by category (weather and market → Find nurseries, policy → Library, grant → Free seedlings), and up to 3 more recent posts.
