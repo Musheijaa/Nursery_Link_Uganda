@@ -6,8 +6,6 @@ import { en } from '../copy/en';
 import { useOnline } from '../lib/online';
 import { signOut, useSession } from '../lib/session';
 import { Logo } from './Logo';
-import { MobileMoneyBadges } from './MobileMoneyBadges';
-import { useFeatures } from '../features/orders/api';
 
 export interface NavItem {
   to: string;
@@ -128,7 +126,6 @@ const WovenBand = () => (
 );
 
 export const Footer = () => {
-  const features = useFeatures();
   return (
   <footer className="on-dark bg-canopy text-mist">
     <WovenBand />
@@ -136,10 +133,6 @@ export const Footer = () => {
       <div className="flex flex-col gap-3">
         <Logo />
         <p className="max-w-sm text-sm text-mist/85">{en.footer.tagline}</p>
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-mist/85">{features.data?.payments === false ? en.payments.comingSoon : en.payments.payWith}</p>
-          <MobileMoneyBadges size="sm" />
-        </div>
       </div>
       <nav aria-label={en.footer.explore} className="flex flex-col gap-1 text-sm">
         <p className="mb-1 font-bold text-paper">{en.footer.explore}</p>

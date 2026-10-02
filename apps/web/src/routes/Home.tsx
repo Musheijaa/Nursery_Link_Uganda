@@ -1,11 +1,8 @@
-import { unwrap } from '@nurserylink/api-client';
-import { Button, Skeleton, formatCount } from '@nurserylink/ui';
-import { useQuery } from '@tanstack/react-query';
+import { Button, Skeleton } from '@nurserylink/ui';
 import { ArrowRight, ChevronRight, LocateFixed, Search } from 'lucide-react';
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Combobox } from '../components/Combobox';
-import { MobileMoneyBadges } from '../components/MobileMoneyBadges';
 import { Picture } from '../components/Picture';
 import { usePageTitle } from '../components/usePageTitle';
 import { en } from '../copy/en';
@@ -18,7 +15,6 @@ import { useFeatures } from '../features/orders/api';
 import { useUserLocation } from '../features/nurseries/location';
 import { useSuggestions, type Suggestion } from '../features/search/api';
 import { suggestionOption } from '../features/search/options';
-import { api } from '../lib/api';
 import { useDebounced } from '../lib/useDebounced';
 import { haversineKm } from '../lib/geo';
 
@@ -56,14 +52,6 @@ const Home = () => {
   const campaigns = useCampaigns(6);
   const news = useNewsList(null, 1, 3);
   const features = useFeatures();
-  const stats = useQuery({ queryKey: ['stats'], queryFn: async () => (await unwrap(api.GET('/stats', {}))).data, staleTime: 5 * 60_000 });
-  const st = stats.data;
-  const statItems = [
-    { key: 'nurseries', value: st ? formatCount(st.nurseries) : '–', label: en.home.stats.nurseries(st?.nurseries ?? 0) },
-    { key: 'species', value: st ? formatCount(st.species_in_stock) : '–', label: en.home.stats.species(st?.species_in_stock ?? 0) },
-    { key: 'seedlings', value: st ? formatCount(st.seedlings_in_stock) : '–', label: en.home.stats.seedlings },
-    { key: 'campaigns', value: st ? formatCount(st.open_campaigns) : '–', label: en.home.stats.campaigns(st?.open_campaigns ?? 0) },
-  ];
 
   // Nearest pickup points first when we already know where the user is
   const nearby = useMemo(() => {
@@ -156,20 +144,6 @@ const Home = () => {
             </ul>
           </div>
 
-          {/* The marketplace at a glance, live from the database (space reserved while it loads) */}
-          <dl aria-label={en.home.statsLabel} className="mt-2 grid max-w-xl grid-cols-2 gap-px overflow-hidden rounded-lg bg-paper/15 ring-1 ring-paper/20 sm:grid-cols-4">
-            {statItems.map(item => (
-              <div key={item.key} className="flex min-h-20 flex-col-reverse justify-end gap-1 bg-canopy/70 p-3 backdrop-blur-sm">
-                <dt className="text-xs leading-snug text-mist/80">{item.label}</dt>
-                <dd className="font-display text-2xl leading-none font-semibold text-paper tabular-nums">{item.value}</dd>
-              </div>
-            ))}
-          </dl>
-
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <p className="text-sm font-bold text-mist/85">{features.data?.payments === false ? en.payments.comingSoon : en.payments.payWith}</p>
-            <MobileMoneyBadges size="sm" />
-          </div>
         </Container>
       </section>
 

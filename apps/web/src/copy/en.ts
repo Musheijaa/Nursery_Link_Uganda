@@ -367,13 +367,6 @@ export const en = {
     stepsPhotoCaption: 'Seedlings arriving by truck',
     stepsCta: 'Find a nursery',
     freeBadge: 'Free',
-    statsLabel: 'Nursery Link today',
-    stats: {
-      nurseries: (n: number) => (n === 1 ? 'nursery listed' : 'nurseries listed'),
-      species: (n: number) => (n === 1 ? 'kind of tree in stock' : 'kinds of trees in stock'),
-      seedlings: 'seedlings ready to plant',
-      campaigns: (n: number) => (n === 1 ? 'free-seedling campaign open' : 'free-seedling campaigns open'),
-    },
     campaignsHeading: 'Free seedlings near you',
     campaignsHeadingAll: 'Free seedlings now',
     campaignsEmpty: 'No free-seedling campaigns are running right now. Check again soon.',
