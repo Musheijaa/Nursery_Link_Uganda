@@ -13,10 +13,13 @@ import { createPool } from './client.js';
  */
 export const SAMPLE_SOURCE = 'synthetic_dev_sample';
 
-/** Two hotspots on the southern lakeshore, far from every nursery, and two inside the served area. */
+/**
+ * Two hotspots on Koome Island (dry land ~27 km from every sample nursery, so beyond all service
+ * areas) and two on the mainland inside the served area. Placed for the official UBOS boundary.
+ */
 const HOTSPOTS = [
-  { lat: 0.06, lng: 32.9, r_km: 3.5, peak: 60, year_from: 2015, year_to: 2022 },
-  { lat: 0.075, lng: 32.66, r_km: 3, peak: 48, year_from: 2012, year_to: 2020 },
+  { lat: -0.13, lng: 32.745, r_km: 2.5, peak: 60, year_from: 2015, year_to: 2022 },
+  { lat: -0.12, lng: 32.79, r_km: 2, peak: 48, year_from: 2012, year_to: 2020 },
   { lat: 0.66, lng: 32.94, r_km: 4, peak: 40, year_from: 2008, year_to: 2016 },
   { lat: 0.43, lng: 32.86, r_km: 2.5, peak: 28, year_from: 2017, year_to: 2023 },
 ];
@@ -39,7 +42,9 @@ export const loadForestLossSample = async (pool: pg.Pool, district = 'Mukono'): 
        hot AS (SELECT * FROM jsonb_to_recordset($3::jsonb) h(lat float8, lng float8, r_km float8, peak float8, year_from int, year_to int)),
        yearly AS (
          SELECT c.g, y AS year,
-                COALESCE((SELECT sum(h.peak * exp(-power(ST_Distance(ST_Centroid(c.g)::geography, ST_SetSRID(ST_MakePoint(h.lng, h.lat), 4326)::geography) / 1000 / h.r_km, 2))
+                -- The exponent is capped: far out on the lake (the official Mukono boundary includes its share of
+                -- Lake Victoria) exp() would otherwise underflow, and the term is 0 there anyway
+                COALESCE((SELECT sum(h.peak * exp(-LEAST(power(ST_Distance(ST_Centroid(c.g)::geography, ST_SetSRID(ST_MakePoint(h.lng, h.lat), 4326)::geography) / 1000 / h.r_km, 2), 50))
                                      / (h.year_to - h.year_from + 1))
                           FROM hot h WHERE y BETWEEN h.year_from AND h.year_to), 0)
                 -- Faint background clearing in about one cell-year in eight
