@@ -8042,6 +8042,36 @@
             }
           },
           {
+            "name": "nursery_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "buyer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -13319,6 +13349,88 @@
       "Dashboard": {
         "type": "object",
         "properties": {
+          "orders_to_dispatch": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "short_code": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending_payment",
+                        "escrow_held",
+                        "dispatched",
+                        "delivered",
+                        "released",
+                        "disputed",
+                        "refunded",
+                        "cancelled"
+                      ]
+                    },
+                    "grand_total": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "nursery_name": {
+                      "type": "string"
+                    },
+                    "buyer_name": {
+                      "type": "string"
+                    },
+                    "paid_at": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "description": "ISO 8601 date-time"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "description": "ISO 8601 date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "short_code",
+                    "status",
+                    "grand_total",
+                    "nursery_name",
+                    "buyer_name",
+                    "paid_at",
+                    "updated_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "count",
+              "items"
+            ],
+            "additionalProperties": false,
+            "description": "New orders: paid (or confirmed in trial mode), waiting for the nursery to dispatch"
+          },
           "disputed_orders": {
             "type": "object",
             "properties": {
@@ -13788,6 +13900,7 @@
           }
         },
         "required": [
+          "orders_to_dispatch",
           "disputed_orders",
           "stuck_escrow",
           "failed_payouts",

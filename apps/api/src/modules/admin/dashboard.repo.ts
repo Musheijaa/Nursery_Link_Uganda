@@ -28,6 +28,8 @@ const latestFailedPayouts = sql`
   ORDER BY p.order_id, p.kind, p.created_at DESC`;
 
 export const dashboard = async (db: DbOrTx) => {
+  // New orders: paid (or confirmed in trial mode) and waiting for the nursery to dispatch
+  const toDispatch = orderList(sql`o.status = 'escrow_held'`);
   const disputed = orderList(sql`o.status = 'disputed'`);
   const stuck = orderList(sql`o.status = 'escrow_held' AND o.paid_at < now() - make_interval(hours => ${STUCK_ESCROW_HOURS})`);
   // Select the DTO columns only (the inner query carries status for the filter)
@@ -48,11 +50,12 @@ export const dashboard = async (db: DbOrTx) => {
     SELECT id::text, after->>'from' AS sender, after->>'text' AS text, after->>'reason' AS reason, created_at
     FROM audit_log WHERE action = 'sms.unrecognised' AND created_at > now() - make_interval(days => ${SMS_WINDOW_DAYS})`;
 
-  const [disputedN, stuckN, failedN, staleN, pendingN, smsN, verifyN] = await Promise.all([disputed, stuck, failed, stale, pending, sms, toVerify].map(q => count(db, q)));
+  const [disputedN, stuckN, failedN, staleN, pendingN, smsN, verifyN, toDispatchN] = await Promise.all([disputed, stuck, failed, stale, pending, sms, toVerify, toDispatch].map(q => count(db, q)));
   const top = async <T extends Record<string, unknown>>(q: ReturnType<typeof sql>, order: ReturnType<typeof sql>) =>
     (await db.execute<T>(sql`SELECT * FROM (${q}) q ORDER BY ${order} LIMIT ${TOP}`)).rows;
 
   return {
+    orders_to_dispatch: { count: toDispatchN, items: await top<DashboardOrder>(toDispatch, sql`q.paid_at DESC NULLS LAST`) },
     disputed_orders: { count: disputedN, items: await top<DashboardOrder>(disputed, sql`q.updated_at DESC`) },
     stuck_escrow: { count: stuckN, items: await top<DashboardOrder>(stuck, sql`q.paid_at`) },
     failed_payouts: {

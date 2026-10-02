@@ -305,7 +305,7 @@ export const adminRoutes = (deps: { db: Database; species: SpeciesService; order
   // ── Orders and payouts ───────────────────────────────────
   router.get('/orders', validate({ query: ordersQuery }), async (_req, res) => {
     const { query: q } = parsed<{ query: z.output<typeof ordersQuery> }>(res);
-    const { items, meta } = await deps.orders.adminList(q.status, { page: q.page, limit: q.limit });
+    const { items, meta } = await deps.orders.adminList({ status: q.status, nurseryId: q.nursery_id, buyerId: q.buyer_id, q: q.q }, { page: q.page, limit: q.limit });
     res.json({ data: items, meta });
   });
   router.get('/orders/:id', validate({ params: idParams }), async (_req, res) => {

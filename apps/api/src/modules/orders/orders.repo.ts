@@ -1,4 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
+import { containsPattern } from '../../lib/sqlText.js';
 import type {
   DeliveryType,
   OrderStatus,
@@ -233,8 +234,28 @@ export const findOrderByShortCode = async (db: DbOrTx, shortCode: string): Promi
 export const listOrdersForUser = (db: DbOrTx, userId: string, limit: number, offset: number) =>
   selectOrders(db, sql`o.user_id = ${userId}`, limit, offset);
 
-export const listOrders = (db: DbOrTx, status: OrderStatus | undefined, limit: number, offset: number) =>
-  selectOrders(db, status ? sql`o.status = ${status}` : sql`true`, limit, offset);
+export interface AdminOrderFilters {
+  status?: OrderStatus | undefined;
+  nurseryId?: string | undefined;
+  buyerId?: string | undefined;
+  /** Order code, or part of the buyer's name or phone */
+  q?: string | undefined;
+}
+
+export const listOrders = (db: DbOrTx, f: AdminOrderFilters, limit: number, offset: number) => {
+  const conditions: SQL[] = [sql`true`];
+  if (f.status) conditions.push(sql`o.status = ${f.status}`);
+  if (f.nurseryId) conditions.push(sql`o.nursery_id = ${f.nurseryId}`);
+  if (f.buyerId) conditions.push(sql`o.user_id = ${f.buyerId}`);
+  if (f.q) {
+    const pattern = containsPattern(f.q);
+    // Phone numbers are stored as +256…: "0772…" should find them too
+    const digits = f.q.replace(/\D/g, '').replace(/^0/, '');
+    conditions.push(sql`(o.short_code = ${f.q.toUpperCase()} OR u.full_name ILIKE ${pattern}
+      ${digits.length >= 4 ? sql`OR u.phone LIKE ${`%${digits}%`}` : sql``})`);
+  }
+  return selectOrders(db, sql.join(conditions, sql` AND `), limit, offset);
+};
 
 /** Orders dispatched more than `hours` ago that the buyer never confirmed. */
 export const staleDispatchedOrders = async (db: DbOrTx, hours: number): Promise<string[]> =>

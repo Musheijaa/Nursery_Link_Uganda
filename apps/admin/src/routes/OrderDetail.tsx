@@ -65,10 +65,12 @@ const OrderDetail = () => {
             <Card title={en.orders.buyer}>
               <p className="font-bold">{o.buyer.full_name}</p>
               <a href={telHref(o.buyer.phone)}>{formatPhone(o.buyer.phone)}</a>
+              <Link to={`/orders?buyer=${o.buyer.id}`} className="text-sm">{en.orders.allFromBuyer}</Link>
             </Card>
             <Card title={en.orders.nursery}>
               <Link to={`/nurseries/${o.nursery.id}`} className="font-bold">{o.nursery.name}</Link>
               <a href={telHref(o.nursery.contact_phone)}>{formatPhone(o.nursery.contact_phone)}</a>
+              <Link to={`/orders?nursery=${o.nursery.id}`} className="text-sm">{en.orders.allFromNursery}</Link>
             </Card>
             <Card title={en.orders.delivery}>
               {o.delivery_type === 'order_and_deliver' ? (

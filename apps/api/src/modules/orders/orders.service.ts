@@ -438,8 +438,8 @@ export class OrdersService {
     return { ...toOrderDto(o, await repo.collectionForOrder(this.deps.db, orderId)), buyer: { id: o.user_id, full_name: o.buyer_name, phone: o.buyer_phone } };
   }
 
-  async adminList(status: OrderStatus | undefined, page: Pagination) {
-    const rows = await repo.listOrders(this.deps.db, status, page.limit, toOffset(page));
+  async adminList(filters: repo.AdminOrderFilters, page: Pagination) {
+    const rows = await repo.listOrders(this.deps.db, filters, page.limit, toOffset(page));
     return {
       items: rows.map(o => ({ ...toOrderDto(o), buyer: { id: o.user_id, full_name: o.buyer_name, phone: o.buyer_phone } })),
       meta: paginationMeta(page, rows[0]?.total ?? 0),

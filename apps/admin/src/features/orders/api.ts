@@ -7,11 +7,35 @@ export type AdminOrder = Schemas['AdminOrder'];
 export type AuditEntry = Schemas['AuditEntry'];
 export type Payout = Schemas['Payout'];
 
-export const useAdminOrders = (status: OrderStatus | null, page: number) =>
+export interface OrderFilters {
+  status: OrderStatus | null;
+  nursery: string | null;
+  buyer: string | null;
+  q: string | null;
+}
+
+/** The order list, kept fresh: new orders appear within 30 seconds, or on coming back to the tab. */
+export const useAdminOrders = (f: OrderFilters, page: number) =>
   useQuery({
-    queryKey: ['admin', 'orders', status, page],
-    queryFn: async () => unwrap(api.GET('/admin/orders', { params: { query: { page, limit: 25, ...(status ? { status } : {}) } } })),
+    queryKey: ['admin', 'orders', f, page],
+    queryFn: async () =>
+      unwrap(
+        api.GET('/admin/orders', {
+          params: {
+            query: {
+              page,
+              limit: 25,
+              ...(f.status ? { status: f.status } : {}),
+              ...(f.nursery ? { nursery_id: f.nursery } : {}),
+              ...(f.buyer ? { buyer_id: f.buyer } : {}),
+              ...(f.q ? { q: f.q } : {}),
+            },
+          },
+        })
+      ),
     placeholderData: keepPreviousData,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
 export const useAdminOrder = (id: string) =>

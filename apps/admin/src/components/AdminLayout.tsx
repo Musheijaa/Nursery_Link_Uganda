@@ -5,6 +5,7 @@ import {
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router';
 import { en } from '../copy/en';
+import { useDashboard } from '../features/dashboard/api';
 import { useOnline } from '../lib/online';
 import { signOut, useSession } from '../lib/session';
 
@@ -68,7 +69,10 @@ const initials = (name: string | undefined) =>
   (name ?? '').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p.charAt(0).toUpperCase()).join('') || '?';
 
 /** The sections, the signed-in admin, and Sign out (in the sidebar, or the menu on narrow screens). */
-const Sidebar = ({ name }: { name: string | undefined }) => (
+const Sidebar = ({ name }: { name: string | undefined }) => {
+  // New orders waiting for dispatch, so they're seen from every page
+  const toDispatch = useDashboard().data?.orders_to_dispatch.count ?? 0;
+  return (
   <>
     <nav aria-label="Admin" className="flex flex-1 flex-col gap-3">
       {SECTIONS.map((section, i) => (
@@ -78,6 +82,12 @@ const Sidebar = ({ name }: { name: string | undefined }) => (
             <NavLink key={to} to={to} end={to === '/'} className={link}>
               <Icon aria-hidden className="size-4" />
               {label}
+              {to === '/orders' && toDispatch > 0 && (
+                <span className="ml-auto rounded-full bg-murram-light px-2 py-0.5 text-xs leading-none text-canopy tabular-nums">
+                  {toDispatch}
+                  <span className="sr-only"> {en.nav.toDispatch}</span>
+                </span>
+              )}
             </NavLink>
           ))}
         </div>
@@ -95,7 +105,8 @@ const Sidebar = ({ name }: { name: string | undefined }) => (
       </Button>
     </div>
   </>
-);
+  );
+};
 
 /** Dense, desktop-first frame: a left sidebar and a wide work area; a top bar and menu below 1024 px. */
 export const AdminLayout = () => {

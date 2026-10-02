@@ -2272,6 +2272,23 @@ export interface components {
             };
         };
         Dashboard: {
+            /** @description New orders: paid (or confirmed in trial mode), waiting for the nursery to dispatch */
+            orders_to_dispatch: {
+                count: number;
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    short_code: string;
+                    /** @enum {string} */
+                    status: "pending_payment" | "escrow_held" | "dispatched" | "delivered" | "released" | "disputed" | "refunded" | "cancelled";
+                    grand_total: number;
+                    nursery_name: string;
+                    buyer_name: string;
+                    paid_at: string | null;
+                    /** @description ISO 8601 date-time */
+                    updated_at: string;
+                }[];
+            };
             disputed_orders: {
                 count: number;
                 items: {
@@ -7058,6 +7075,9 @@ export interface operations {
         parameters: {
             query?: {
                 status?: "pending_payment" | "escrow_held" | "dispatched" | "delivered" | "released" | "disputed" | "refunded" | "cancelled";
+                nursery_id?: string;
+                buyer_id?: string;
+                q?: string;
                 page?: number;
                 limit?: number;
             };

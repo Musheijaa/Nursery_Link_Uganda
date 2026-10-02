@@ -39,4 +39,12 @@ export const adminRefundSchema = z.object({
   reason: z.string().trim().min(5, 'Record why you are refunding this order').max(500),
 });
 
-export const adminOrdersQuerySchema = z.object({ status: orderStatusSchema.optional() });
+export const adminOrdersQuerySchema = z.object({
+  status: orderStatusSchema.optional(),
+  /** Only this nursery's orders */
+  nursery_id: z.uuid().optional(),
+  /** Only this buyer's orders */
+  buyer_id: z.uuid().optional(),
+  /** Order code, or part of the buyer's name or phone number */
+  q: z.string().trim().min(1).max(100).optional(),
+});

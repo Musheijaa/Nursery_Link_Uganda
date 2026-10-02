@@ -1,12 +1,10 @@
-import { unwrap } from '@nurserylink/api-client';
 import { Button, ErrorState, Skeleton, cn, formatDateTime, formatPhone, formatRelative, formatUGX } from '@nurserylink/ui';
-import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, BarChart3, Banknote, CheckCircle2, ClipboardCheck, Clock, Gift, MessageSquareWarning, PackageX, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, BarChart3, Banknote, CheckCircle2, ClipboardCheck, Clock, Gift, MessageSquareWarning, Package, PackageX, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { PageHeader } from '../components/PageHeader';
 import { en } from '../copy/en';
-import { api } from '../lib/api';
+import { useDashboard } from '../features/dashboard/api';
 import { useSession } from '../lib/session';
 
 const Panel = ({ icon: Icon, title, help, count, to, children, urgent }: { icon: LucideIcon; title: string; help: string; count: number; to: string; children: ReactNode; urgent?: boolean }) => (
@@ -35,7 +33,7 @@ const Row = ({ to, children }: { to: string; children: ReactNode }) => (
 /** The items that need an admin, not vanity metrics. */
 const Dashboard = () => {
   const { user } = useSession();
-  const dash = useQuery({ queryKey: ['admin', 'dashboard'], queryFn: async () => (await unwrap(api.GET('/admin/dashboard', {}))).data, refetchInterval: 60_000 });
+  const dash = useDashboard();
   const d = dash.data;
   return (
     <div>
@@ -49,10 +47,18 @@ const Dashboard = () => {
       {dash.isError && <ErrorState title={en.common.loadFailed} onRetry={() => { void dash.refetch(); }} retryLabel={en.common.retry} />}
       {d && (
         <>
-          {[d.disputed_orders, d.stuck_escrow, d.failed_payouts, d.stale_stock, d.pending_applications, d.unparsed_sms, d.nurseries_to_verify].every(s => s.count === 0) && (
+          {[d.orders_to_dispatch, d.disputed_orders, d.stuck_escrow, d.failed_payouts, d.stale_stock, d.pending_applications, d.unparsed_sms, d.nurseries_to_verify].every(s => s.count === 0) && (
             <p className="mb-4 flex items-center gap-2 rounded-md bg-seedling-tint px-4 py-3 font-bold text-canopy"><CheckCircle2 aria-hidden className="size-5" />{en.dashboard.allClear}</p>
           )}
           <div className="grid gap-4 lg:grid-cols-2">
+            <Panel icon={Package} title={en.dashboard.toDispatch} help={en.dashboard.toDispatchHelp} count={d.orders_to_dispatch.count} to="/orders?status=escrow_held">
+              {d.orders_to_dispatch.items.map(o => (
+                <Row key={o.id} to={`/orders/${o.id}`}>
+                  <span><span className="font-mono font-bold">{o.short_code}</span> · {o.nursery_name} · {o.buyer_name}</span>
+                  <span className="whitespace-nowrap text-bark-muted">{o.paid_at ? formatRelative(o.paid_at) : formatUGX(o.grand_total)}</span>
+                </Row>
+              ))}
+            </Panel>
             <Panel icon={AlertTriangle} urgent title={en.dashboard.disputed} help={en.dashboard.disputedHelp} count={d.disputed_orders.count} to="/orders?status=disputed">
               {d.disputed_orders.items.map(o => (
                 <Row key={o.id} to={`/orders/${o.id}`}>

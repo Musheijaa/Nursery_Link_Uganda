@@ -65,7 +65,17 @@ const NurseryForm = () => {
   const title = existing.data ? en.nurseries.editTitle(existing.data.name) : en.nurseries.newTitle;
   return (
     <div className="max-w-5xl">
-      <PageHeader title={title} actions={<Button asChild size="sm" variant="ghost"><Link to="/nurseries">{en.common.back}</Link></Button>} />
+      <PageHeader
+        title={title}
+        actions={
+          <>
+            {existing.data && (
+              <Button asChild size="sm" variant="secondary"><Link to={`/orders?nursery=${existing.data.id}`}>{en.orders.nurseryOrders}</Link></Button>
+            )}
+            <Button asChild size="sm" variant="ghost"><Link to="/nurseries">{en.common.back}</Link></Button>
+          </>
+        }
+      />
       <form
         noValidate
         className="grid gap-6 lg:grid-cols-2"

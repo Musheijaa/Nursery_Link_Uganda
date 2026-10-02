@@ -111,6 +111,28 @@ describe('trial mode: no payment step', () => {
     expect(await orderStatus(order.id)).toBe('released');
   });
 
+  it('shows a new order to admins straight away: on Needs attention, and findable by nursery, buyer and code', async () => {
+    const reg = await request(app).post('/api/v1/auth/register').send({ full_name: 'Admin Sees Me', phone: uniquePhone(), password: 'trial-password-1' }).expect(201);
+    const { user, tokens } = data<{ user: { id: string; phone: string }; tokens: AuthTokens }>(reg);
+    const quote = data<QuoteResult>(await request(app).post('/api/v1/orders/quote').set(bearer(tokens.access_token))
+      .send({ nursery_id: line.nursery_id, items: [{ inventory_id: line.inventory_id, quantity: 2 }], delivery_type: 'self_pickup' }).expect(200));
+    const order = data<OrderDto>(await request(app).post('/api/v1/orders').set(bearer(tokens.access_token)).send({ quote_token: quote.quote_token }).expect(201));
+    const admin = bearer(await adminToken(app));
+
+    const dash = data<{ orders_to_dispatch: { count: number; items: { id: string }[] } }>(await request(app).get('/api/v1/admin/dashboard').set(admin).expect(200));
+    expect(dash.orders_to_dispatch.count).toBeGreaterThanOrEqual(1);
+    expect(dash.orders_to_dispatch.items.map(o => o.id)).toContain(order.id);
+
+    const ids = async (query: string) => data<{ id: string }[]>(await request(app).get(`/api/v1/admin/orders?${query}`).set(admin).expect(200)).map(o => o.id);
+    expect(await ids(`nursery_id=${line.nursery_id}`)).toContain(order.id);
+    expect(await ids(`buyer_id=${user.id}`)).toEqual([order.id]);
+    expect(await ids(`q=${order.short_code.toLowerCase()}`)).toEqual([order.id]);
+    expect(await ids('q=Admin%20Sees')).toEqual([order.id]);
+    // A phone number as people type it ("0752…") finds the stored +256 number
+    expect(await ids(`q=0${user.phone.slice(4)}`)).toEqual([order.id]);
+    expect(await ids('nursery_id=00000000-0000-4000-8000-000000000000')).toEqual([]);
+  });
+
   it('refuses switching payments off while live payments are configured', () => {
     expect(() => testConfig(inject('databaseUrl'), { PAYMENTS: 'off', PAYMENT_PROVIDER_MODE: 'live' })).toThrow(/PAYMENTS=off needs PAYMENT_PROVIDER_MODE=mock/);
   });

@@ -479,6 +479,7 @@ const section = <T extends z.ZodType>(item: T) => s({ count: z.number().int(), i
 
 /** What needs an admin's attention, each with a count and the top items (GET /admin/dashboard). */
 export const dashboardSchema = s({
+  orders_to_dispatch: section(dashOrder).describe('New orders: paid (or confirmed in trial mode), waiting for the nursery to dispatch'),
   disputed_orders: section(dashOrder),
   stuck_escrow: section(dashOrder),
   failed_payouts: section(s({ id: z.uuid(), order_id: z.uuid(), kind: paymentKindSchema, amount: z.number().int(), msisdn: z.string(), short_code: z.string(), attempts: z.number().int(), updated_at: isoDate })),
