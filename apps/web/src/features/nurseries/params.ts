@@ -54,7 +54,7 @@ export const useNurseryParams = () => {
             else set(KEYS[field], value);
           }
           // A new district invalidates the sub-county; closing the card ends directions
-          if ('district' in changes) next.delete(KEYS.subCounty);
+          if ('district' in changes && !('subCounty' in changes)) next.delete(KEYS.subCounty);
           if ('nursery' in changes && !('directions' in changes)) next.delete(KEYS.directions);
           return next;
         },

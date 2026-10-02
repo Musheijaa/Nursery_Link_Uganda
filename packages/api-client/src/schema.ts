@@ -344,6 +344,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/search/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Suggestions as you type (typo-tolerant)
+         * @description Public. Trees (common, scientific and local names), nurseries, and districts and sub-counties whose names match the text, best first. Spelling mistakes are forgiven ("mvulle" suggests Mvule).
+         */
+        get: operations["getSearchSuggest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/places": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find a place by name
+         * @description Public. Our districts and sub-counties, then villages, landmarks and roads in Uganda from OpenStreetMap. If OpenStreetMap is unavailable, meta.osm is "unavailable" and only our own places are returned. Call it when the person asks to search, not on every keystroke.
+         */
+        get: operations["getPlaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/boundaries": {
         parameters: {
             query?: never;
@@ -1686,6 +1726,52 @@ export interface components {
             level: "district" | "sub_county";
             parent_id: string | null;
         };
+        Suggestion: {
+            /** @constant */
+            kind: "species";
+            slug: string;
+            /** @description Common name */
+            label: string;
+            scientific_name: string;
+            /** @description The local or scientific name that matched, when it was not the common name */
+            matched: string | null;
+            nursery_count: number;
+        } | {
+            /** @constant */
+            kind: "nursery";
+            /** Format: uuid */
+            id: string;
+            label: string;
+            /** @description Sub-county, district */
+            place: string;
+        } | {
+            /** @constant */
+            kind: "place";
+            /** Format: uuid */
+            id: string;
+            label: string;
+            /** @enum {string} */
+            level: "district" | "sub_county";
+            parent_id: string | null;
+            parent_name: string | null;
+            lat: number;
+            lng: number;
+        };
+        Place: {
+            /**
+             * @description Our districts and sub-counties, or OpenStreetMap
+             * @enum {string}
+             */
+            source: "boundary" | "osm";
+            boundary_id: string | null;
+            name: string;
+            /** @description Where it is, e.g. "Goma Division, Mukono" */
+            context: string;
+            /** @description district, sub_county, village, school, road… */
+            kind: string;
+            lat: number;
+            lng: number;
+        };
         BoundaryFeature: {
             /** @constant */
             type: "Feature";
@@ -2972,10 +3058,12 @@ export interface operations {
                             total: number;
                             /** @enum {string} */
                             distance_mode?: "road" | "straight_line";
+                            corrected_q?: string;
                         } | {
                             total: number;
                             /** @enum {string} */
                             distance_mode?: "road" | "straight_line";
+                            corrected_q?: string;
                         };
                     };
                 };
@@ -3140,7 +3228,12 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["SpeciesListItem"][];
-                        meta: components["schemas"]["PageMeta"];
+                        meta: {
+                            page: number;
+                            limit: number;
+                            total: number;
+                            corrected_q?: string;
+                        };
                     };
                 };
             };
@@ -3245,6 +3338,7 @@ export interface operations {
                             total: number;
                             /** @enum {string} */
                             distance_mode?: "road" | "straight_line";
+                            corrected_q?: string;
                             species: {
                                 /** Format: uuid */
                                 id: string;
@@ -3266,6 +3360,97 @@ export interface operations {
             };
             /** @description Not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getSearchSuggest: {
+        parameters: {
+            query: {
+                q: string;
+                types?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Suggestions, best first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Suggestion"][];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getPlaces: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Places, ours first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Place"][];
+                        meta: {
+                            /** @enum {string} */
+                            osm: "ok" | "unavailable";
+                        };
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

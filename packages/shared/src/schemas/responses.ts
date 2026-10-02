@@ -37,7 +37,10 @@ const position = z.tuple([z.number(), z.number()]);
 
 export const pageMetaSchema = s({ page: z.number().int(), limit: z.number().int(), total: z.number().int() });
 export const distanceModeSchema = z.enum(['road', 'straight_line']);
-export const nurseryListMetaSchema = s({ ...pageMetaSchema.shape, distance_mode: distanceModeSchema.optional() });
+/** Set when nothing matched the search exactly and the results are for the closest spelling instead */
+const correctedQ = z.string().describe('The spelling the results are for, when the search text matched nothing as typed').optional();
+export const nurseryListMetaSchema = s({ ...pageMetaSchema.shape, distance_mode: distanceModeSchema.optional(), corrected_q: correctedQ });
+export const speciesListMetaSchema = s({ ...pageMetaSchema.shape, corrected_q: correctedQ });
 export const messageSchema = s({ message: z.string() });
 
 // ── Health and auth ────────────────────────────────────────
@@ -123,7 +126,7 @@ export const nurseryFeatureCollectionSchema = s({
     })
   ),
 });
-export const nurseryGeoJsonMetaSchema = s({ total: z.number().int(), distance_mode: distanceModeSchema.optional() });
+export const nurseryGeoJsonMetaSchema = s({ total: z.number().int(), distance_mode: distanceModeSchema.optional(), corrected_q: correctedQ });
 
 const speciesRef = s({ id: z.uuid(), slug: z.string(), common_name: z.string(), scientific_name: z.string(), category: speciesCategorySchema });
 
@@ -191,6 +194,41 @@ export const speciesNurseriesMetaSchema = s({
   ...nurseryListMetaSchema.shape,
   species: s({ id: z.uuid(), slug: z.string(), common_name: z.string() }),
 });
+
+// ── Search suggestions, places ─────────────────────────────
+
+export const suggestionSchema = z.discriminatedUnion('kind', [
+  s({
+    kind: z.literal('species'),
+    slug: z.string(),
+    label: z.string().describe('Common name'),
+    scientific_name: z.string(),
+    matched: z.string().nullable().describe('The local or scientific name that matched, when it was not the common name'),
+    nursery_count: z.number().int(),
+  }),
+  s({ kind: z.literal('nursery'), id: z.uuid(), label: z.string(), place: z.string().describe('Sub-county, district') }),
+  s({
+    kind: z.literal('place'),
+    id: z.uuid(),
+    label: z.string(),
+    level: boundaryLevelSchema,
+    parent_id: z.uuid().nullable(),
+    parent_name: z.string().nullable(),
+    lat: z.number(),
+    lng: z.number(),
+  }),
+]);
+
+export const placeSchema = s({
+  source: z.enum(['boundary', 'osm']).describe('Our districts and sub-counties, or OpenStreetMap'),
+  boundary_id: z.uuid().nullable(),
+  name: z.string(),
+  context: z.string().describe('Where it is, e.g. "Goma Division, Mukono"'),
+  kind: z.string().describe('district, sub_county, village, school, road…'),
+  lat: z.number(),
+  lng: z.number(),
+});
+export const placesMetaSchema = s({ osm: z.enum(['ok', 'unavailable']).describe('Whether OpenStreetMap place search answered') });
 
 // ── Boundaries, news ───────────────────────────────────────
 
@@ -507,6 +545,8 @@ export const shadowLayerCollectionSchema = s({
 
 export type HealthDto = z.infer<typeof healthSchema>;
 export type NurserySummaryDto = z.infer<typeof nurserySummarySchema>;
+export type SuggestionDto = z.infer<typeof suggestionSchema>;
+export type PlaceDto = z.infer<typeof placeSchema>;
 export type NurseryProfileDto = z.infer<typeof nurseryProfileSchema>;
 export type InventoryItemDto = z.infer<typeof inventoryItemSchema>;
 export type RouteDto = z.infer<typeof routeSchema>;
@@ -541,6 +581,8 @@ export const namedResponseSchemas = {
   SpeciesProfile: speciesProfileSchema,
   SpeciesNursery: speciesNurserySchema,
   Boundary: boundarySchema,
+  Suggestion: suggestionSchema,
+  Place: placeSchema,
   BoundaryFeature: boundaryFeatureSchema,
   NewsListItem: newsListItemSchema,
   NewsPost: newsPostSchema,

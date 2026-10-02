@@ -36,6 +36,7 @@ import * as news from '../modules/news/news.routes.js';
 import { listNurseriesQuery } from '../modules/nurseries/nurseries.routes.js';
 import { providerParams } from '../modules/orders/webhooks.routes.js';
 import { mapParams, mapQuery } from '../modules/orders/orders.routes.js';
+import * as search from '../modules/search/search.routes.js';
 import * as species from '../modules/species/species.routes.js';
 
 /** Who may call an operation. */
@@ -108,12 +109,18 @@ export const operations: Operation[] = [
   { method: 'get', path: '/nurseries/:id/route', tag: 'Nurseries', summary: 'Driving route from a point to the nursery', response: { data: r.routeSchema }, access: 'public',
     params: id, query: requiredLatLngQuery, success: { status: 200, description: 'Route line, distance, duration and turn-by-turn steps' },
     errors: { 503: 'Routing is unavailable (routes never fall back to a straight line)' } },
-  { method: 'get', path: '/species', tag: 'Species', summary: 'Digital Tree Library', response: { data: z.array(r.speciesListItemSchema), meta: r.pageMetaSchema }, access: 'public',
+  { method: 'get', path: '/species', tag: 'Species', summary: 'Digital Tree Library', response: { data: z.array(r.speciesListItemSchema), meta: r.speciesListMetaSchema }, access: 'public',
     query: species.listQuery, success: { status: 200, description: 'Species' } },
   { method: 'get', path: '/species/:slug', tag: 'Species', summary: 'One species', response: { data: r.speciesProfileSchema }, access: 'public',
     params: species.slugParams, success: { status: 200, description: 'The species, with local names, growth and media' } },
   { method: 'get', path: '/species/:slug/nurseries', tag: 'Species', summary: 'Nurseries stocking a species', response: { data: z.array(r.speciesNurserySchema), meta: r.speciesNurseriesMetaSchema }, access: 'public',
     params: species.slugParams, query: species.nurseriesQuery, success: { status: 200, description: 'Nurseries with stock and price' } },
+  { method: 'get', path: '/search/suggest', tag: 'Search', summary: 'Suggestions as you type (typo-tolerant)', access: 'public',
+    description: 'Trees (common, scientific and local names), nurseries, and districts and sub-counties whose names match the text, best first. Spelling mistakes are forgiven ("mvulle" suggests Mvule).',
+    response: { data: z.array(r.suggestionSchema) }, query: search.suggestQuery, success: { status: 200, description: 'Suggestions, best first' } },
+  { method: 'get', path: '/places', tag: 'Search', summary: 'Find a place by name', access: 'public',
+    description: 'Our districts and sub-counties, then villages, landmarks and roads in Uganda from OpenStreetMap. If OpenStreetMap is unavailable, meta.osm is "unavailable" and only our own places are returned. Call it when the person asks to search, not on every keystroke.',
+    response: { data: z.array(r.placeSchema), meta: r.placesMetaSchema }, query: search.placesQuery, success: { status: 200, description: 'Places, ours first' } },
   { method: 'get', path: '/boundaries', tag: 'Boundaries', summary: 'Districts and sub-counties', response: { data: z.array(r.boundarySchema) }, access: 'public',
     query: boundaries.listQuery, success: { status: 200, description: 'Boundaries (without geometry)' } },
   { method: 'get', path: '/boundaries/:id/geojson', tag: 'Boundaries', summary: 'A boundary outline', response: { data: r.boundaryFeatureSchema }, access: 'public',

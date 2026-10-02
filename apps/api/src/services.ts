@@ -10,6 +10,7 @@ import { MediaService } from './modules/media/media.service.js';
 import { ShadowService } from './modules/shadow/shadow.service.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { NurseriesService } from './modules/nurseries/nurseries.service.js';
+import { SearchService } from './modules/search/search.service.js';
 import { SpeciesService } from './modules/species/species.service.js';
 import { OrderNotifications } from './modules/orders/notifications.js';
 import { OrdersService } from './modules/orders/orders.service.js';
@@ -29,6 +30,7 @@ export interface Services {
   auth: AuthService;
   nurseries: NurseriesService;
   species: SpeciesService;
+  search: SearchService;
   payments: PaymentsService;
   orders: OrdersService;
   applications: ApplicationsService;
@@ -41,13 +43,15 @@ export const buildServices = ({ config, pool, logger, providers, queue }: AppDep
   const db = createDb(pool);
   const notifications = new OrderNotifications({ queue, config });
   const payments = new PaymentsService({ db, providers: providers.payments, queue, notifications, logger });
-  const nurseries = new NurseriesService({ db, routing: providers.routing, logger });
+  const search = new SearchService({ db, geocoding: providers.geocoding, logger });
+  const nurseries = new NurseriesService({ db, routing: providers.routing, search, logger });
   return {
     db,
     sms: providers.sms,
     auth: new AuthService({ db, config, providers, logger }),
     nurseries,
-    species: new SpeciesService({ db, nurseries }),
+    species: new SpeciesService({ db, nurseries, search }),
+    search,
     payments,
     applications: new ApplicationsService({ db, queue }),
     shadow: new ShadowService({ db, routing: providers.routing, queue, logger }),

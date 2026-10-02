@@ -4,6 +4,7 @@ import { lazy, Suspense, type ReactNode } from 'react';
 import { en } from '../../../copy/en';
 import type { LatLng } from '../../../lib/geo';
 import { useAskLocation } from '../../nurseries/LocationDialog';
+import { PlaceSearch } from '../../search/PlaceSearch';
 import type { OrderDraft } from '../draft';
 
 const DeliveryPicker = lazy(() => import('./DeliveryPicker'));
@@ -48,10 +49,22 @@ export const StepDelivery = ({ draft, update, nursery, errors }: {
             <p className="font-bold">{en.checkout.pinLabel}</p>
             <p className="text-sm text-bark-muted">{en.checkout.pinHelp}</p>
           </div>
-          <Button variant="secondary" className="self-start" busy={finding} onClick={() => { ask(p => { update({ point: p }); }); }}>
-            <LocateFixed aria-hidden />
-            {en.checkout.useMyLocation}
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+            <PlaceSearch
+              id="delivery-place"
+              label={en.checkout.findPlace}
+              className="flex-1"
+              onPick={place => {
+                // Start the address from the place name; the buyer adds the turn-offs a rider needs
+                const address = draft.address.trim() ? draft.address : [place.name, place.context].filter(Boolean).join(', ').slice(0, 300);
+                update({ point: { lat: place.lat, lng: place.lng }, address });
+              }}
+            />
+            <Button variant="secondary" className="min-h-12 self-start" busy={finding} onClick={() => { ask(p => { update({ point: p }); }); }}>
+              <LocateFixed aria-hidden />
+              {en.checkout.useMyLocation}
+            </Button>
+          </div>
           <Suspense fallback={<Skeleton className="h-64 rounded-md md:h-80" />}>
             <DeliveryPicker point={draft.point} nursery={nursery.location} onPick={p => { update({ point: p }); }} label={en.checkout.pinLabel} />
           </Suspense>

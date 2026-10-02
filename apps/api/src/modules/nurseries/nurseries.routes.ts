@@ -52,7 +52,8 @@ export const nurseriesRoutes = (service: NurseriesService, limit: Limit): Router
     });
 
     if (geojson) {
-      res.json({ data: service.toGeoJson(result.items), meta: { total: result.meta.total, ...(result.meta.distance_mode ? { distance_mode: result.meta.distance_mode } : {}) } });
+      const { total, distance_mode, corrected_q } = result.meta;
+      res.json({ data: service.toGeoJson(result.items), meta: { total, ...(distance_mode ? { distance_mode } : {}), ...(corrected_q ? { corrected_q } : {}) } });
       return;
     }
     res.json({ data: result.items, meta: result.meta });

@@ -24,6 +24,9 @@
       "name": "Species"
     },
     {
+      "name": "Search"
+    },
+    {
       "name": "Boundaries"
     },
     {
@@ -1091,6 +1094,9 @@
                                 "road",
                                 "straight_line"
                               ]
+                            },
+                            "corrected_q": {
+                              "type": "string"
                             }
                           },
                           "required": [
@@ -1114,6 +1120,9 @@
                                 "road",
                                 "straight_line"
                               ]
+                            },
+                            "corrected_q": {
+                              "type": "string"
                             }
                           },
                           "required": [
@@ -1436,7 +1445,33 @@
                       }
                     },
                     "meta": {
-                      "$ref": "#/components/schemas/PageMeta"
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "corrected_q": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "limit",
+                        "total"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "additionalProperties": false
@@ -1645,6 +1680,9 @@
                             "straight_line"
                           ]
                         },
+                        "corrected_q": {
+                          "type": "string"
+                        },
                         "species": {
                           "type": "object",
                           "properties": {
@@ -1694,6 +1732,187 @@
           },
           "404": {
             "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/suggest": {
+      "get": {
+        "operationId": "getSearchSuggest",
+        "tags": [
+          "Search"
+        ],
+        "summary": "Suggestions as you type (typo-tolerant)",
+        "description": "Public. Trees (common, scientific and local names), nurseries, and districts and sub-counties whose names match the text, best first. Spelling mistakes are forgiven (\"mvulle\" suggests Mvule).",
+        "security": [],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suggestions, best first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Suggestion"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/places": {
+      "get": {
+        "operationId": "getPlaces",
+        "tags": [
+          "Search"
+        ],
+        "summary": "Find a place by name",
+        "description": "Public. Our districts and sub-counties, then villages, landmarks and roads in Uganda from OpenStreetMap. If OpenStreetMap is unavailable, meta.osm is \"unavailable\" and only our own places are returned. Call it when the person asks to search, not on every keystroke.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 6,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Places, ours first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Place"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "osm": {
+                          "type": "string",
+                          "enum": [
+                            "ok",
+                            "unavailable"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "osm"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
             "content": {
               "application/json": {
                 "schema": {
@@ -10599,6 +10818,189 @@
           "name",
           "level",
           "parent_id"
+        ],
+        "additionalProperties": false
+      },
+      "Suggestion": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "species"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string",
+                "description": "Common name"
+              },
+              "scientific_name": {
+                "type": "string"
+              },
+              "matched": {
+                "description": "The local or scientific name that matched, when it was not the common name",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "nursery_count": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "kind",
+              "slug",
+              "label",
+              "scientific_name",
+              "matched",
+              "nursery_count"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "nursery"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "label": {
+                "type": "string"
+              },
+              "place": {
+                "type": "string",
+                "description": "Sub-county, district"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "label",
+              "place"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "place"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "label": {
+                "type": "string"
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "district",
+                  "sub_county"
+                ]
+              },
+              "parent_id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "parent_name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lng": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "label",
+              "level",
+              "parent_id",
+              "parent_name",
+              "lat",
+              "lng"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Place": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "boundary",
+              "osm"
+            ],
+            "description": "Our districts and sub-counties, or OpenStreetMap"
+          },
+          "boundary_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string",
+            "description": "Where it is, e.g. \"Goma Division, Mukono\""
+          },
+          "kind": {
+            "type": "string",
+            "description": "district, sub_county, village, school, road…"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "source",
+          "boundary_id",
+          "name",
+          "context",
+          "kind",
+          "lat",
+          "lng"
         ],
         "additionalProperties": false
       },

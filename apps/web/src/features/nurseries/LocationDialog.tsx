@@ -3,7 +3,8 @@ import { LocateFixed } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { en } from '../../copy/en';
 import type { LatLng } from '../../lib/geo';
-import { locationStatus, requestLocation, useUserLocation } from './location';
+import { PlaceSearch } from '../search/PlaceSearch';
+import { locationStatus, requestLocation, setTypedLocation, useUserLocation } from './location';
 
 /**
  * Explains why we want the location before the browser asks (NFR: clear reason, graceful
@@ -44,7 +45,20 @@ export const useAskLocation = () => {
           </Button>
         </>
       }
-    />
+    >
+      <div className="flex flex-col gap-2 rounded-md bg-mist p-3">
+        <p className="font-bold text-canopy">{en.location.typeInstead}</p>
+        <PlaceSearch
+          id="location-place"
+          inline
+          onPick={place => {
+            const then = pending;
+            setPending(null);
+            then?.(setTypedLocation(place));
+          }}
+        />
+      </div>
+    </Dialog>
   );
 
   return { ask, dialog, position, finding: status === 'asking' };

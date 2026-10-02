@@ -41,6 +41,21 @@ export const useUserLocation = (): LocationState =>
   );
 
 /**
+ * A position the person typed instead (a place they searched for). Kept for the session like a GPS
+ * fix, rounded the same way.
+ */
+export const setTypedLocation = (p: LatLng): LatLng => {
+  const position = { lat: Math.round(p.lat * 1000) / 1000, lng: Math.round(p.lng * 1000) / 1000 };
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(position));
+  } catch (err) {
+    console.warn('Could not remember the location for this session', err);
+  }
+  set({ status: 'granted', position });
+  return position;
+};
+
+/**
  * Asks the browser for the user's position (after the app has explained why). Resolves to the
  * position, or null when refused or unavailable; the status says which.
  */

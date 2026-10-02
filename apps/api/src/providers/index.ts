@@ -9,6 +9,10 @@ import { NotYetAvailablePayment } from './payment/unavailableProvider.js';
 import { MockEmail } from './email/mockEmail.js';
 import { SmtpEmail } from './email/smtpEmail.js';
 import { AfricasTalkingSms } from './sms/africasTalking.js';
+import type { GeocodingProvider } from './geocoding/geocoding.js';
+import { MockGeocoding } from './geocoding/mockGeocoding.js';
+import { NominatimGeocoding } from './geocoding/nominatim.js';
+import { API_VERSION } from '../lib/version.js';
 import { MockRouting } from './routing/mockRouting.js';
 import { OsrmRouting } from './routing/osrm.js';
 import type { RoutingProvider } from './routing/routing.js';
@@ -19,6 +23,7 @@ export interface Providers {
   sms: SmsProvider;
   email: EmailProvider;
   routing: RoutingProvider;
+  geocoding: GeocodingProvider;
   payments: PaymentProviders;
 }
 
@@ -87,6 +92,13 @@ export const createProviders = (config: Config, logger: Logger): Providers => ({
         })
       : new MockEmail(logger),
   routing: config.ROUTING_PROVIDER === 'osrm' ? new OsrmRouting(config.OSRM_URL) : new MockRouting(),
+  geocoding:
+    config.GEOCODER_PROVIDER === 'nominatim'
+      ? new NominatimGeocoding({
+          baseUrl: config.NOMINATIM_URL,
+          userAgent: `NurseryLinkUganda/${API_VERSION} (${required(config.GEOCODER_CONTACT, 'GEOCODER_CONTACT')})`,
+        })
+      : new MockGeocoding(),
   payments:
     config.PAYMENT_PROVIDER_MODE === 'live'
       ? paymentProviders('live', new MockPayment(), { mtn_momo: mtnFromConfig(config) })

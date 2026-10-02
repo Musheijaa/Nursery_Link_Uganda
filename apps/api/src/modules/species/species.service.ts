@@ -5,12 +5,24 @@ import type { LatLng } from '../../lib/geo.js';
 import { paginationMeta, toOffset, type Pagination } from '../../lib/pagination.js';
 import { listInventory } from '../nurseries/nurseries.repo.js';
 import { toInventoryItem, type InventoryItem, type ListResult, type NurseriesService, type NurserySummary } from '../nurseries/nurseries.service.js';
+import type { SearchService } from '../search/search.service.js';
 import * as repo from './species.repo.js';
 
 export class SpeciesService {
-  constructor(private readonly deps: { db: Database; nurseries: NurseriesService }) {}
+  constructor(private readonly deps: { db: Database; nurseries: NurseriesService; search: SearchService }) {}
 
-  async list(filters: repo.SpeciesFilters, page: Pagination): Promise<{ items: Omit<repo.SpeciesRow, 'total'>[]; meta: PaginationMeta }> {
+  /** The tree library. Like the nursery list, a search that matches nothing is retried with the closest tree name. */
+  async list(filters: repo.SpeciesFilters, page: Pagination): Promise<{ items: Omit<repo.SpeciesRow, 'total'>[]; meta: PaginationMeta & { corrected_q?: string } }> {
+    const result = await this.listAsTyped(filters, page);
+    if (result.meta.total > 0 || !filters.q) return result;
+    for (const term of await this.deps.search.corrections(filters.q, ['species'])) {
+      const retry = await this.listAsTyped({ ...filters, q: term }, page);
+      if (retry.meta.total > 0) return { ...retry, meta: { ...retry.meta, corrected_q: term } };
+    }
+    return result;
+  }
+
+  private async listAsTyped(filters: repo.SpeciesFilters, page: Pagination): Promise<{ items: Omit<repo.SpeciesRow, 'total'>[]; meta: PaginationMeta }> {
     const rows = await repo.listSpecies(this.deps.db, filters, page.limit, toOffset(page));
     const total = rows[0]?.total ?? (page.page > 1 ? await repo.countSpecies(this.deps.db) : 0);
     return { items: rows.map(({ total: _total, ...rest }) => rest), meta: paginationMeta(page, total) };

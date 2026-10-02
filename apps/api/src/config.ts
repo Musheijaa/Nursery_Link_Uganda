@@ -75,6 +75,12 @@ const schema = z
     ROUTING_PROVIDER: z.enum(['mock', 'osrm']).default('mock'),
     OSRM_URL: z.url().default('http://localhost:5000'),
 
+    /** Place search by name (villages, landmarks): mock, or OpenStreetMap's Nominatim */
+    GEOCODER_PROVIDER: z.enum(['mock', 'nominatim']).default('mock'),
+    NOMINATIM_URL: z.url().default('https://nominatim.openstreetmap.org'),
+    /** Contact (email or URL) sent in the User-Agent, as Nominatim's usage policy requires */
+    GEOCODER_CONTACT: optional,
+
     EMAIL_PROVIDER: z.enum(['mock', 'smtp']).default('mock'),
     EMAIL_FROM: z.string().default('Nursery Link Uganda <no-reply@nurserylink.local>'),
     SMTP_HOST: optional,
@@ -111,6 +117,7 @@ const schema = z
       }
     }
     if (env.SMS_PROVIDER === 'africastalking') require(['AT_USERNAME', 'AT_API_KEY', 'SMS_INBOUND_TOKEN'], 'SMS_PROVIDER=africastalking');
+    if (env.GEOCODER_PROVIDER === 'nominatim') require(['GEOCODER_CONTACT'], 'GEOCODER_PROVIDER=nominatim');
     if (env.EMAIL_PROVIDER === 'smtp') require(['SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD'], 'EMAIL_PROVIDER=smtp');
   });
 

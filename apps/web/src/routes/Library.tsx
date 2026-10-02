@@ -3,12 +3,13 @@ import { speciesCategories, type SpeciesCategory } from '@nurserylink/shared';
 import { EmptyState, ErrorState, SkeletonList, cn } from '@nurserylink/ui';
 import { isApiError } from '@nurserylink/api-client';
 import { useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { CachedNote } from '../components/CachedNote';
 import { Picture } from '../components/Picture';
 import { usePageTitle } from '../components/usePageTitle';
 import { en } from '../copy/en';
 import { useSpeciesIndex, type SpeciesItem } from '../features/library/api';
+import { CorrectedNote } from '../components/CorrectedNote';
 import { SearchBox } from '../components/SearchBox';
 import { PageHero } from '../components/PageHero';
 import { SpeciesPill } from '../components/Pills';
@@ -58,6 +59,7 @@ const Entry = ({ s }: { s: SpeciesItem }) => (
 /** The Digital Tree Library index: A–Z with jump links and category filters (FR-18). */
 const Library = () => {
   usePageTitle(en.library.title);
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const raw = params.get('category');
   const category = speciesCategories.find(c => c === raw) ?? null;
@@ -87,7 +89,13 @@ const Library = () => {
       <PageHero title={en.library.title} intro={en.library.intro} photo="mabira-forest" />
 
       <div className="flex flex-col gap-3">
-        <SearchBox value={q} onChange={v => { setParam('q', v || null, true); }} label={en.library.searchLabel} placeholder={en.library.searchPlaceholder} />
+        <SearchBox
+          value={q}
+          onChange={v => { setParam('q', v || null, true); }}
+          label={en.library.searchLabel}
+          placeholder={en.library.searchPlaceholder}
+          suggest={{ types: ['species'], onPick: s => { if (s.kind === 'species') void navigate(`/library/${s.slug}`); return q; } }}
+        />
         <CategoryChips value={category} onChange={c => { setParam('category', c); }} />
       </div>
 
@@ -106,6 +114,7 @@ const Library = () => {
       </nav>
 
       {index.data && <CachedNote fromCache={index.data.fromCache} fetchedAt={index.data.fetchedAt} />}
+      {index.data?.correctedQ && <CorrectedNote typed={q} corrected={index.data.correctedQ} />}
       {index.isPending && <SkeletonList rows={6} label={en.library.title} />}
       {index.isError && !index.data && (
         <ErrorState

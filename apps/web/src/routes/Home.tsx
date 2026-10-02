@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, ChevronRight, LocateFixed, Search } from 'lucide-react';
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { Combobox } from '../components/Combobox';
 import { MobileMoneyBadges } from '../components/MobileMoneyBadges';
 import { Picture } from '../components/Picture';
 import { usePageTitle } from '../components/usePageTitle';
@@ -15,7 +16,10 @@ import { useNewsList } from '../features/news/api';
 import { NewsCard } from '../features/news/NewsCard';
 import { useFeatures } from '../features/orders/api';
 import { useUserLocation } from '../features/nurseries/location';
+import { useSuggestions, type Suggestion } from '../features/search/api';
+import { suggestionOption } from '../features/search/options';
 import { api } from '../lib/api';
+import { useDebounced } from '../lib/useDebounced';
 import { haversineKm } from '../lib/geo';
 
 /** The four modules, each shown with a real photo from Uganda (decorative: the title names the link). */
@@ -67,6 +71,18 @@ const Home = () => {
     return position ? [...list].sort((a, b) => haversineKm(position, a.pickup_nursery.location) - haversineKm(position, b.pickup_nursery.location)) : list;
   }, [campaigns.data, position]);
 
+  const typed = useDebounced(q.trim(), 200);
+  const suggestions = useSuggestions(typed, ['species', 'nursery', 'place']);
+  const suggested = typed.length >= 2 && q.trim().length >= 2 ? (suggestions.data?.data ?? []) : [];
+  const go = (s: Suggestion) => {
+    const to =
+      s.kind === 'species' ? `/nurseries?q=${encodeURIComponent(s.label)}`
+      : s.kind === 'nursery' ? `/nurseries?nursery=${s.id}`
+      : s.level === 'district' ? `/nurseries?district=${s.id}`
+      : `/nurseries?district=${s.parent_id ?? ''}&sub_county=${s.id}`;
+    void navigate(to);
+  };
+
   const search = (e: FormEvent) => {
     e.preventDefault();
     const term = q.trim();
@@ -107,19 +123,18 @@ const Home = () => {
           </h1>
           <p className="max-w-lg text-base text-mist/90 md:text-lg">{en.home.lead}</p>
           <form role="search" onSubmit={search} className="flex max-w-xl flex-col gap-2 rounded-lg bg-paper/10 p-2 ring-1 ring-paper/20 backdrop-blur-sm sm:flex-row">
-            <label htmlFor="home-search" className="sr-only">{en.home.searchLabel}</label>
-            <div className="relative flex-1">
-              <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-bark-muted" />
-              <input
-                id="home-search"
-                type="search"
-                enterKeyHint="search"
-                value={q}
-                onChange={e => { setQ(e.target.value); }}
-                placeholder={en.home.searchPlaceholder}
-                className="block min-h-12 w-full rounded-md border-0 bg-mist pr-3 pl-11 text-base text-bark placeholder:text-bark-muted"
-              />
-            </div>
+            <Combobox
+              id="home-search"
+              label={en.home.searchLabel}
+              value={q}
+              onChange={setQ}
+              placeholder={en.home.searchPlaceholder}
+              options={suggested.map(suggestionOption)}
+              onSelect={i => { const s = suggested[i]; if (s) go(s); }}
+              className="flex-1"
+              leading={<Search aria-hidden className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-bark-muted" />}
+              inputClassName="rounded-md border-0 bg-mist pr-3 pl-11"
+            />
             <Button type="submit" variant="accent" className="min-h-12">{en.home.search}</Button>
           </form>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm">

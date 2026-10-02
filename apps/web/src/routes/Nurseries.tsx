@@ -3,10 +3,11 @@ import { List, Map as MapIcon, X } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import type { Feature as GeoFeature } from 'geojson';
 import { CachedNote } from '../components/CachedNote';
+import { CorrectedNote } from '../components/CorrectedNote';
 import { usePageTitle } from '../components/usePageTitle';
 import { en } from '../copy/en';
 import { useBoundaryShape, useNearest, useNurseryMap, useRoute } from '../features/nurseries/api';
-import { FilterPanel, SearchBox } from '../features/nurseries/Filters';
+import { FilterPanel, SearchBox, nurserySuggest } from '../features/nurseries/Filters';
 import { useAskLocation } from '../features/nurseries/LocationDialog';
 import { NurseryCard } from '../features/nurseries/NurseryCard';
 import { NurseryList, type ListNursery } from '../features/nurseries/NurseryList';
@@ -69,6 +70,7 @@ const Nurseries = () => {
   }, [nearestOn, nearest.data, map.data, features]);
 
   const listQuery = nearestOn ? nearest : map;
+  const correctedQ = (listQuery.data?.meta as { corrected_q?: string } | undefined)?.corrected_q;
   const heading = nearestOn
     ? nearest.data?.distanceMode === 'straight_line' ? en.nurseries.sortedStraight : en.nurseries.sortedByRoad
     : en.nurseries.count(items?.length ?? 0);
@@ -110,6 +112,7 @@ const Nurseries = () => {
   const list = (
     <div className="flex flex-col gap-3">
       {speciesChip}
+      {correctedQ && <CorrectedNote typed={params.q} corrected={correctedQ} />}
       {listQuery.data && <CachedNote fromCache={listQuery.data.fromCache} fetchedAt={listQuery.data.fetchedAt} />}
       <NurseryList
         items={items}
@@ -194,7 +197,7 @@ const Nurseries = () => {
       <h1 className="sr-only">{en.nurseries.title}</h1>
       {mapElement}
       <div className="absolute inset-x-3 top-3 z-[500] flex flex-col gap-2">
-        <SearchBox value={params.q} onChange={q => { update({ q }, { replace: true }); }} className="shadow-float" />
+        <SearchBox value={params.q} onChange={q => { update({ q }, { replace: true }); }} suggest={nurserySuggest(update)} className="shadow-float" />
         <div className="self-start">{viewToggle}</div>
       </div>
       <BottomSheet title={en.nurseries.title} snap={snap} onSnapChange={setSnap} expandLabel={en.nurseries.expandList} collapseLabel={en.nurseries.collapseList}>

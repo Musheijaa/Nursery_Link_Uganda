@@ -15,6 +15,7 @@ import { authRoutes } from './modules/auth/auth.routes.js';
 import { adminRoutes } from './modules/admin/admin.routes.js';
 import { nurseriesRoutes } from './modules/nurseries/nurseries.routes.js';
 import { speciesRoutes } from './modules/species/species.routes.js';
+import { searchRoutes } from './modules/search/search.routes.js';
 import { boundariesRoutes } from './modules/boundaries/boundaries.routes.js';
 import { newsRoutes } from './modules/news/news.routes.js';
 import { campaignsRoutes } from './modules/campaigns/campaigns.routes.js';
@@ -29,7 +30,7 @@ export type { AppDeps } from './services.js';
 /** Builds the Express app without listening, so tests can drive it with Supertest. */
 export const createApp = (deps: AppDeps, services: Services = buildServices(deps)): Express => {
   const { config, pool, logger, providers } = deps;
-  const { db, auth, nurseries, species, orders, payments, applications, shadow, media } = services;
+  const { db, auth, nurseries, species, search, orders, payments, applications, shadow, media } = services;
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', config.TRUST_PROXY);
@@ -88,6 +89,7 @@ export const createApp = (deps: AppDeps, services: Services = buildServices(deps
   v1.use('/nurseries', nurseriesRoutes(nurseries, limit));
   v1.use('/species', speciesRoutes(species));
   v1.use('/boundaries', boundariesRoutes(db));
+  v1.use(searchRoutes(search, limit));
   v1.use('/stats', statsRoutes(db));
   v1.use('/news', newsRoutes(db));
   v1.use('/campaigns', campaignsRoutes(db, applications, limit));

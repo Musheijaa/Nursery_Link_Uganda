@@ -6,6 +6,7 @@ import { NotFoundError, ProviderUnavailableError } from '../../lib/errors.js';
 import { roundKm, type FeatureCollection, type GeoJsonLineString, type GeoJsonPoint, type LatLng } from '../../lib/geo.js';
 import { paginationMeta, toOffset, type Pagination } from '../../lib/pagination.js';
 import type { RouteStep } from '../../providers/routing/routing.js';
+import type { SearchService } from '../search/search.service.js';
 import * as repo from './nurseries.repo.js';
 
 /** Nearest-first ranking prefilters this many candidates by straight line before asking for road distances. */
@@ -27,7 +28,7 @@ export interface ListQuery extends Pagination {
 
 export interface ListResult {
   items: NurserySummary[];
-  meta: PaginationMeta & { distance_mode?: DistanceMode };
+  meta: PaginationMeta & { distance_mode?: DistanceMode; corrected_q?: string };
 }
 
 export const toSummary = (row: repo.NurseryRow): NurserySummary => ({
@@ -58,9 +59,24 @@ export const toInventoryItem = (row: repo.InventoryRow): InventoryItem => ({
 });
 
 export class NurseriesService {
-  constructor(private readonly deps: { db: Database; routing: RoutingProvider; logger: Logger }) {}
+  constructor(private readonly deps: { db: Database; routing: RoutingProvider; search: SearchService; logger: Logger }) {}
 
+  /**
+   * The nursery list. When the search text matches nothing as typed, it is retried with the
+   * closest tree or nursery names ("mvulle" → Mvule), and meta.corrected_q says which one.
+   */
   async list(query: ListQuery): Promise<ListResult> {
+    const result = await this.listAsTyped(query);
+    const q = query.filters.q;
+    if (result.meta.total > 0 || !q) return result;
+    for (const term of await this.deps.search.corrections(q, ['species', 'nursery'])) {
+      const retry = await this.listAsTyped({ ...query, filters: { ...query.filters, q: term } });
+      if (retry.meta.total > 0) return { ...retry, meta: { ...retry.meta, corrected_q: term } };
+    }
+    return result;
+  }
+
+  private async listAsTyped(query: ListQuery): Promise<ListResult> {
     if (query.sort === 'nearest' && query.point) return this.nearest(query, query.point);
 
     const rows = await repo.listNurseries(this.deps.db, query.filters, {
