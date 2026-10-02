@@ -130,11 +130,11 @@ export const en = {
         source: 'https://data.humdata.org/dataset/cod-ab-uga',
       },
       {
-        name: 'MTN and Airtel logos',
-        by: 'Trademarks of MTN Group and Airtel Africa, shown to name the mobile money services we take. Files from Wikimedia Commons',
-        license: 'Public domain (text logos)',
-        licenseUrl: 'https://commons.wikimedia.org/wiki/File:MTN_2022_logo.svg',
-        source: 'https://commons.wikimedia.org/wiki/File:Airtel_logo.svg',
+        name: 'MTN MoMo and Airtel Money logos',
+        by: 'Trademarks of MTN Group and Airtel Africa, shown to name the mobile money services we take. Images supplied by the Nursery Link project',
+        license: 'Used with the services’ names',
+        licenseUrl: 'https://www.mtn.co.ug/momo/',
+        source: 'https://www.airtel.co.ug/airtel-money',
       },
       {
         name: 'Map tiles and place search',

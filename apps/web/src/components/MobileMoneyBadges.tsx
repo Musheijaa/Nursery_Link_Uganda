@@ -3,22 +3,22 @@ import { cn } from '@nurserylink/ui';
 import { en } from '../copy/en';
 
 /*
- * MTN MoMo and Airtel Money with their own logos (public/brands; files from Wikimedia Commons).
- * The logos are the companies' trademarks, shown only to say which mobile money services the site
- * takes; confirm each provider's merchant brand rules before launch.
+ * MTN MoMo and Airtel Money, shown with the project owner's own images of each provider's artwork
+ * (public/brands), whole and uncropped. The logos are the providers' trademarks, shown only to say
+ * which mobile money services the site takes; confirm their merchant brand rules before launch.
  */
 
-/** Logo heights: MTN's oval is twice as wide as it is tall, Airtel's mark about square. */
+/** Heights; each image keeps its own shape (MTN 3:2, Airtel square). */
 const SIZES = {
-  sm: { mtn: 'h-8', airtel: 'h-10' },
-  md: { mtn: 'h-10', airtel: 'h-12' },
-  lg: { mtn: 'h-14', airtel: 'h-16' },
-  xl: { mtn: 'h-16', airtel: 'h-20' },
+  sm: 'h-10',
+  md: 'h-12',
+  lg: 'h-16',
+  xl: 'h-24',
 } as const;
 
 const FILES = {
-  mtn_momo: { src: '/brands/mtn.svg', width: 128, height: 64, size: 'mtn' },
-  airtel_money: { src: '/brands/airtel.svg', width: 96, height: 100, size: 'airtel' },
+  mtn_momo: { src: '/brands/mtn-momo.jpg', width: 360, height: 240 },
+  airtel_money: { src: '/brands/airtel-money.jpg', width: 240, height: 240 },
 } as const;
 
 /** A provider's logo on its own, large, with no box around it. */
@@ -36,7 +36,7 @@ export const MobileMoneyLogo = ({ method, size = 'lg', className, decorative = f
       alt={decorative ? '' : en.checkout.methods[method]}
       width={f.width}
       height={f.height}
-      className={cn('w-auto shrink-0', SIZES[size][f.size], className)}
+      className={cn('w-auto shrink-0', SIZES[size], className)}
     />
   );
 };

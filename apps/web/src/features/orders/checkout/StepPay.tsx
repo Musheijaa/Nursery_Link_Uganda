@@ -55,7 +55,7 @@ const QuoteBreakdown = ({ quote, onExpired }: { quote: Quote; onExpired: () => v
 const MethodTile = ({ method, selected, available, onSelect }: { method: MobileMoneyMethod; selected: boolean; available: boolean; onSelect: () => void }) => (
   <label className={cn('flex min-h-28 items-center gap-4 rounded-lg bg-paper px-4 py-4 shadow-card ring-1', !available ? 'cursor-not-allowed opacity-60 ring-line' : selected ? 'cursor-pointer ring-2 ring-forest' : 'cursor-pointer ring-line hover:ring-forest')}>
     <input type="radio" name="method" checked={selected} disabled={!available} onChange={onSelect} className="size-5 shrink-0 accent-forest" />
-    <span className="flex w-24 shrink-0 justify-center">
+    <span className="flex w-36 shrink-0 justify-center">
       <MobileMoneyLogo method={method} size="xl" decorative />
     </span>
     <span className="flex flex-col gap-0.5">
