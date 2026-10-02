@@ -15,6 +15,7 @@ import { useFeatures } from '../features/orders/api';
 import { useUserLocation } from '../features/nurseries/location';
 import { useSuggestions, type Suggestion } from '../features/search/api';
 import { suggestionOption } from '../features/search/options';
+import { PAGE_FRAME } from '../lib/layout';
 import { useDebounced } from '../lib/useDebounced';
 import { haversineKm } from '../lib/geo';
 
@@ -27,7 +28,7 @@ const MODULES = [
 ] as const;
 
 const Container = ({ children, className = '' }: { children: ReactNode; className?: string }) => (
-  <div className={`mx-auto w-full max-w-7xl px-4 md:px-6 ${className}`}>{children}</div>
+  <div className={`${PAGE_FRAME} ${className}`}>{children}</div>
 );
 
 const SectionHeading = ({ id, title, to }: { id: string; title: string; to: string }) => (
@@ -101,16 +102,18 @@ const Home = () => {
           <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-canopy via-canopy/30 to-canopy/10 md:bg-gradient-to-r md:from-canopy md:via-canopy/25 md:to-transparent" />
           <div aria-hidden className="absolute inset-x-0 bottom-0 hidden h-24 bg-gradient-to-t from-canopy/70 to-transparent md:block" />
         </div>
-        <Container className="flex flex-col gap-4 pt-56 pb-14 sm:pt-64 md:min-h-[36rem] md:justify-center md:py-16 md:pr-[45%] lg:pr-[48%]">
+        <Container className="pt-56 pb-14 sm:pt-64 md:flex md:min-h-[36rem] md:items-center md:py-16 2xl:min-h-[40rem]">
+          {/* The copy keeps to the left, over the dark side of the photo's gradient */}
+          <div className="flex flex-col gap-4 md:w-[55%] lg:w-[52%] 2xl:w-[48%]">
           <p className="flex items-center gap-2 self-start rounded-full bg-paper/10 px-3 py-1 text-sm font-bold text-mist ring-1 ring-paper/25">
             <span aria-hidden className="size-2 rounded-full bg-sky" />
             {en.home.eyebrow}
           </p>
-          <h1 id="home-title" className="max-w-xl text-[2rem] leading-[1.1] text-paper md:text-[2.5rem] lg:text-[2.75rem]">
+          <h1 id="home-title" className="max-w-2xl text-[2rem] leading-[1.1] text-paper md:text-[2.5rem] lg:text-[2.75rem] 2xl:text-[3.5rem]">
             {en.home.title} <span className="text-murram-light">{en.home.titleAccent}</span>
           </h1>
-          <p className="max-w-lg text-base text-mist/90 md:text-lg">{en.home.lead}</p>
-          <form role="search" onSubmit={search} className="flex max-w-xl flex-col gap-2 rounded-lg bg-paper/10 p-2 ring-1 ring-paper/20 backdrop-blur-sm sm:flex-row">
+          <p className="max-w-lg text-base text-mist/90 md:text-lg 2xl:max-w-xl 2xl:text-xl">{en.home.lead}</p>
+          <form role="search" onSubmit={search} className="flex max-w-xl flex-col 2xl:max-w-2xl gap-2 rounded-lg bg-paper/10 p-2 ring-1 ring-paper/20 backdrop-blur-sm sm:flex-row">
             <Combobox
               id="home-search"
               label={en.home.searchLabel}
@@ -143,7 +146,7 @@ const Home = () => {
               ))}
             </ul>
           </div>
-
+          </div>
         </Container>
       </section>
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { IMAGES } from '../data/images';
+import { PAGE_FRAME } from '../lib/layout';
 import { Picture } from './Picture';
 
 /**
@@ -20,11 +21,13 @@ export const PageHero = ({ title, intro, photo, focus = 'object-center', childre
         {img && <Picture src={img.src} alt="" width={960} height={640} sizes="(min-width: 768px) 55vw, 100vw" priority className={`size-full object-cover ${focus}`} />}
         <div aria-hidden className="absolute inset-0 bg-canopy/80 md:bg-transparent md:bg-gradient-to-r md:from-canopy md:via-canopy/40 md:to-transparent" />
       </div>
-      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-10 md:px-6 md:py-14 md:pr-[50%]">
-        <h1 className="text-3xl leading-tight text-paper md:text-5xl">{title}</h1>
-        <span aria-hidden className="block h-1 w-12 rounded-full bg-murram-light" />
-        {intro && <p className="max-w-xl text-lg text-mist/90">{intro}</p>}
-        {children}
+      <div className={`${PAGE_FRAME} py-10 md:py-14`}>
+        <div className="flex flex-col gap-3 md:w-1/2">
+          <h1 className="text-3xl leading-tight text-paper md:text-5xl">{title}</h1>
+          <span aria-hidden className="block h-1 w-12 rounded-full bg-murram-light" />
+          {intro && <p className="max-w-xl text-lg text-mist/90">{intro}</p>}
+          {children}
+        </div>
       </div>
     </section>
   );

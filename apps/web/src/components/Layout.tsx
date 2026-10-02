@@ -3,6 +3,7 @@ import { BookOpen, Gift, LogIn, LogOut, Map as MapIcon, Menu, Newspaper, Package
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useMatches } from 'react-router';
 import { en } from '../copy/en';
+import { PAGE_FRAME } from '../lib/layout';
 import { useOnline } from '../lib/online';
 import { signOut, useSession } from '../lib/session';
 import { Logo } from './Logo';
@@ -97,7 +98,7 @@ const MobileMenu = () => {
 
 export const Header = () => (
   <header className="on-dark sticky top-0 z-30 bg-canopy">
-    <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
+    <div className={cn(PAGE_FRAME, 'flex h-16 items-center justify-between gap-4')}>
       <Logo />
       <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
         {NAV.map(({ to, label }) => (
@@ -129,7 +130,7 @@ export const Footer = () => {
   return (
   <footer className="on-dark bg-canopy text-mist">
     <WovenBand />
-    <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-[1.4fr_1fr_1fr] md:px-6">
+    <div className={cn(PAGE_FRAME, 'grid gap-8 py-10 md:grid-cols-[1.4fr_1fr_1fr]')}>
       <div className="flex flex-col gap-3">
         <Logo />
         <p className="max-w-sm text-sm text-mist/85">{en.footer.tagline}</p>
@@ -166,7 +167,7 @@ export const Layout = ({ children }: { children?: ReactNode }) => {
       </a>
       <Header />
       {!online && <OfflineBanner>{en.offline.banner}</OfflineBanner>}
-      <main id="main" tabIndex={-1} className={cn('flex-1 outline-none', !bare && 'mx-auto w-full max-w-7xl px-4 py-6 md:px-6 md:py-8')}>
+      <main id="main" tabIndex={-1} className={cn('flex-1 outline-none', !bare && cn(PAGE_FRAME, 'py-6 md:py-8'))}>
         {children ?? <Outlet />}
       </main>
       {!fullBleed && <Footer />}
