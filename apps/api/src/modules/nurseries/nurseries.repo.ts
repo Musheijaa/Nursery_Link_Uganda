@@ -23,6 +23,7 @@ export type NurseryRow = {
   contact_phone: string;
   annual_capacity: number;
   seed_source: string | null;
+  is_demo: boolean;
   district_id: string;
   district_name: string;
   sub_county_id: string;
@@ -76,7 +77,7 @@ const whereSql = (f: NurseryFilters): SQL => {
 export interface ListOptions {
   /** When set, each row gets straight_km from this point */
   point?: LatLng | undefined;
-  /** 'name' = alphabetical; 'knn' = nearest first by straight line (uses the GiST index) */
+  /** 'name' = alphabetical (sample nurseries last); 'knn' = nearest first by straight line (uses the GiST index) */
   order: 'name' | 'knn';
   limit: number;
   offset: number;
@@ -86,10 +87,11 @@ export interface ListOptions {
 const selectNurseries = async (db: DbOrTx, where: SQL, options: ListOptions): Promise<NurseryRow[]> => {
   const { point } = options;
   const straightKm = point ? sql`ST_Distance(n.location::geography, ${pointSql(point)}::geography) / 1000` : sql`NULL::float8`;
-  const orderBy = options.order === 'knn' && point ? sql`n.location <-> ${pointSql(point)}` : sql`lower(n.name), n.id`;
+  // Alphabetical, with invented sample nurseries after the real ones
+  const orderBy = options.order === 'knn' && point ? sql`n.location <-> ${pointSql(point)}` : sql`n.is_demo, lower(n.name), n.id`;
 
   const result = await db.execute<NurseryRow>(sql`
-    SELECT n.id, n.name, n.type, n.certification_status, n.operator_name, n.contact_phone, n.annual_capacity, n.seed_source,
+    SELECT n.id, n.name, n.type, n.certification_status, n.operator_name, n.contact_phone, n.annual_capacity, n.seed_source, n.is_demo,
            d.id AS district_id, d.name AS district_name, sc.id AS sub_county_id, sc.name AS sub_county_name,
            ST_Y(n.location) AS lat, ST_X(n.location) AS lng,
            ${activeCampaignSql(sql`n.id`)} AS has_active_campaign,

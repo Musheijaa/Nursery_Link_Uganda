@@ -36,8 +36,17 @@ const StockFreshness = ({ at }: { at: string | null }) => {
   );
 };
 
+/** Invented sample nurseries (demo data) say so up front, so nobody travels to one. */
+export const SampleNote = () => (
+  <p role="note" className="flex flex-col gap-0.5 rounded-md bg-amber-tint px-3 py-2 text-sm text-bark ring-1 ring-amber/30">
+    <span className="font-bold text-amber">{en.nurseryCard.sampleTitle}</span>
+    {en.nurseryCard.sampleBody}
+  </p>
+);
+
 const Details = ({ n, onSpecies }: { n: Profile; onSpecies: (slug: string) => void }) => (
   <div className="flex flex-col gap-4">
+    {n.is_demo && <SampleNote />}
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-sm text-bark-muted">{en.nurseryCard.types[n.type]}</span>
       {n.certification_status === 'certified' ? (
@@ -52,12 +61,16 @@ const Details = ({ n, onSpecies }: { n: Profile; onSpecies: (slug: string) => vo
         {[n.distance_km !== undefined ? en.nurseryCard.distanceFromYou(formatDistance(n.distance_km, n.distance_mode ?? 'road')) : null, `${n.sub_county.name}, ${n.district.name}`].filter(Boolean).join(' · ')}
       </Row>
       <Row icon={<Phone aria-hidden />}>
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span>{n.operator_name} · {formatPhone(n.contact_phone)}</span>
-          <Button asChild variant="secondary" size="sm" className="min-h-11">
-            <a href={telHref(n.contact_phone)} aria-label={`${en.nurseryCard.call} ${n.name}`}>{en.nurseryCard.call}</a>
-          </Button>
-        </span>
+        {n.contact_phone ? (
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>{n.operator_name} · {formatPhone(n.contact_phone)}</span>
+            <Button asChild variant="secondary" size="sm" className="min-h-11">
+              <a href={telHref(n.contact_phone)} aria-label={`${en.nurseryCard.call} ${n.name}`}>{en.nurseryCard.call}</a>
+            </Button>
+          </span>
+        ) : (
+          <span>{n.operator_name} · {en.nurseryCard.noPhone}</span>
+        )}
       </Row>
       <p className="text-sm text-bark-muted">{en.nurseryCard.capacity(formatCount(n.annual_capacity))}</p>
       {n.seed_source && <p className="text-sm"><span className="font-bold">{en.nurseryCard.seedSource}:</span> {n.seed_source}</p>}

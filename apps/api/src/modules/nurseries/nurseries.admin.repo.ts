@@ -15,6 +15,9 @@ export type AdminNurseryRow = {
   annual_capacity: number;
   seed_source: string | null;
   is_active: boolean;
+  is_demo: boolean;
+  external_ref: string | null;
+  listing_note: string | null;
   district_id: string;
   district_name: string;
   sub_county_id: string;
@@ -32,13 +35,15 @@ export interface AdminNurseryFilters {
   districtId?: string | undefined;
   subCountyId?: string | undefined;
   isActive?: boolean | undefined;
+  isDemo?: boolean | undefined;
+  toVerify?: boolean | undefined;
   certificationStatus?: CertificationStatus | undefined;
 }
 
 const select = async (db: DbOrTx, where: SQL, limit: number, offset: number): Promise<AdminNurseryRow[]> => {
   const result = await db.execute<AdminNurseryRow>(sql`
     SELECT n.id, n.name, n.type, n.certification_status, n.operator_name, n.contact_phone, n.payout_phone, n.annual_capacity,
-           n.seed_source, n.is_active, d.id AS district_id, d.name AS district_name, sc.id AS sub_county_id, sc.name AS sub_county_name,
+           n.seed_source, n.is_active, n.is_demo, n.external_ref, n.listing_note, d.id AS district_id, d.name AS district_name, sc.id AS sub_county_id, sc.name AS sub_county_name,
            ST_Y(n.location) AS lat, ST_X(n.location) AS lng, n.created_at, n.updated_at,
            (SELECT max(i.updated_at) FROM inventory i WHERE i.nursery_id = n.id) AS stock_updated_at,
            count(*) OVER ()::int AS total
@@ -58,6 +63,9 @@ export const listNurseries = (db: DbOrTx, f: AdminNurseryFilters, limit: number,
   if (f.subCountyId) conditions.push(sql`n.sub_county_id = ${f.subCountyId}`);
   if (f.isActive !== undefined) conditions.push(sql`n.is_active = ${f.isActive}`);
   if (f.certificationStatus) conditions.push(sql`n.certification_status = ${f.certificationStatus}`);
+  if (f.isDemo !== undefined) conditions.push(sql`n.is_demo = ${f.isDemo}`);
+  // Imported from a list and not yet checked: switched off, with a note saying what to verify
+  if (f.toVerify) conditions.push(sql`NOT n.is_active AND n.listing_note IS NOT NULL`);
   return select(db, sql.join(conditions, sql` AND `), limit, offset);
 };
 
@@ -96,7 +104,7 @@ export type ExportRow = Omit<AdminNurseryRow, 'total'> & {
 export const exportNurseries = async (db: DbOrTx): Promise<ExportRow[]> => {
   const result = await db.execute<ExportRow>(sql`
     SELECT n.id, n.name, n.type, n.certification_status, n.operator_name, n.contact_phone, n.payout_phone, n.annual_capacity,
-           n.seed_source, n.is_active, d.id AS district_id, d.name AS district_name, sc.id AS sub_county_id, sc.name AS sub_county_name,
+           n.seed_source, n.is_active, n.is_demo, n.external_ref, n.listing_note, d.id AS district_id, d.name AS district_name, sc.id AS sub_county_id, sc.name AS sub_county_name,
            ST_Y(n.location) AS lat, ST_X(n.location) AS lng, n.created_at, n.updated_at,
            COALESCE((SELECT json_agg(json_build_object('species_slug', s.slug, 'common_name', s.common_name,
                                                        'quantity_available', i.quantity_available, 'unit_price', i.unit_price) ORDER BY s.slug)

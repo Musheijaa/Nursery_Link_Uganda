@@ -1463,7 +1463,8 @@ export interface components {
             /** @enum {string} */
             certification_status: "certified" | "pending" | "unverified";
             operator_name: string;
-            contact_phone: string;
+            /** @description Null for sample nurseries, which have no real number */
+            contact_phone: string | null;
             annual_capacity: number;
             seed_source: string | null;
             district: {
@@ -1476,6 +1477,8 @@ export interface components {
                 id: string;
                 name: string;
             };
+            /** @description Invented sample nursery (demo data): show it as such */
+            is_demo: boolean;
             /** @description Shows the gift pin (FR-17) */
             has_active_campaign: boolean;
             total_stock: number;
@@ -1515,7 +1518,8 @@ export interface components {
                     /** @enum {string} */
                     certification_status: "certified" | "pending" | "unverified";
                     operator_name: string;
-                    contact_phone: string;
+                    /** @description Null for sample nurseries, which have no real number */
+                    contact_phone: string | null;
                     annual_capacity: number;
                     seed_source: string | null;
                     district: {
@@ -1528,6 +1532,8 @@ export interface components {
                         id: string;
                         name: string;
                     };
+                    /** @description Invented sample nursery (demo data): show it as such */
+                    is_demo: boolean;
                     /** @description Shows the gift pin (FR-17) */
                     has_active_campaign: boolean;
                     total_stock: number;
@@ -1567,7 +1573,8 @@ export interface components {
             /** @enum {string} */
             certification_status: "certified" | "pending" | "unverified";
             operator_name: string;
-            contact_phone: string;
+            /** @description Null for sample nurseries, which have no real number */
+            contact_phone: string | null;
             annual_capacity: number;
             seed_source: string | null;
             district: {
@@ -1580,6 +1587,8 @@ export interface components {
                 id: string;
                 name: string;
             };
+            /** @description Invented sample nursery (demo data): show it as such */
+            is_demo: boolean;
             /** @description Shows the gift pin (FR-17) */
             has_active_campaign: boolean;
             total_stock: number;
@@ -1690,7 +1699,8 @@ export interface components {
             /** @enum {string} */
             certification_status: "certified" | "pending" | "unverified";
             operator_name: string;
-            contact_phone: string;
+            /** @description Null for sample nurseries, which have no real number */
+            contact_phone: string | null;
             annual_capacity: number;
             seed_source: string | null;
             district: {
@@ -1703,6 +1713,8 @@ export interface components {
                 id: string;
                 name: string;
             };
+            /** @description Invented sample nursery (demo data): show it as such */
+            is_demo: boolean;
             /** @description Shows the gift pin (FR-17) */
             has_active_campaign: boolean;
             total_stock: number;
@@ -2091,6 +2103,12 @@ export interface components {
             annual_capacity: number;
             seed_source: string | null;
             is_active: boolean;
+            /** @description Invented sample nursery (db:demo-nurseries) */
+            is_demo: boolean;
+            /** @description Reference in the list it was imported from */
+            external_ref: string | null;
+            /** @description What to check before switching an imported nursery on */
+            listing_note: string | null;
             district: {
                 /** Format: uuid */
                 id: string;
@@ -4473,6 +4491,8 @@ export interface operations {
                 sub_county_id?: string;
                 is_active?: "true" | "false";
                 certification_status?: "certified" | "pending" | "unverified";
+                is_demo?: "true" | "false";
+                to_verify?: "true" | "false";
             };
             header?: never;
             path?: never;

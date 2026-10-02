@@ -26,7 +26,8 @@ export class OrderNotifications {
 
   async paymentReceived(order: OrderRow): Promise<void> {
     const mapUrl = orderMapUrl(this.deps.config.PUBLIC_WEB_URL, this.deps.config.OTP_HMAC_SECRET, order.short_code);
-    await this.send(order.nursery_contact_phone, nurseryOrderSms(order, mapUrl), order.id);
+    // Sample nurseries have placeholder numbers that may belong to someone: never text them
+    if (!order.nursery_is_demo) await this.send(order.nursery_contact_phone, nurseryOrderSms(order, mapUrl), order.id);
     await this.send(order.buyer_phone, `NurseryLink: we have received ${ugx(order.grand_total)} for order ${order.short_code}. It is held safely until you confirm delivery.`, order.id);
   }
 
@@ -39,6 +40,7 @@ export class OrderNotifications {
   }
 
   async released(order: OrderRow, amount: number): Promise<void> {
+    if (order.nursery_is_demo) return;
     await this.send(order.nursery_payout_phone, `NurseryLink order ${order.short_code}: ${ugx(amount)} has been sent to your mobile money.`, order.id);
   }
 

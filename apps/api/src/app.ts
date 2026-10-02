@@ -1,4 +1,5 @@
 import express, { type Express } from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { pinoHttp } from 'pino-http';
@@ -59,6 +60,8 @@ export const createApp = (deps: AppDeps, services: Services = buildServices(deps
     // A missing file is a plain 404, never routed on into the API
     notFoundHandler
   );
+  // Gzip JSON for phones on slow, metered connections (the map's GeoJSON shrinks about 8×)
+  app.use(compression({ threshold: 1024 }));
   app.use(limitUrlLength);
   app.use(apiSecurityHeaders());
   app.use(cors({

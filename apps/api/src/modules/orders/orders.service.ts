@@ -104,6 +104,7 @@ export class OrdersService {
     const { db } = this.deps;
     const nursery = await repo.findActiveNursery(db, input.nursery_id);
     if (!nursery) throw new NotFoundError('Nursery not found');
+    this.refuseSampleNurseryWithLivePayments(nursery);
 
     const lines = await this.checkedLines(input.nursery_id, input.items);
     const items = input.items.map(item => {
@@ -189,10 +190,22 @@ export class OrdersService {
    * stock against the quote, take the stock, and record the pending payment. The payment prompt
    * is sent after the transaction commits.
    */
+  /**
+   * Sample (demo) nurseries are invented: with real money they'd take payment for seedlings that
+   * don't exist, and pay out to a placeholder number. They can only take mock or trial orders.
+   */
+  private refuseSampleNurseryWithLivePayments(nursery: { is_demo: boolean }) {
+    if (nursery.is_demo && this.deps.config.PAYMENT_PROVIDER_MODE === 'live') {
+      throw new ConflictError('This is a sample nursery for testing. It can’t take real orders.');
+    }
+  }
+
   async create(userId: string, input: CreateOrderInput): Promise<{ order: OrderDto; next_step: string }> {
     const { db, config } = this.deps;
     const { id: quoteId, quote } = await verifyQuote(config.QUOTE_TOKEN_SECRET, input.quote_token);
     if (quote.user_id !== userId) throw new ForbiddenError('This quote belongs to another account');
+    const nursery = await repo.findActiveNursery(db, quote.nursery_id);
+    if (nursery) this.refuseSampleNurseryWithLivePayments(nursery);
 
     // FR-25: nothing reaches a nursery without items, a delivery point and address, and a payment method
     const address = input.delivery_address?.trim() ?? '';

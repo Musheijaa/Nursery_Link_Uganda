@@ -9,6 +9,8 @@ export interface ListNursery {
   name: string;
   subCounty: string;
   hasCampaign: boolean;
+  /** Invented sample nursery */
+  isDemo: boolean;
   speciesCount: number;
   /** Road distance when known, else straight line (then marked approx.) */
   km: number | null;
@@ -27,7 +29,10 @@ const Row = ({ n, selected, onOpen }: { n: ListNursery; selected: boolean; onOpe
       )}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="font-bold text-canopy">{n.name}</span>
+        <span className="flex flex-wrap items-center gap-2 font-bold text-canopy">
+          {n.name}
+          {n.isDemo && <span className="rounded-full bg-amber-tint px-2 py-0.5 text-xs font-bold text-amber">{en.nurseries.sample}</span>}
+        </span>
         <span className="text-sm text-bark-muted">
           {[n.subCounty, n.km !== null ? formatDistance(n.km, n.distanceMode) : null, en.nurseries.speciesCount(n.speciesCount)].filter(Boolean).join(' · ')}
         </span>

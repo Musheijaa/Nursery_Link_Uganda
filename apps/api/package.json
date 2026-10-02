@@ -15,12 +15,14 @@
     "db:seed": "tsx --conditions=source --env-file=../../.env src/db/seed/index.ts",
     "db:reset": "tsx --conditions=source --env-file=../../.env src/db/reset.ts",
     "db:demo-activity": "tsx --conditions=source --env-file=../../.env src/db/demoActivity.ts",
+    "db:demo-nurseries": "tsx --conditions=source --env-file=../../.env src/db/demoNurseries.ts",
     "db:forest-sample": "tsx --conditions=source --env-file=../../.env src/db/forestLossSample.ts",
     "openapi:export": "tsx --conditions=source src/openapi/export.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.1",
     "@nurserylink/shared": "workspace:*",
+    "compression": "^1.8.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "csv-parse": "^7.0.3",
@@ -41,6 +43,7 @@
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^12.2.0",
+    "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

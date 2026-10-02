@@ -468,3 +468,15 @@ Interpretations where the spec was silent or ambiguous. Anything touching the da
   - **Nominatim's usage policy:** at most 1 request/s with an identifying User-Agent, cached, and no search-as-you-type. So the client queues requests ≥ 1.1 s apart and gives up (503 → our places only, `meta.osm: 'unavailable'`) rather than wait over 4 s. It caches results for 24 h (1,000 entries).
   - **In the web app:** our places are suggested as you type, and OpenStreetMap is asked only when the person presses Search. `MockGeocoding` returns one labelled test place near Mukono.
   - **Where it's used:** the location dialog ("Or type where you are"; the place becomes the session location like a GPS fix) and checkout's delivery step (moves the pin; fills the address only if it's empty).
+- **Sample (demo) nurseries** (October 2026, user's choice): the owner's two spreadsheets (1,500 nurseries, 6,735 stock lines) turned out to be generated: placeholder sub-counties, 10 manager names, and coordinates scattered across whole regions. But their phones and emails are real-format and could belong to real people.
+  - **Cleaned file:** `scripts/demo-nurseries/convert.py` keeps only safe fields and writes `apps/api/src/db/demo/demo-nurseries.json.gz`. It drops phones, emails, villages, certificate numbers, the invented sponsors (WWF, ECOTRUST, the Ministry) and the 1,699 lines priced 0. Each nursery gets a fixed point at least ~1 km inside its named district and off the big lakes (Natural Earth lakes, public domain), seeded by its reference.
+  - **Loader:** `pnpm --filter @nurserylink/api db:demo-nurseries` (`--remove` to delete) upserts by `external_ref`, and dev only. It writes a `demo.load` audit entry. Sample nurseries that orders or campaigns refer to are switched off rather than deleted.
+  - **`nurseries.is_demo`** (migration `0005`, with `external_ref` and `listing_note`):
+    - Public responses give `is_demo` and `contact_phone: null`; the placeholder number (+256 7009 xxxxx) is never shown.
+    - The card says "Sample nursery… don't travel there", and list rows carry a "Sample" tag.
+    - Lists sort real nurseries first.
+    - Sample nurseries are never texted (order and payout SMS are skipped).
+    - With `PAYMENT_PROVIDER_MODE=live`, quoting or ordering from one returns 409.
+  - **The raw spreadsheets and zips** are git-ignored and must never be committed.
+- **Response compression:** the API gzips responses over 1 kB (`compression`). With ~1,500 nurseries the map's GeoJSON goes from 1.06 MB to 100 kB.
+- **Home eyebrow** reads "Tree nurseries across Uganda" now that boundaries and data are nationwide. The footer still says the pilot is Mukono.

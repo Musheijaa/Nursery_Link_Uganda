@@ -3680,6 +3680,30 @@
                 "unverified"
               ]
             }
+          },
+          {
+            "name": "is_demo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "to_verify",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
           }
         ],
         "responses": {
@@ -9650,7 +9674,11 @@
             "type": "string"
           },
           "contact_phone": {
-            "type": "string"
+            "description": "Null for sample nurseries, which have no real number",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "annual_capacity": {
             "type": "integer",
@@ -9698,6 +9726,10 @@
               "name"
             ],
             "additionalProperties": false
+          },
+          "is_demo": {
+            "type": "boolean",
+            "description": "Invented sample nursery (demo data): show it as such"
           },
           "has_active_campaign": {
             "type": "boolean",
@@ -9763,6 +9795,7 @@
           "seed_source",
           "district",
           "sub_county",
+          "is_demo",
           "has_active_campaign",
           "total_stock",
           "species_count",
@@ -9851,7 +9884,11 @@
                       "type": "string"
                     },
                     "contact_phone": {
-                      "type": "string"
+                      "description": "Null for sample nurseries, which have no real number",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "annual_capacity": {
                       "type": "integer",
@@ -9899,6 +9936,10 @@
                         "name"
                       ],
                       "additionalProperties": false
+                    },
+                    "is_demo": {
+                      "type": "boolean",
+                      "description": "Invented sample nursery (demo data): show it as such"
                     },
                     "has_active_campaign": {
                       "type": "boolean",
@@ -9948,6 +9989,7 @@
                     "seed_source",
                     "district",
                     "sub_county",
+                    "is_demo",
                     "has_active_campaign",
                     "total_stock",
                     "species_count",
@@ -10073,7 +10115,11 @@
             "type": "string"
           },
           "contact_phone": {
-            "type": "string"
+            "description": "Null for sample nurseries, which have no real number",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "annual_capacity": {
             "type": "integer",
@@ -10121,6 +10167,10 @@
               "name"
             ],
             "additionalProperties": false
+          },
+          "is_demo": {
+            "type": "boolean",
+            "description": "Invented sample nursery (demo data): show it as such"
           },
           "has_active_campaign": {
             "type": "boolean",
@@ -10253,6 +10303,7 @@
           "seed_source",
           "district",
           "sub_county",
+          "is_demo",
           "has_active_campaign",
           "total_stock",
           "species_count",
@@ -10657,7 +10708,11 @@
             "type": "string"
           },
           "contact_phone": {
-            "type": "string"
+            "description": "Null for sample nurseries, which have no real number",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "annual_capacity": {
             "type": "integer",
@@ -10705,6 +10760,10 @@
               "name"
             ],
             "additionalProperties": false
+          },
+          "is_demo": {
+            "type": "boolean",
+            "description": "Invented sample nursery (demo data): show it as such"
           },
           "has_active_campaign": {
             "type": "boolean",
@@ -10773,6 +10832,7 @@
           "seed_source",
           "district",
           "sub_county",
+          "is_demo",
           "has_active_campaign",
           "total_stock",
           "species_count",
@@ -12482,6 +12542,24 @@
           "is_active": {
             "type": "boolean"
           },
+          "is_demo": {
+            "type": "boolean",
+            "description": "Invented sample nursery (db:demo-nurseries)"
+          },
+          "external_ref": {
+            "description": "Reference in the list it was imported from",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "listing_note": {
+            "description": "What to check before switching an imported nursery on",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "district": {
             "type": "object",
             "properties": {
@@ -12565,6 +12643,9 @@
           "annual_capacity",
           "seed_source",
           "is_active",
+          "is_demo",
+          "external_ref",
+          "listing_note",
           "district",
           "sub_county",
           "location",

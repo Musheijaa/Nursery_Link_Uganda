@@ -43,3 +43,9 @@ e2e/.results/
 e2e/.report/
 docs/lighthouse/
 docs/screenshots/
+
+# Raw source material shared by the project owner. Never commit: the spreadsheets hold phone numbers
+# and emails that may belong to real people (see scripts/demo-nurseries/convert.py), and the zips are large
+/File *.xlsx
+/Demo photo gallery*.zip
+/gadm41_UGA_shp.zip

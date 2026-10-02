@@ -174,6 +174,12 @@ export const nurseries = pgTable(
     seedSource: text('seed_source'),
     certificationStatus: certificationStatusEnum('certification_status').notNull().default('unverified'),
     isActive: boolean('is_active').notNull().default(true),
+    /** Invented sample data (db:demo-nurseries): shown with a "sample" label, never texted, no live orders */
+    isDemo: boolean('is_demo').notNull().default(false),
+    /** Where an imported nursery came from, e.g. "NUR-UG-0001" (demo sheet) or "SPGS-2018-C08" (certified list) */
+    externalRef: text('external_ref').unique(),
+    /** For admins: what to check before switching an imported nursery on */
+    listingNote: text('listing_note'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

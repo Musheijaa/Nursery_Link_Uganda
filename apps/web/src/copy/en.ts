@@ -334,7 +334,7 @@ export const en = {
     payWith: 'Pay with mobile money',
   },
   home: {
-    eyebrow: 'Tree nurseries of Mukono District',
+    eyebrow: 'Tree nurseries across Uganda',
     title: 'Tree seedlings from nurseries',
     titleAccent: 'near you',
     lead: 'See what local nurseries have in stock and what it costs, then collect your seedlings or get them brought by boda boda.',
@@ -476,6 +476,7 @@ export const en = {
     loadFailed: "We couldn't load nurseries",
     freeSeedlings: 'Free seedlings here',
     speciesCount: (n: number) => (n === 1 ? '1 kind of tree' : `${String(n)} kinds of trees`),
+    sample: 'Sample',
     filterSpecies: (name: string) => `Stocking “${name}”`,
     removeSpecies: 'Show all nurseries',
     mapLabel: 'Map of nurseries',
@@ -518,6 +519,9 @@ export const en = {
   },
   nurseryCard: {
     close: 'Close nursery details',
+    sampleTitle: 'Sample nursery',
+    sampleBody: 'Invented for testing the site. It isn’t a real nursery, so don’t travel there or expect a call.',
+    noPhone: 'no phone number',
     certification: { certified: 'Certified', pending: 'Certification pending', unverified: 'Not yet certified' } satisfies Record<CertificationStatus, string>,
     types: { community: 'Community nursery', commercial: 'Commercial nursery', private: 'Private nursery' } satisfies Record<NurseryType, string>,
     capacity: (n: string) => `Grows up to ${n} seedlings a year`,

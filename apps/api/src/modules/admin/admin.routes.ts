@@ -71,6 +71,10 @@ export const nurseriesQuery = paginationQuerySchema.extend({
   sub_county_id: z.uuid().optional(),
   is_active: booleanParam.optional(),
   certification_status: certificationStatusSchema.optional(),
+  /** Only invented sample nurseries (true) or only real ones (false) */
+  is_demo: booleanParam.optional(),
+  /** Imported nurseries waiting to be checked and switched on */
+  to_verify: booleanParam.optional(),
 });
 export const speciesQuery = paginationQuerySchema.extend({ category: speciesCategorySchema.optional(), q: z.string().trim().min(1).max(100).optional() });
 export const newsQuery = paginationQuerySchema.extend({ category: newsCategorySchema.optional(), is_published: booleanParam.optional() });
@@ -130,7 +134,7 @@ export const adminRoutes = (deps: { db: Database; species: SpeciesService; order
   router.get('/nurseries', validate({ query: nurseriesQuery }), async (_req, res) => {
     const { query: q } = parsed<{ query: z.output<typeof nurseriesQuery> }>(res);
     const { items, meta } = await nurseries.list(
-      { q: q.q, districtId: q.district_id, subCountyId: q.sub_county_id, isActive: q.is_active, certificationStatus: q.certification_status },
+      { q: q.q, districtId: q.district_id, subCountyId: q.sub_county_id, isActive: q.is_active, certificationStatus: q.certification_status, isDemo: q.is_demo, toVerify: q.to_verify },
       { page: q.page, limit: q.limit }
     );
     res.json({ data: items, meta });

@@ -13,11 +13,11 @@ import type { LatLng } from '../../lib/geo.js';
 
 // ── Quoting ────────────────────────────────────────────────
 
-export type QuoteNurseryRow = { id: string; name: string; lat: number; lng: number };
+export type QuoteNurseryRow = { id: string; name: string; lat: number; lng: number; is_demo: boolean };
 
 export const findActiveNursery = async (db: DbOrTx, id: string): Promise<QuoteNurseryRow | undefined> =>
   (await db.execute<QuoteNurseryRow>(sql`
-    SELECT id, name, ST_Y(location) AS lat, ST_X(location) AS lng FROM nurseries WHERE id = ${id} AND is_active`)).rows[0];
+    SELECT id, name, ST_Y(location) AS lat, ST_X(location) AS lng, is_demo FROM nurseries WHERE id = ${id} AND is_active`)).rows[0];
 
 export type StockRow = {
   id: string;
@@ -182,6 +182,8 @@ export type OrderRow = {
   nursery_name: string;
   nursery_contact_phone: string;
   nursery_payout_phone: string;
+  /** Sample nursery: its numbers are placeholders, so it is never texted */
+  nursery_is_demo: boolean;
   nursery_lat: number;
   nursery_lng: number;
   delivery_type: DeliveryType;
@@ -207,7 +209,7 @@ const selectOrders = async (db: DbOrTx, where: SQL, limit: number, offset: numbe
   (
     await db.execute<OrderRow>(sql`
       SELECT o.id, o.short_code, o.user_id, u.full_name AS buyer_name, u.phone AS buyer_phone,
-             o.nursery_id, n.name AS nursery_name, n.contact_phone AS nursery_contact_phone, n.payout_phone AS nursery_payout_phone,
+             o.nursery_id, n.name AS nursery_name, n.contact_phone AS nursery_contact_phone, n.payout_phone AS nursery_payout_phone, n.is_demo AS nursery_is_demo,
              ST_Y(n.location) AS nursery_lat, ST_X(n.location) AS nursery_lng,
              o.delivery_type, ST_Y(o.delivery_point) AS delivery_lat, ST_X(o.delivery_point) AS delivery_lng, o.delivery_address,
              o.distance_km::float8 AS distance_km, o.delivery_fee, o.items_total, o.grand_total, o.status, o.payment_method,
