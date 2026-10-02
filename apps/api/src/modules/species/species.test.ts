@@ -71,11 +71,28 @@ describe('GET /species/:slug/nurseries (FR-20)', () => {
     const res = await request(app).get('/api/v1/species/mvule/nurseries').expect(200);
     const body = res.body as { data: Row[]; meta: { species: { slug: string } } };
     expect(body.meta.species.slug).toBe('mvule');
-    expect(body.data.map(n => [n.name, n.stock.quantity_available, n.stock.unit_price])).toEqual([
-      ['Katosi Lakeshore Seedlings', 2500, 2000],
-      ['Kimenyedde Green Nursery', 1200, 2000],
-      ['Namilyango Tree Growers', 3500, 1800],
+    expect(body.data.map(n => [n.name, n.stock.unit_price])).toEqual([
+      ['Katosi Lakeshore Seedlings', 2000],
+      ['Kimenyedde Green Nursery', 2000],
+      ['Namilyango Tree Growers', 1800],
     ]);
+    // Other test files order from the same seeded stock in parallel, and stock only goes down,
+    // so each figure lies between the current database value and the seed value.
+    const seeded: Record<string, number> = {
+      'Katosi Lakeshore Seedlings': 2500,
+      'Kimenyedde Green Nursery': 1200,
+      'Namilyango Tree Growers': 3500,
+    };
+    const { rows } = await pool.query<{ name: string; quantity_available: number }>(
+      `SELECT n.name, i.quantity_available FROM inventory i JOIN nurseries n ON n.id = i.nursery_id
+       JOIN species s ON s.id = i.species_id WHERE s.slug = 'mvule'`,
+    );
+    for (const n of body.data) {
+      const now = rows.find(r => r.name === n.name)?.quantity_available;
+      expect(now).toBeDefined();
+      expect(n.stock.quantity_available).toBeGreaterThanOrEqual(now ?? Infinity);
+      expect(n.stock.quantity_available).toBeLessThanOrEqual(seeded[n.name] ?? 0);
+    }
   });
 
   it('ranks nearest-first by road distance when given the buyer location', async () => {
