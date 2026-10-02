@@ -153,6 +153,9 @@ export const en = {
   checkout: {
     title: (nursery: string) => `Order from ${nursery}`,
     back: 'Back to the nursery',
+    adminTitle: 'Admin accounts can’t place orders',
+    adminBody: 'You’re signed in on this site as an administrator. To order seedlings, sign out and sign in with a buyer account (or create one). New orders then show in the admin console under Orders and “Needs attention”.',
+    adminSwitch: 'Sign out and use a buyer account',
     steps: { seedlings: 'Seedlings', delivery: 'Delivery', pay: 'Pay' },
     stepOf: (n: number, total: number) => `Step ${String(n)} of ${String(total)}`,
     seedlingsHeading: 'How many seedlings?',

@@ -135,7 +135,7 @@ export interface paths {
         put?: never;
         /**
          * Rotate the refresh cookie and get a new access token
-         * @description Public. Reads the nl_refresh cookie. Reusing an old refresh token signs the account out everywhere.
+         * @description Public. Reads the nl_refresh cookie (nl_admin_refresh when sent with X-Client: admin, the admin console). Reusing an old refresh token signs the account out everywhere.
          */
         post: operations["postAuthRefresh"];
         delete?: never;

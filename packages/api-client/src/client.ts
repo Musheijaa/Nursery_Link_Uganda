@@ -4,6 +4,12 @@ import type { paths } from './schema.js';
 import { Session, type AuthTokens } from './session.js';
 
 export interface ApiClientOptions {
+  /**
+   * Which app this is. The admin console says so (X-Client: admin), and the API then keeps its
+   * session in a cookie of its own, so signing in to one app never signs the other in or out
+   * (browsers share cookies between localhost ports, and between subdomains with COOKIE_DOMAIN).
+   */
+  app?: 'web' | 'admin';
   /** API origin, e.g. "https://api.example.ug"; empty for same-origin (dev proxy) */
   baseUrl: string;
   fetch?: typeof fetch;
@@ -23,9 +29,12 @@ const NO_RETRY = ['/api/v1/auth/login', '/api/v1/auth/refresh', '/api/v1/auth/ve
  *  - credentials included, so the httpOnly refresh cookie reaches /auth/refresh;
  *  - network failures turned into ApiError('network_error').
  */
-export const createApiClient = ({ baseUrl, fetch: customFetch, timeoutMs = 20_000 }: ApiClientOptions) => {
+export const createApiClient = ({ baseUrl, fetch: customFetch, timeoutMs = 20_000, app = 'web' }: ApiClientOptions) => {
   // Looked up on every call, so test tools and polyfills that patch fetch later still apply
-  const fetchImpl = (request: Request) => (customFetch ?? globalThis.fetch)(request);
+  const fetchImpl = (request: Request) => {
+    if (app === 'admin') request.headers.set('X-Client', 'admin');
+    return (customFetch ?? globalThis.fetch)(request);
+  };
   const root = `${baseUrl.replace(/\/$/, '')}/api/v1`;
 
   /**

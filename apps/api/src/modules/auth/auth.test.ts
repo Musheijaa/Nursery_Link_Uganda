@@ -274,3 +274,31 @@ describe('RBAC on /admin', () => {
     await request(app).get('/api/v1/admin/anything').set('Authorization', `Bearer ${forged}`).expect(401);
   });
 });
+
+describe('separate sessions for the admin console and the public site', () => {
+  const cookieNamed = (res: request.Response, name: string) =>
+    ((res.headers['set-cookie'] as unknown as string[] | undefined) ?? []).find(c => c.startsWith(`${name}=`))?.split(';')[0];
+
+  it('keeps the admin console in its own cookie, so signing in there leaves the public site alone', async () => {
+    const admin = await request(app).post('/api/v1/auth/login').set('X-Client', 'admin')
+      .send({ identifier: TEST_ADMIN.email, password: TEST_ADMIN.password }).expect(200);
+    const adminCookie = cookieNamed(admin, 'nl_admin_refresh');
+    expect(adminCookie).toBeDefined();
+    expect(cookieNamed(admin, 'nl_refresh')).toBeUndefined();
+
+    // The admin console refreshes with its cookie...
+    await request(app).post('/api/v1/auth/refresh').set('X-Client', 'admin').set('Cookie', adminCookie ?? '').expect(200);
+    // ...but the public site never sees it: the admin isn't signed in there
+    await request(app).post('/api/v1/auth/refresh').set('Cookie', adminCookie ?? '').expect(401);
+  });
+
+  it("keeps a buyer's public-site session out of the admin console", async () => {
+    const phone = newPhone();
+    await registerAndVerify(phone);
+    const web = await request(app).post('/api/v1/auth/login').send({ identifier: phone, password: 'correct-horse-battery' }).expect(200);
+    const webCookie = cookieNamed(web, 'nl_refresh');
+    expect(webCookie).toBeDefined();
+    await request(app).post('/api/v1/auth/refresh').set('X-Client', 'admin').set('Cookie', webCookie ?? '').expect(401);
+    await request(app).post('/api/v1/auth/refresh').set('Cookie', webCookie ?? '').expect(200);
+  });
+});

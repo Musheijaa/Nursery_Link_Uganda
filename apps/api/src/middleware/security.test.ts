@@ -57,7 +57,7 @@ describe('CORS', () => {
       .set('Access-Control-Request-Headers', 'content-type,authorization')
       .expect(204);
     expect(res.headers['access-control-allow-methods']).toBe('GET,POST,PUT,PATCH,DELETE');
-    expect(res.headers['access-control-allow-headers']).toBe('Content-Type,Authorization,X-Request-Id');
+    expect(res.headers['access-control-allow-headers']).toBe('Content-Type,Authorization,X-Request-Id,X-Client');
     expect(res.headers['access-control-max-age']).toBe('600');
   });
 });

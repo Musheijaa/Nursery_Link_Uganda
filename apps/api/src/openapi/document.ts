@@ -132,7 +132,7 @@ export const buildOpenApiDocument = (version: string): Json => {
         '- Successful responses are `{ data, meta? }`; errors are `{ error: { code, message, details? } }`.\n' +
         '- Money is whole Uganda shillings (UGX). Coordinates are WGS 84 (EPSG:4326).\n' +
         '- Sign in with `/auth/login` or `/auth/verify`, then send `Authorization: Bearer <access_token>`. ' +
-        'Access tokens last 15 minutes; `/auth/refresh` renews them using the httpOnly `nl_refresh` cookie.',
+        'Access tokens last 15 minutes; `/auth/refresh` renews them using the httpOnly `nl_refresh` cookie (the admin console sends `X-Client: admin` and uses `nl_admin_refresh`, so the two apps keep separate sessions).',
     },
     servers: [{ url: '/api/v1' }],
     tags: [...new Set(operations.map(o => o.tag))].map(name => ({ name })),

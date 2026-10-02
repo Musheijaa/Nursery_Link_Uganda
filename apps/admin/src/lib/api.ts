@@ -1,7 +1,7 @@
 import { createApiClient, isApiError } from '@nurserylink/api-client';
 import { QueryClient } from '@tanstack/react-query';
 
-export const { client: api, session } = createApiClient({ baseUrl: import.meta.env.VITE_API_URL ?? '' });
+export const { client: api, session } = createApiClient({ baseUrl: import.meta.env.VITE_API_URL ?? '', app: 'admin' });
 
 export const queryClient = new QueryClient({
   defaultOptions: {

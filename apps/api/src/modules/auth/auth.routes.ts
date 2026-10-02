@@ -1,4 +1,4 @@
-import { Router, type CookieOptions, type Response } from 'express';
+import { Router, type CookieOptions, type Request, type Response } from 'express';
 import {
   forgotPasswordSchema,
   loginSchema,
@@ -17,7 +17,15 @@ import { UnauthorizedError } from '../../lib/errors.js';
 import { OTP_TTL_MINUTES, type AuthService, type Session } from './auth.service.js';
 
 export const REFRESH_COOKIE = 'nl_refresh';
+/** The admin console's own session, so signing in there never signs the public site in (and back) */
+export const ADMIN_REFRESH_COOKIE = 'nl_admin_refresh';
 const REFRESH_COOKIE_PATH = '/api/v1/auth';
+
+/**
+ * Which app is calling: the admin console sends `X-Client: admin`. Browsers share cookies between
+ * ports of one host (localhost:5173 and :5174) and, with COOKIE_DOMAIN, between subdomains.
+ */
+const cookieFor = (req: Request): string => (req.get('x-client') === 'admin' ? ADMIN_REFRESH_COOKIE : REFRESH_COOKIE);
 
 type Body<S extends z.ZodType> = z.output<S>;
 const body = <S extends z.ZodType>(res: Response, _schema: S): Body<S> => (res.locals.validated as { body: Body<S> }).body;
@@ -35,13 +43,13 @@ export const authRoutes = (service: AuthService, config: Config): Router => {
     ...(config.COOKIE_DOMAIN ? { domain: config.COOKIE_DOMAIN } : {}),
   };
 
-  const sendSession = (res: Response, session: Session, status = 200) => {
-    res.cookie(REFRESH_COOKIE, session.refreshToken, { ...cookieOptions, expires: session.refreshExpiresAt });
+  const sendSession = (req: Request, res: Response, session: Session, status = 200) => {
+    res.cookie(cookieFor(req), session.refreshToken, { ...cookieOptions, expires: session.refreshExpiresAt });
     res.status(status).json({ data: session.tokens });
   };
 
-  const readRefreshCookie = (cookies: unknown): string | undefined => {
-    const value = (cookies as Record<string, unknown> | undefined)?.[REFRESH_COOKIE];
+  const readRefreshCookie = (req: Request): string | undefined => {
+    const value = (req.cookies as Record<string, unknown> | undefined)?.[cookieFor(req)];
     return typeof value === 'string' && value.length > 0 ? value : undefined;
   };
 
@@ -59,11 +67,11 @@ export const authRoutes = (service: AuthService, config: Config): Router => {
     },
   });
 
-  router.post('/register', perIp, validate({ body: registerSchema }), async (_req, res) => {
+  router.post('/register', perIp, validate({ body: registerSchema }), async (req, res) => {
     const { user, session } = await service.register(body(res, registerSchema));
     if (session) {
       // Phone verification is switched off: signed in straight away
-      res.cookie(REFRESH_COOKIE, session.refreshToken, { ...cookieOptions, expires: session.refreshExpiresAt });
+      res.cookie(cookieFor(req), session.refreshToken, { ...cookieOptions, expires: session.refreshExpiresAt });
       res.status(201).json({ data: { user, verification: null, tokens: session.tokens } });
       return;
     }
@@ -75,31 +83,31 @@ export const authRoutes = (service: AuthService, config: Config): Router => {
     res.status(202).json({ data: { message: 'If this number is waiting for verification, a new code has been sent.' } });
   });
 
-  router.post('/verify', perIp, perIdentifier, validate({ body: verifyPhoneSchema }), async (_req, res) => {
+  router.post('/verify', perIp, perIdentifier, validate({ body: verifyPhoneSchema }), async (req, res) => {
     const { phone, code } = body(res, verifyPhoneSchema);
-    sendSession(res, await service.verifyPhone(phone, code));
+    sendSession(req, res, await service.verifyPhone(phone, code));
   });
 
-  router.post('/login', perIp, perIdentifier, validate({ body: loginSchema }), async (_req, res) => {
+  router.post('/login', perIp, perIdentifier, validate({ body: loginSchema }), async (req, res) => {
     const { identifier, password } = body(res, loginSchema);
-    sendSession(res, await service.login(identifier, password));
+    sendSession(req, res, await service.login(identifier, password));
   });
 
   router.post('/refresh', limit({ windowMinutes: 1, limit: 60 }), async (req, res) => {
-    const token = readRefreshCookie(req.cookies);
+    const token = readRefreshCookie(req);
     if (!token) throw new UnauthorizedError('Please sign in again');
     try {
-      sendSession(res, await service.refresh(token));
+      sendSession(req, res, await service.refresh(token));
     } catch (err) {
       // A dead refresh token should not linger in the browser
-      res.clearCookie(REFRESH_COOKIE, cookieOptions);
+      res.clearCookie(cookieFor(req), cookieOptions);
       throw err;
     }
   });
 
   router.post('/logout', async (req, res) => {
-    await service.logout(readRefreshCookie(req.cookies));
-    res.clearCookie(REFRESH_COOKIE, cookieOptions);
+    await service.logout(readRefreshCookie(req));
+    res.clearCookie(cookieFor(req), cookieOptions);
     res.status(204).end();
   });
 
@@ -108,9 +116,9 @@ export const authRoutes = (service: AuthService, config: Config): Router => {
     res.status(202).json({ data: { message: 'If an account matches, we have sent a code or a reset link.' } });
   });
 
-  router.post('/password/reset', perIp, perIdentifier, validate({ body: resetPasswordSchema }), async (_req, res) => {
+  router.post('/password/reset', perIp, perIdentifier, validate({ body: resetPasswordSchema }), async (req, res) => {
     await service.resetPassword(body(res, resetPasswordSchema));
-    res.clearCookie(REFRESH_COOKIE, cookieOptions);
+    res.clearCookie(cookieFor(req), cookieOptions);
     res.json({ data: { message: 'Your password has been changed. Please sign in again.' } });
   });
 

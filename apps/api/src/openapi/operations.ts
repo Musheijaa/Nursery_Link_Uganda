@@ -89,7 +89,7 @@ export const operations: Operation[] = [
     body: loginSchema, success: { status: 200, description: 'Access token; refresh cookie set' },
     errors: { 401: 'Phone number, email or password is not correct', 403: 'phone_not_verified: confirm the phone number first' } },
   { method: 'post', path: '/auth/refresh', tag: 'Auth', summary: 'Rotate the refresh cookie and get a new access token', response: { data: r.authTokensSchema }, access: 'public',
-    description: 'Reads the nl_refresh cookie. Reusing an old refresh token signs the account out everywhere.',
+    description: 'Reads the nl_refresh cookie (nl_admin_refresh when sent with X-Client: admin, the admin console). Reusing an old refresh token signs the account out everywhere.',
     success: { status: 200, description: 'New access token; new refresh cookie' }, errors: { 401: 'No valid refresh cookie: sign in again' } },
   { method: 'post', path: '/auth/logout', tag: 'Auth', summary: 'Sign out this device', access: 'public',
     success: { status: 204, description: 'Refresh token revoked and cookie cleared' } },

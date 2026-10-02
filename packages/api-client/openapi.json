@@ -3,7 +3,7 @@
   "info": {
     "title": "Nursery Link Uganda API",
     "version": "0.1.0",
-    "description": "Marketplace and supply-gap API for Uganda's tree nurseries (pilot: Mukono District).\n\n- Successful responses are `{ data, meta? }`; errors are `{ error: { code, message, details? } }`.\n- Money is whole Uganda shillings (UGX). Coordinates are WGS 84 (EPSG:4326).\n- Sign in with `/auth/login` or `/auth/verify`, then send `Authorization: Bearer <access_token>`. Access tokens last 15 minutes; `/auth/refresh` renews them using the httpOnly `nl_refresh` cookie."
+    "description": "Marketplace and supply-gap API for Uganda's tree nurseries (pilot: Mukono District).\n\n- Successful responses are `{ data, meta? }`; errors are `{ error: { code, message, details? } }`.\n- Money is whole Uganda shillings (UGX). Coordinates are WGS 84 (EPSG:4326).\n- Sign in with `/auth/login` or `/auth/verify`, then send `Authorization: Bearer <access_token>`. Access tokens last 15 minutes; `/auth/refresh` renews them using the httpOnly `nl_refresh` cookie (the admin console sends `X-Client: admin` and uses `nl_admin_refresh`, so the two apps keep separate sessions)."
   },
   "servers": [
     {
@@ -570,7 +570,7 @@
           "Auth"
         ],
         "summary": "Rotate the refresh cookie and get a new access token",
-        "description": "Public. Reads the nl_refresh cookie. Reusing an old refresh token signs the account out everywhere.",
+        "description": "Public. Reads the nl_refresh cookie (nl_admin_refresh when sent with X-Client: admin, the admin console). Reusing an old refresh token signs the account out everywhere.",
         "security": [],
         "parameters": [],
         "responses": {

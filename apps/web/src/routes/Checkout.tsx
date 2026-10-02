@@ -11,7 +11,7 @@ import { StepPay, type Change } from '../features/orders/checkout/StepPay';
 import { StepSeedlings } from '../features/orders/checkout/StepSeedlings';
 import { chosenItems, useOrderDraft } from '../features/orders/draft';
 import { useNurseryProfile } from '../features/nurseries/api';
-import { useUser } from '../lib/session';
+import { signOut, useUser } from '../lib/session';
 
 const STEPS = ['seedlings', 'delivery', 'pay'] as const;
 type Step = (typeof STEPS)[number];
@@ -98,6 +98,21 @@ const Checkout = () => {
     [draft.quantities, nameOf, update, profile]
   );
 
+  // Only buyer accounts can order (the API refuses admins): say so up front, not at the last step
+  if (user?.role === 'admin') {
+    return (
+      <div className="mx-auto flex max-w-2xl flex-col gap-4">
+        <h1 className="text-2xl">{en.checkout.adminTitle}</h1>
+        <p className="rounded-md bg-amber-tint px-4 py-3 text-bark ring-1 ring-amber/30">{en.checkout.adminBody}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => { void signOut().then(() => navigate(`/login?next=${encodeURIComponent(`/nurseries/${id}/order`)}`)); }}>
+            {en.checkout.adminSwitch}
+          </Button>
+          <Button asChild variant="secondary"><Link to={`/nurseries?nursery=${id}`}>{en.checkout.back}</Link></Button>
+        </div>
+      </div>
+    );
+  }
   if (profile.isPending) return <SkeletonList rows={4} />;
   if (!nursery) {
     const offline = isApiError(profile.error) && profile.error.isOffline;
