@@ -21,6 +21,9 @@ test.describe('phase 3: /nurseries', () => {
     // Search a tree, then sort by nearest (asks for the location first, with a reason)
     await page.getByLabel('Search a tree or nursery').fill('Mvule');
     await expect(page.getByRole('heading', { name: /^\d+ nurser/ })).not.toHaveText('15 nurseries');
+    // Close the suggestions, as a person would before moving on to the filters
+    await expect(page.getByRole('listbox', { name: 'Suggestions' })).toBeVisible();
+    await page.getByLabel('Search a tree or nursery').press('Escape');
     await page.getByRole('button', { name: 'Sort by nearest' }).click();
     await expect(page.getByRole('dialog', { name: 'Use your location?' })).toBeVisible();
     await page.screenshot({ path: `${DIR}/location-ask-desktop.png` });
