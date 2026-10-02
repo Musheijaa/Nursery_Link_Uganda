@@ -1,5 +1,5 @@
 import { Button, OfflineBanner, cn } from '@nurserylink/ui';
-import { BookOpen, Gift, LogIn, LogOut, Map as MapIcon, Menu, Newspaper, Package, type LucideIcon } from 'lucide-react';
+import { BookOpen, Gift, LogIn, LogOut, Map as MapIcon, Menu, Newspaper, Package, Sprout, type LucideIcon } from 'lucide-react';
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useMatches } from 'react-router';
 import { en } from '../copy/en';
@@ -19,6 +19,7 @@ const NAV: NavItem[] = [
   { to: '/free-seedlings', label: en.nav.freeSeedlings, icon: Gift },
   { to: '/library', label: en.nav.library, icon: BookOpen },
   { to: '/news', label: en.nav.news, icon: Newspaper },
+  { to: '/services', label: en.nav.services, icon: Sprout },
 ];
 
 const navLink = ({ isActive }: { isActive: boolean }) =>
@@ -79,7 +80,7 @@ const MobileMenu = () => {
       <Button
         variant="ghost"
         size="icon"
-        className="text-paper hover:bg-paper/10 md:hidden"
+        className="text-paper hover:bg-paper/10 lg:hidden"
         aria-label={en.app.menu}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -100,7 +101,7 @@ export const Header = () => (
   <header className="on-dark sticky top-0 z-30 bg-canopy">
     <div className={cn(PAGE_FRAME, 'flex h-16 items-center justify-between gap-4')}>
       <Logo />
-      <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+      <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
         {NAV.map(({ to, label }) => (
           <NavLink key={to} to={to} className={navLink}>
             {label}
@@ -108,7 +109,7 @@ export const Header = () => (
         ))}
       </nav>
       <div className="flex items-center gap-1">
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <AccountLinks />
         </div>
         <MobileMenu />
@@ -145,7 +146,7 @@ export const Footer = () => {
         <p className="mb-1 font-bold text-paper">{en.footer.about}</p>
         <p className="text-mist/85">{en.footer.pilot}</p>
         <Link to="/credits" className="min-h-11 py-2.5 text-mist/90 underline decoration-mist/30 underline-offset-4 hover:text-paper md:min-h-0 md:py-1">{en.footer.credits}</Link>
-        <p className="text-mist/70">{en.footer.mapData}</p>
+        <p className="text-mist/90">{en.footer.mapData}</p>
       </div>
     </div>
   </footer>

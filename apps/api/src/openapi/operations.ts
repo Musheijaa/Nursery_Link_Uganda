@@ -22,6 +22,8 @@ import {
   registerSchema,
   requestVerificationSchema,
   resetPasswordSchema,
+  serviceRequestCreateSchema,
+  serviceRequestUpdateSchema,
   shadowRunCreateSchema,
   speciesCreateSchema,
   speciesUpdateSchema,
@@ -141,6 +143,12 @@ export const operations: Operation[] = [
   { method: 'get', path: '/campaigns/applications/me', tag: 'Campaigns', summary: 'My applications', response: { data: z.array(r.applicationSchema), meta: r.pageMetaSchema }, access: 'buyer',
     query: paginationQuerySchema, success: { status: 200, description: 'Applications' } },
 
+  // ── Service requests ─────────────────────────────────────
+  { method: 'post', path: '/service-requests', tag: 'Services', summary: 'Ask for a tree-planting service', response: { data: r.serviceRequestSchema }, access: 'buyer',
+    body: serviceRequestCreateSchema, success: { status: 201, description: 'Request recorded; the team phones the buyer back' } },
+  { method: 'get', path: '/service-requests/me', tag: 'Services', summary: 'My service requests', response: { data: z.array(r.serviceRequestSchema), meta: r.pageMetaSchema }, access: 'buyer',
+    query: paginationQuerySchema, success: { status: 200, description: 'Requests, newest first' } },
+
   // ── Orders ───────────────────────────────────────────────
   { method: 'post', path: '/orders/quote', tag: 'Orders', summary: 'Price an order (items + delivery by road distance)', response: { data: r.quoteSchema }, access: 'buyer',
     body: quoteRequestSchema, success: { status: 200, description: 'Breakdown and a quote_token valid for 10 minutes' },
@@ -235,6 +243,10 @@ export const operations: Operation[] = [
     description: 'Approval takes the seedlings from the campaign\'s remaining stock in the same transaction.',
     params: id, body: applicationReviewSchema, success: { status: 200, description: 'Reviewed; the applicant is sent an SMS' },
     errors: { 409: 'Not allowed from the current status, or not enough seedlings left' } },
+  { method: 'get', path: '/admin/service-requests', tag: 'Admin: service requests', summary: 'Service requests to phone back', response: { data: z.array(r.adminServiceRequestSchema), meta: r.pageMetaSchema }, access: 'admin',
+    query: admin.serviceRequestsQuery, success: { status: 200, description: 'Requests with the requester\'s name and phone, newest first' } },
+  { method: 'put', path: '/admin/service-requests/:id', tag: 'Admin: service requests', summary: 'Mark a request contacted, scheduled, done or cancelled', response: { data: r.adminServiceRequestSchema }, access: 'admin',
+    params: id, body: serviceRequestUpdateSchema, success: { status: 200, description: 'Updated' }, errors: { 409: 'Not a valid next step from its current status' } },
 
   // ── Admin: media ─────────────────────────────────────────
   { method: 'post', path: '/admin/media', tag: 'Admin: species', summary: 'Upload a photo (stored as 480 and 960 px WebP)', response: { data: r.mediaUploadSchema }, access: 'admin',

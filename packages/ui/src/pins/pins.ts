@@ -6,8 +6,8 @@
 
 export type PinKind = 'normal' | 'gift';
 
-const CANOPY = '#123d2a';
-const FOREST = '#1e5b3c';
+const CANOPY = '#1b6e44';
+const FOREST = '#1d7647';
 const SUN = '#f2b705';
 const PAPER = '#ffffff';
 
@@ -49,7 +49,7 @@ export const clusterPinSvg = (count: number, hasGift: boolean): string => {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${String(size)}" height="${String(size)}" viewBox="0 0 ${String(size)} ${String(size)}" aria-hidden="true">
 <circle cx="${String(size / 2)}" cy="${String(size / 2)}" r="${String(r)}" fill="${FOREST}" stroke="${PAPER}" stroke-width="3"/>
 <circle cx="${String(size / 2)}" cy="${String(size / 2)}" r="${String(r + 1.5)}" fill="none" stroke="${CANOPY}" stroke-width="1"/>
-<text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Atkinson Hyperlegible Next Variable, system-ui, sans-serif" font-weight="700" font-size="${count < 100 ? '16' : '14'}" fill="${PAPER}">${label}</text>${badge}</svg>`;
+<text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Plus Jakarta Sans Variable, system-ui, sans-serif" font-weight="700" font-size="${count < 100 ? '16' : '14'}" fill="${PAPER}">${label}</text>${badge}</svg>`;
 };
 
 /** Accessible name for a pin, e.g. "Mukono Town Nursery, 4.2 km by road, free seedlings available". */

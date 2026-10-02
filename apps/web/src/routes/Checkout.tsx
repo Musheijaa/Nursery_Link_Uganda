@@ -33,7 +33,7 @@ const Progress = ({ step }: { step: Step }) => {
   );
 };
 
-/** Order & deliver: seedlings → delivery → quote and pay (FR-12–FR-14, FR-25). */
+/** Order: seedlings → delivery → quote and pay (FR-12–FR-14, FR-25). */
 const Checkout = () => {
   const { id = '' } = useParams();
   const [params, setParams] = useSearchParams();

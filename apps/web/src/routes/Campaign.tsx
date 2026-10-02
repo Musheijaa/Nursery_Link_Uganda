@@ -55,7 +55,7 @@ const Campaign = () => {
 
       <header className="flex flex-col gap-3 overflow-hidden rounded-lg bg-paper p-5 pt-0 shadow-card ring-1 ring-line">
         <span aria-hidden className="-mx-5 mb-2 h-2 bg-sun" />
-        <span className="self-start rounded-full bg-sun px-2.5 py-0.5 text-xs font-bold text-canopy ring-1 ring-canopy">{en.home.modules.free}</span>
+        <span className="self-start rounded-full bg-sun px-2.5 py-0.5 text-xs font-bold text-bark ring-1 ring-canopy">{en.home.modules.free}</span>
         <h1 className="text-2xl md:text-3xl">{c.title}</h1>
         <p className="flex flex-wrap items-center gap-2 text-bark-muted">
           <FunderBadge type={c.funder_type} />

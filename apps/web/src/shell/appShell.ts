@@ -21,6 +21,7 @@ const NAV = [
   { to: '/free-seedlings', label: en.nav.freeSeedlings },
   { to: '/library', label: en.nav.library },
   { to: '/news', label: en.nav.news },
+  { to: '/services', label: en.nav.services },
 ];
 
 const MARK = `<svg width="34" height="34" viewBox="${BRAND_MARK_VIEWBOX}" aria-hidden="true" class="shrink-0 rounded-[9px] ring-1 ring-paper/15">${BRAND_MARK_BODY}</svg>`;
@@ -31,7 +32,7 @@ const header = () =>
   `<a href="/" class="flex min-h-11 items-center gap-2.5 text-paper no-underline" aria-label="${esc(`${en.app.fullName}, ${en.app.home}`)}">${MARK}` +
   `<span class="flex flex-col leading-none"><span class="font-display text-xl font-semibold tracking-tight">${esc(en.app.name)}</span>` +
   `<span class="text-xs font-bold text-murram-light">${esc(en.footer.country)}</span></span></a>` +
-  '<nav aria-label="Main" class="hidden items-center gap-1 md:flex">' +
+  '<nav aria-label="Main" class="hidden items-center gap-1 lg:flex">' +
   NAV.map(n => `<a href="${n.to}" class="flex min-h-11 items-center gap-2 rounded-sm px-3 font-bold no-underline text-paper/90">${esc(n.label)}</a>`).join('') +
   '</nav><span class="size-11"></span></div></header>';
 

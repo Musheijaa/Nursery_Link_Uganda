@@ -35,6 +35,8 @@ import {
   paymentProviders,
   paymentStatuses,
   roles,
+  serviceRequestStatuses,
+  serviceTypes,
   shadowRunStatuses,
   speciesCategories,
   vehicles,
@@ -82,6 +84,8 @@ export const newsCategoryEnum = pgEnum('news_category', newsCategories);
 export const vehicleEnum = pgEnum('vehicle', vehicles);
 export const otpPurposeEnum = pgEnum('otp_purpose', otpPurposes);
 export const shadowRunStatusEnum = pgEnum('shadow_run_status', shadowRunStatuses);
+export const serviceTypeEnum = pgEnum('service_type', serviceTypes);
+export const serviceRequestStatusEnum = pgEnum('service_request_status', serviceRequestStatuses);
 
 // ── Accounts ───────────────────────────────────────────────
 
@@ -431,6 +435,31 @@ export const campaignApplications = pgTable(
     unique('campaign_applications_campaign_user_key').on(t.campaignId, t.userId),
     check('campaign_applications_quantity_positive', sql`${t.quantityRequested} > 0`),
     index('campaign_applications_campaign_status_idx').on(t.campaignId, t.status),
+  ]
+);
+
+// ── Service requests ───────────────────────────────────────
+
+/** A buyer asks for planting help (/services); the team phones them and records the outcome. */
+export const serviceRequests = pgTable(
+  'service_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+    service: serviceTypeEnum('service').notNull(),
+    location: text('location').notNull(),
+    landAcres: numeric('land_acres', { precision: 9, scale: 2 }),
+    notes: text('notes'),
+    status: serviceRequestStatusEnum('status').notNull().default('new'),
+    adminNote: text('admin_note'),
+    handledBy: uuid('handled_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  t => [
+    check('service_requests_land_acres_positive', sql`${t.landAcres} IS NULL OR ${t.landAcres} > 0`),
+    index('service_requests_status_created_idx').on(t.status, t.createdAt),
+    index('service_requests_user_idx').on(t.userId),
   ]
 );
 

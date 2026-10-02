@@ -16,7 +16,7 @@ export const buttonStyles = cva(
         secondary: 'border border-forest bg-paper text-forest hover:bg-forest-tint',
         ghost: 'text-forest hover:bg-forest-tint',
         danger: 'bg-laterite text-paper hover:bg-[color-mix(in_srgb,var(--color-laterite),black_15%)]',
-        gift: 'border-2 border-canopy bg-sun text-canopy hover:bg-[color-mix(in_srgb,var(--color-sun),black_8%)]',
+        gift: 'border-2 border-canopy bg-sun text-bark hover:bg-[color-mix(in_srgb,var(--color-sun),black_8%)]',
       },
       size: {
         // 44 px minimum tap target on the public site; admin uses the denser "sm"
