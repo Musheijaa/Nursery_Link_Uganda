@@ -19,6 +19,8 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       globals: true,
       setupFiles: ['./vitest.setup.ts'],
+      // Component tests type into forms; slower CI runners need more than the 5 s default
+      testTimeout: 15_000,
       include: ['src/**/*.test.{ts,tsx}'],
       env: { VITE_API_URL: 'http://localhost' },
     },

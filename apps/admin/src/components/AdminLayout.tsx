@@ -60,10 +60,7 @@ const WovenBand = () => (
 const Brand = () => (
   <div className="flex items-center gap-2.5 px-2 py-2 text-paper">
     <BrandMark size={34} className="shrink-0 rounded-[9px] ring-1 ring-paper/15" />
-    <span className="flex flex-col leading-none">
-      <span className="font-display text-lg font-semibold tracking-tight">{en.app.shortName}</span>
-      <span className="text-xs font-bold text-murram-light">{en.app.consoleLabel}</span>
-    </span>
+    <span className="font-display text-lg font-semibold tracking-tight">{en.app.shortName}</span>
   </div>
 );
 

@@ -49,15 +49,9 @@ const LoginPage = () => {
       <div className="flex w-full max-w-sm flex-col gap-5 rounded-lg bg-paper p-7 shadow-lift ring-1 ring-line">
         <div className="flex items-center gap-2.5">
           <BrandMark size={40} className="shrink-0 rounded-[10px]" />
-          <span className="flex flex-col leading-none">
-            <span className="font-display text-xl font-semibold tracking-tight text-canopy">{en.app.shortName}</span>
-            <span className="text-xs font-bold text-murram">{en.app.consoleLabel}</span>
-          </span>
+          <span className="font-display text-xl font-semibold tracking-tight text-canopy">{en.app.shortName}</span>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl">{en.login.title}</h1>
-          <p className="text-sm text-bark-muted">{en.login.tagline}</p>
-        </div>
+        <h1 className="text-2xl">{en.login.title}</h1>
         <form noValidate className="flex flex-col gap-3" onSubmit={e => { setFormError(null); void handleSubmit(v => { mutation.mutate(v); })(e); }}>
           {formError && <p role="alert" className="rounded-sm bg-laterite-tint px-3 py-2 font-bold text-laterite">{formError}</p>}
           <Field label={en.login.identifierLabel} error={errors.identifier && en.login.identifierRequired}>

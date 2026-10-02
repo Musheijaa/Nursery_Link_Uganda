@@ -1,6 +1,6 @@
 /** Every string in the admin console, in one place. */
 export const en = {
-  app: { name: 'Nursery Link admin', shortName: 'Nursery Link', consoleLabel: 'Admin console', skipToContent: 'Skip to main content' },
+  app: { name: 'Nursery Link admin', shortName: 'Nursery Link', skipToContent: 'Skip to main content' },
   nav: {
     dashboard: 'Needs attention',
     insights: 'Insights',
@@ -20,14 +20,13 @@ export const en = {
     sections: { catalogue: 'Catalogue', money: 'Orders and money', analysis: 'Analysis' },
   },
   login: {
-    title: 'Sign in to the admin console',
+    title: 'Sign in',
     identifierLabel: 'Phone number or email',
     passwordLabel: 'Password',
     submit: 'Sign in',
     notAdmin: 'This account is not an administrator. Sign in with an admin account.',
     identifierRequired: 'Enter your phone number or email',
     passwordRequired: 'Enter your password',
-    tagline: 'Run the marketplace: nurseries, stock, orders, payouts and free-seedling campaigns.',
   },
   states: {
     loadFailed: "We couldn't load this page.",

@@ -17,7 +17,7 @@ test.describe('admin redesign screens', () => {
     test.setTimeout(240_000);
     await shoot(page, DIR, 'admin-login', async p => {
       await p.goto(`${ADMIN_URL}/login`);
-      await expect(p.getByRole('heading', { name: 'Sign in to the admin console' })).toBeVisible();
+      await expect(p.getByRole('heading', { name: 'Sign in' })).toBeVisible();
       await settle(p, 500);
     });
 
