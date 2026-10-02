@@ -188,6 +188,9 @@ export const speciesProfileSchema = s({
   nursery_count: z.number().int(),
   min_price: z.number().int().nullable(),
   max_price: z.number().int().nullable(),
+  reference_price: s({ ugx: z.number().int(), pot_inches: z.number().int() })
+    .nullable()
+    .describe('National Forestry Authority price for its smallest pot (price list of January 2024), as a guide'),
 });
 
 export const speciesNurserySchema = s({ ...nurserySummarySchema.shape, stock: inventoryItemSchema });

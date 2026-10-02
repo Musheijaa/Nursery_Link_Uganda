@@ -1689,6 +1689,11 @@ export interface components {
             nursery_count: number;
             min_price: number | null;
             max_price: number | null;
+            /** @description National Forestry Authority price for its smallest pot (price list of January 2024), as a guide */
+            reference_price: {
+                ugx: number;
+                pot_inches: number;
+            } | null;
         };
         SpeciesNursery: {
             /** Format: uuid */

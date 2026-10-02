@@ -72,6 +72,15 @@ const Species = () => {
               <span className="rounded-full bg-mist px-3 py-1 text-sm font-bold text-bark ring-1 ring-line">{en.speciesDrawer.pace[s.growth_pace]}</span>
             </p>
             <p className="text-bark-muted">{en.species.availability(s.nursery_count, from, to)}</p>
+            {s.reference_price && (
+              <p className="flex flex-col gap-0.5 rounded-sm bg-sky-tint px-3 py-2 text-sm text-bark">
+                <span>
+                  <span className="font-bold text-lake">{en.species.priceGuide}: </span>
+                  {en.species.nfaPrice(formatUGX(s.reference_price.ugx), s.reference_price.pot_inches)}
+                </span>
+                <Link to="/news/nfa-seedling-price-guide" className="self-start">{en.species.priceGuideMore}</Link>
+              </p>
+            )}
             {/* FR-20: research turns straight into a supplier search near the user */}
             <Button asChild size="lg" className="self-start">
               <Link to={`/nurseries?species=${encodeURIComponent(s.slug)}&sort=nearest`}>

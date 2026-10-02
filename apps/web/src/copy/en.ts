@@ -396,6 +396,9 @@ export const en = {
     findNearMe: 'Find nurseries near me',
     availability: (n: number, from: string | null, to: string | null) =>
       n === 0 ? 'No nursery lists this tree right now.' : `In stock at ${n === 1 ? '1 nursery' : `${String(n)} nurseries`}${from ? `, ${from === to ? from : `${from}–${to ?? ''}`} each` : ''}.`,
+    priceGuide: 'Price guide',
+    nfaPrice: (price: string, inches: number) => `${price} a seedling at the National Forestry Authority (${String(inches)}-inch pot, January 2024).`,
+    priceGuideMore: 'More on seedling prices',
     growthHeading: 'Growth over the years',
     growthCaption: 'Typical height in good conditions. Growth is slower on poor or dry soils.',
     yearsLabel: (n: number) => (n === 1 ? '1 year' : `${String(n)} years`),

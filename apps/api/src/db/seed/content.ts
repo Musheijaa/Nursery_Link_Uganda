@@ -10,6 +10,36 @@ export const DELIVERY_RATES: { vehicle: Vehicle; maxItems: number; baseFee: numb
 // Sample posts for development; the wording makes clear they are not real advisories.
 export const NEWS_POSTS: { slug: string; title: string; category: NewsCategory; body: string; publishedAt: string }[] = [
   {
+    slug: 'nfa-seedling-price-guide',
+    title: 'What seedlings cost at the National Forestry Authority',
+    category: 'market',
+    publishedAt: '2026-10-02T08:00:00+03:00',
+    body: [
+      'The National Forestry Authority (NFA) publishes the prices of the seedlings it sells. Use them as a guide when you compare nurseries: ' +
+        'prices elsewhere vary with the pot size, grafting, and how far the seedlings travel.',
+      '',
+      '## Price per seedling, smallest pot',
+      '',
+      '- **Eucalyptus** (local *E. grandis*), 3-inch pot: UGX 200',
+      '- **Grevillea** and **Calliandra**, 3-inch pot: UGX 300',
+      '- **Moringa**, 3-inch pot: UGX 400',
+      '- **Mvule, Musizi, Nsambya, Mugavu, African mahogany, Prunus africana, Neem, Teak, Jacaranda, Nandi flame and Caribbean pine**, 3-inch pot: UGX 500',
+      '- **Mukebu**, 3-inch pot: UGX 700',
+      '- **Mutuba**, 5-inch pot: UGX 1,000',
+      '- **Jackfruit**, 5-inch pot: UGX 1,500',
+      '- **Grafted mango**, 5-inch pot: UGX 3,000',
+      '- **Grafted Hass avocado**, 5-inch pot: UGX 5,000',
+      '',
+      '## Bigger trees cost more',
+      '',
+      'Most trees in a large 16-inch pot cost UGX 5,000 at NFA. They are older and establish faster, but cost more to carry and plant.',
+      '',
+      'Each tree page in the Tree library shows its NFA price next to what nurseries on Nursery Link charge.',
+      '',
+      '*Source: National Forestry Authority, price list of assorted tree seedlings, January 2024.*',
+    ].join('\n'),
+  },
+  {
     slug: 'plant-early-in-the-second-rains',
     title: 'Plant early in the second rains',
     category: 'weather',

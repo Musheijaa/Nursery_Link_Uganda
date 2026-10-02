@@ -24,6 +24,7 @@ export type SpeciesDetailRow = Omit<SpeciesRow, 'thumbnail_url' | 'total'> & {
   media: { url: string; caption: string | null }[];
   min_price: number | null;
   max_price: number | null;
+  reference_price: { ugx: number; pot_inches: number } | null;
 };
 
 export interface SpeciesFilters {
@@ -72,7 +73,9 @@ const findSpeciesWhere = async (db: DbOrTx, where: SQL): Promise<SpeciesDetailRo
            COALESCE((SELECT json_agg(json_build_object('url', m.url, 'caption', m.caption) ORDER BY m.sort_order)
                      FROM species_media m WHERE m.species_id = s.id), '[]'::json) AS media,
            ${nurseryCountSql} AS nursery_count,
-           prices.min_price, prices.max_price
+           prices.min_price, prices.max_price,
+           CASE WHEN s.reference_price_ugx IS NULL THEN NULL
+                ELSE json_build_object('ugx', s.reference_price_ugx, 'pot_inches', s.reference_pot_inches) END AS reference_price
     FROM species s
     LEFT JOIN LATERAL (
       SELECT min(i.unit_price)::int AS min_price, max(i.unit_price)::int AS max_price

@@ -16,6 +16,34 @@ export interface SeedSpecies {
   media: { url: string; caption: string }[];
 }
 
+/**
+ * National Forestry Authority prices (price list of assorted tree seedlings, January 2024, docs/),
+ * for the smallest pot NFA lists: [UGX per seedling, pot size in inches]. Bottlebrush isn't listed.
+ * Mango and avocado are NFA's grafted prices (Hass for avocado); eucalyptus is local E. grandis.
+ */
+export const NFA_PRICES: Record<string, [number, number]> = {
+  mvule: [500, 3],
+  musizi: [500, 3],
+  nsambya: [500, 3],
+  mukebu: [700, 3],
+  'african-mahogany': [500, 3],
+  mutuba: [1000, 5],
+  grevillea: [300, 3],
+  calliandra: [300, 3],
+  mugavu: [500, 3],
+  jackfruit: [1500, 5],
+  'hass-avocado': [5000, 5],
+  mango: [3000, 5],
+  'eucalyptus-grandis': [200, 3],
+  'caribbean-pine': [500, 3],
+  teak: [500, 3],
+  jacaranda: [500, 3],
+  'nandi-flame': [500, 3],
+  'prunus-africana': [500, 3],
+  neem: [500, 3],
+  moringa: [400, 3],
+};
+
 const LAKE = 'Lake Victoria Crescent';
 const MOIST = 'Moist forest';
 const WETLAND = 'Wetland margins';

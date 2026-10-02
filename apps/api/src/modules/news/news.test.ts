@@ -26,10 +26,10 @@ type Post = { slug: string; category: string; excerpt?: string; body?: string; p
 describe('news (FR-22)', () => {
   it('lists published posts newest first with excerpts', async () => {
     const body = (await request(app).get('/api/v1/news').expect(200)).body as { data: Post[]; meta: { total: number } };
-    expect(body.data.map(p => p.slug)).toEqual([
-      'plant-early-in-the-second-rains', 'grafted-avocado-seedling-prices-steady', 'shoreline-restoration-seedlings-open',
-    ]);
-    expect(body.meta.total).toBe(3);
+    // Other test files add posts in parallel: check the seeded ones keep their order
+    const seeded = ['nfa-seedling-price-guide', 'plant-early-in-the-second-rains', 'grafted-avocado-seedling-prices-steady', 'shoreline-restoration-seedlings-open'];
+    expect(body.data.map(p => p.slug).filter(slug => seeded.includes(slug))).toEqual(seeded);
+    expect(body.meta.total).toBeGreaterThanOrEqual(4);
     expect(body.data[0]).not.toHaveProperty('body');
     expect(body.data[0]?.excerpt).toMatch(/…$/);
   });

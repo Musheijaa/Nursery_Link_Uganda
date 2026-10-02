@@ -20,7 +20,7 @@ import {
   speciesMedia,
   users,
 } from '../schema.js';
-import { SPECIES } from './species.js';
+import { NFA_PRICES, SPECIES } from './species.js';
 import { NURSERIES, PREVIOUS_SEED_LOCATIONS } from './nurseries.js';
 import { CAMPAIGNS, DELIVERY_RATES, NEWS_POSTS } from './content.js';
 
@@ -150,6 +150,8 @@ const seedSpecies = async (tx: Tx) => {
       canopyNotes: s.canopyNotes,
       rootNotes: s.rootNotes,
       ecologicalZones: s.ecologicalZones,
+      referencePriceUgx: NFA_PRICES[s.slug]?.[0] ?? null,
+      referencePotInches: NFA_PRICES[s.slug]?.[1] ?? null,
     };
     const [row] = await tx
       .insert(species)

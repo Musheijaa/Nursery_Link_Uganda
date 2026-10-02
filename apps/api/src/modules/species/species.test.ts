@@ -54,8 +54,11 @@ describe('GET /species/:slug (FR-19)', () => {
         media: [{ url: '/images/sp-mvule.jpg' }],
         min_price: 1800,
         max_price: 2000,
+        reference_price: { ugx: 500, pot_inches: 3 },
       },
     });
+    // Bottlebrush isn't on the NFA price list
+    expect(((await request(app).get('/api/v1/species/bottlebrush').expect(200)).body as { data: { reference_price: unknown } }).data.reference_price).toBeNull();
   });
 
   it('404s for unknown slugs and 400s for malformed ones', async () => {

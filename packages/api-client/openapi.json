@@ -10656,6 +10656,34 @@
                 "type": "null"
               }
             ]
+          },
+          "reference_price": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "ugx": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "pot_inches": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "ugx",
+                  "pot_inches"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "National Forestry Authority price for its smallest pot (price list of January 2024), as a guide"
           }
         },
         "required": [
@@ -10673,7 +10701,8 @@
           "media",
           "nursery_count",
           "min_price",
-          "max_price"
+          "max_price",
+          "reference_price"
         ],
         "additionalProperties": false
       },

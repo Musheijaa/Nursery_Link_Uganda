@@ -207,6 +207,9 @@ export const species = pgTable(
     canopyNotes: text('canopy_notes'),
     rootNotes: text('root_notes'),
     ecologicalZones: text('ecological_zones').array().notNull().default(sql`'{}'::text[]`),
+    /** National Forestry Authority price for its smallest pot (NFA price list, January 2024): a guide for buyers */
+    referencePriceUgx: integer('reference_price_ugx'),
+    referencePotInches: integer('reference_pot_inches'),
     slug: text('slug').notNull().unique(),
   },
   t => [

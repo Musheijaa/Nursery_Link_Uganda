@@ -486,3 +486,5 @@ Interpretations where the spec was silent or ambiguous. Anything touching the da
   - **`listing_note`:** says who to phone and what to confirm (still operating, current certification, stock, location, consent to be listed). Nothing is public until an admin ticks "Listed on the site" (Data Protection and Privacy Act 2019).
   - **Admin:** "Needs attention" has an "Imported nurseries to verify" panel (inactive with a note). The nurseries table has a "Show" filter (real / to verify / sample) with "To verify" and "Sample" tags. The edit page shows the note.
   - **Stale stock:** "Needs attention" ignores sample nurseries.
+- **NFA reference prices:** `species.reference_price_ugx` and `reference_pot_inches` (migration `0006`) come from the National Forestry Authority price list of January 2024 (`docs/`). Each is the price for the smallest pot NFA lists; mango and avocado are NFA's grafted prices, eucalyptus local *E. grandis*. They are seeded from `NFA_PRICES` in `seed/species.ts`; Bottlebrush isn't listed.
+  - **Tree pages** show it as a "Price guide" next to nursery prices, linking to the seeded market post `nfa-seedling-price-guide`, which cites the source.
