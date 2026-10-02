@@ -16,14 +16,25 @@ const Nurseries = () => {
   const [district, setDistrict] = useParam('district');
   const [subCounty, setSubCounty] = useParam('sub_county');
   const [active, setActive] = useParam('active');
+  const [showParam, setShow] = useParam('show');
+  const show = showParam === 'real' || showParam === 'demo' || showParam === 'to_verify' ? showParam : null;
   const [page, setPage] = usePage();
   const [text, setText] = useState(q ?? '');
-  const list = useAdminNurseries({ q: q ?? '', district, subCounty, active: active === 'true' || active === 'false' ? active : null }, page);
+  const list = useAdminNurseries({ q: q ?? '', district, subCounty, active: active === 'true' || active === 'false' ? active : null, show }, page);
   const districts = useDistricts();
   const subs = useSubCounties(district);
 
   const columns = useMemo<ColumnDef<AdminNursery>[]>(() => [
-    { header: en.nurseries.columns.name, cell: ({ row }) => <Link to={`/nurseries/${row.original.id}`} className="font-bold">{row.original.name}</Link> },
+    {
+      header: en.nurseries.columns.name,
+      cell: ({ row }) => (
+        <span className="flex flex-wrap items-center gap-1.5">
+          <Link to={`/nurseries/${row.original.id}`} className="font-bold">{row.original.name}</Link>
+          {row.original.is_demo && <Badge tone="neutral">{en.nurseries.sample}</Badge>}
+          {!row.original.is_active && row.original.listing_note && <Badge tone="info">{en.nurseries.toVerify}</Badge>}
+        </span>
+      ),
+    },
     { header: en.nurseries.columns.place, cell: ({ row }) => `${row.original.sub_county.name}, ${row.original.district.name}` },
     { header: en.nurseries.columns.type, cell: ({ row }) => en.nurseries.types[row.original.type] },
     { header: en.nurseries.columns.cert, cell: ({ row }) => en.nurseries.certs[row.original.certification_status] },
@@ -64,6 +75,13 @@ const Nurseries = () => {
           <option value="">{en.nurseries.columns.status}: {en.common.all}</option>
           <option value="true">{en.common.active}</option>
           <option value="false">{en.common.inactive}</option>
+        </Select>
+        <label className="sr-only" htmlFor="show">{en.nurseries.show}</label>
+        <Select id="show" className="min-h-9 w-52 text-sm" value={show ?? ''} onChange={e => { setShow(e.target.value || null); }}>
+          <option value="">{en.nurseries.show}: {en.common.all}</option>
+          <option value="real">{en.nurseries.showReal}</option>
+          <option value="to_verify">{en.nurseries.toVerify}</option>
+          <option value="demo">{en.nurseries.showDemo}</option>
         </Select>
       </div>
       <DataTable

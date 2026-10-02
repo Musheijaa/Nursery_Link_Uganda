@@ -481,6 +481,7 @@ export const dashboardSchema = s({
   failed_payouts: section(s({ id: z.uuid(), order_id: z.uuid(), kind: paymentKindSchema, amount: z.number().int(), msisdn: z.string(), short_code: z.string(), attempts: z.number().int(), updated_at: isoDate })),
   stale_stock: section(s({ id: z.uuid(), name: z.string(), stock_updated_at: isoDate.nullable() })),
   pending_applications: section(s({ id: z.uuid(), campaign_id: z.uuid(), campaign_title: z.string(), applicant_name: z.string(), quantity_requested: z.number().int(), created_at: isoDate })),
+  nurseries_to_verify: section(s({ id: z.uuid(), name: z.string(), district_name: z.string(), created_at: isoDate })).describe('Imported nurseries waiting for an admin to check them and switch them on'),
   unparsed_sms: section(s({ id: z.string(), sender: z.string().nullable(), text: z.string().nullable(), reason: z.string().nullable(), created_at: isoDate })),
   thresholds: s({ stuck_escrow_hours: z.number().int(), stale_stock_days: z.number().int(), sms_window_days: z.number().int() }),
 });

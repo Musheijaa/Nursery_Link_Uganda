@@ -1,7 +1,7 @@
 import { unwrap } from '@nurserylink/api-client';
 import { Button, ErrorState, Skeleton, cn, formatDateTime, formatPhone, formatRelative, formatUGX } from '@nurserylink/ui';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, BarChart3, Banknote, CheckCircle2, Clock, Gift, MessageSquareWarning, PackageX, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, BarChart3, Banknote, CheckCircle2, ClipboardCheck, Clock, Gift, MessageSquareWarning, PackageX, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { PageHeader } from '../components/PageHeader';
@@ -49,7 +49,7 @@ const Dashboard = () => {
       {dash.isError && <ErrorState title={en.common.loadFailed} onRetry={() => { void dash.refetch(); }} retryLabel={en.common.retry} />}
       {d && (
         <>
-          {[d.disputed_orders, d.stuck_escrow, d.failed_payouts, d.stale_stock, d.pending_applications, d.unparsed_sms].every(s => s.count === 0) && (
+          {[d.disputed_orders, d.stuck_escrow, d.failed_payouts, d.stale_stock, d.pending_applications, d.unparsed_sms, d.nurseries_to_verify].every(s => s.count === 0) && (
             <p className="mb-4 flex items-center gap-2 rounded-md bg-seedling-tint px-4 py-3 font-bold text-canopy"><CheckCircle2 aria-hidden className="size-5" />{en.dashboard.allClear}</p>
           )}
           <div className="grid gap-4 lg:grid-cols-2">
@@ -90,6 +90,14 @@ const Dashboard = () => {
                 <Row key={n.id} to={`/inventory?nursery=${n.id}`}>
                   <span>{n.name}</span>
                   <span className="whitespace-nowrap text-bark-muted">{n.stock_updated_at ? formatRelative(n.stock_updated_at) : en.dashboard.neverUpdated}</span>
+                </Row>
+              ))}
+            </Panel>
+            <Panel icon={ClipboardCheck} title={en.dashboard.toVerify} help={en.dashboard.toVerifyHelp} count={d.nurseries_to_verify.count} to="/nurseries?show=to_verify">
+              {d.nurseries_to_verify.items.map(n => (
+                <Row key={n.id} to={`/nurseries/${n.id}`}>
+                  <span>{n.name}</span>
+                  <span className="whitespace-nowrap text-bark-muted">{n.district_name}</span>
                 </Row>
               ))}
             </Panel>

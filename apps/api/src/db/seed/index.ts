@@ -273,6 +273,62 @@ const seedContent = async (tx: Tx, districtId: string, speciesIds: Map<string, s
   }
 };
 
+interface CertifiedNursery2018 {
+  ref: string;
+  cluster: string;
+  name: string;
+  district_2018: string;
+  town: string;
+  contact: string;
+  phone: string;
+  stars: number;
+  location: [number, number] | null;
+  located_by: string | null;
+}
+
+/** People listed under their own name are individuals' nurseries; the rest are businesses. */
+const INDIVIDUAL_NURSERIES = new Set(['Waiswa David', 'Tom Orech Omara']);
+
+/**
+ * The 2018 list of certified Eucalyptus clonal nurseries (SPGS III), imported switched OFF with a
+ * note for admins: they are real businesses with 2018 contacts, so nothing is published until an
+ * admin has phoned to confirm (Data Protection and Privacy Act 2019). Created once by reference;
+ * admin edits and activations are never overwritten.
+ */
+const seedCertified2018 = async (tx: Tx) => {
+  const file = new URL('./data/certified-nurseries-2018.json', import.meta.url);
+  const { nurseries: list } = JSON.parse(readFileSync(file, 'utf8')) as { nurseries: CertifiedNursery2018[] };
+  // A business listed at several sites gets the town in its name, so the sites can be told apart
+  const sites = new Map<string, number>();
+  for (const n of list) sites.set(n.name, (sites.get(n.name) ?? 0) + 1);
+
+  for (const n of list) {
+    const phone = toE164UgandaMobile(n.phone);
+    if (!phone) throw new Error(`${n.ref}: not a Ugandan mobile number: ${n.phone}`);
+    const name = (sites.get(n.name) ?? 0) > 1 ? `${n.name} (${n.town.split(/[-,]/)[0]?.trim() ?? n.town})` : n.name;
+    const where = n.location
+      ? `found on OpenStreetMap at ${n.town} (check on the map)`
+      : `not found on OpenStreetMap: placed inside ${n.district_2018} district, so set the real location`;
+    const note =
+      `Imported from the 2018 list of certified Eucalyptus clonal nurseries (SPGS III, ${n.cluster} cluster, ${String(n.stars)}★; ` +
+      `listed in ${n.district_2018} at ${n.town}). Before switching it on, phone ${n.contact} to confirm it still operates, ` +
+      `its current certification, stock and prices, and that they agree to be listed. Location ${where}.`;
+    // The town's point, or a point inside the listed district when the town wasn't found
+    const pt = n.location
+      ? point(n.location)
+      : sql`(SELECT ST_PointOnSurface(geom) FROM admin_boundaries WHERE level = 'district' AND name = ${n.district_2018})`;
+    await tx.execute(sql`
+      WITH p AS (SELECT ${pt} AS pt),
+      sc AS (SELECT b.id, b.parent_id FROM admin_boundaries b, p WHERE b.level = 'sub_county' AND ST_Contains(b.geom, p.pt) LIMIT 1)
+      INSERT INTO nurseries (external_ref, name, type, operator_name, contact_phone, payout_phone, annual_capacity, seed_source,
+                             certification_status, is_active, listing_note, location, district_id, sub_county_id)
+      SELECT ${n.ref}, ${name}, ${INDIVIDUAL_NURSERIES.has(n.name) ? 'private' : 'commercial'}, ${n.contact}, ${phone}, ${phone}, 0,
+             'Eucalyptus hybrid clones (certified clonal nursery, SPGS 2018)', 'pending', false, ${note}, p.pt, sc.parent_id, sc.id
+      FROM p, sc
+      ON CONFLICT (external_ref) DO NOTHING`);
+  }
+};
+
 /** Creates the first administrator. An existing account keeps its password; only name and role are refreshed. */
 const seedAdmin = async (tx: Tx, admin: SeedOptions['admin']) => {
   const phone = toE164UgandaMobile(admin.phone);
@@ -298,6 +354,7 @@ export const seed = async (pool: pg.Pool, options: SeedOptions) => {
     const speciesIds = await seedSpecies(tx);
     const nurseryIds = await seedNurseries(tx, speciesIds);
     await seedContent(tx, districtId, speciesIds, nurseryIds);
+    await seedCertified2018(tx);
     await seedAdmin(tx, options.admin);
   });
 

@@ -2339,6 +2339,18 @@ export interface components {
                     created_at: string;
                 }[];
             };
+            /** @description Imported nurseries waiting for an admin to check them and switch them on */
+            nurseries_to_verify: {
+                count: number;
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    district_name: string;
+                    /** @description ISO 8601 date-time */
+                    created_at: string;
+                }[];
+            };
             unparsed_sms: {
                 count: number;
                 items: {

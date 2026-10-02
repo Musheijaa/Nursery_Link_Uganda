@@ -35,16 +35,20 @@ export const dashboard = async (db: DbOrTx) => {
   const stale = sql`
     SELECT n.id, n.name, s.stock_updated_at FROM nurseries n
     JOIN LATERAL (SELECT max(i.updated_at) AS stock_updated_at FROM inventory i WHERE i.nursery_id = n.id) s ON true
-    WHERE n.is_active AND (s.stock_updated_at IS NULL OR s.stock_updated_at < now() - make_interval(days => ${STALE_STOCK_DAYS}))`;
+    WHERE n.is_active AND NOT n.is_demo AND (s.stock_updated_at IS NULL OR s.stock_updated_at < now() - make_interval(days => ${STALE_STOCK_DAYS}))`;
   const pending = sql`
     SELECT a.id, a.campaign_id, c.title AS campaign_title, u.full_name AS applicant_name, a.quantity_requested, a.created_at
     FROM campaign_applications a JOIN campaigns c ON c.id = a.campaign_id JOIN users u ON u.id = a.user_id
     WHERE a.status = 'pending'`;
+  // Imported from a list (e.g. the 2018 certified nurseries) and not yet checked and switched on
+  const toVerify = sql`
+    SELECT n.id, n.name, d.name AS district_name, n.created_at FROM nurseries n JOIN admin_boundaries d ON d.id = n.district_id
+    WHERE NOT n.is_active AND n.listing_note IS NOT NULL`;
   const sms = sql`
     SELECT id::text, after->>'from' AS sender, after->>'text' AS text, after->>'reason' AS reason, created_at
     FROM audit_log WHERE action = 'sms.unrecognised' AND created_at > now() - make_interval(days => ${SMS_WINDOW_DAYS})`;
 
-  const [disputedN, stuckN, failedN, staleN, pendingN, smsN] = await Promise.all([disputed, stuck, failed, stale, pending, sms].map(q => count(db, q)));
+  const [disputedN, stuckN, failedN, staleN, pendingN, smsN, verifyN] = await Promise.all([disputed, stuck, failed, stale, pending, sms, toVerify].map(q => count(db, q)));
   const top = async <T extends Record<string, unknown>>(q: ReturnType<typeof sql>, order: ReturnType<typeof sql>) =>
     (await db.execute<T>(sql`SELECT * FROM (${q}) q ORDER BY ${order} LIMIT ${TOP}`)).rows;
 
@@ -60,6 +64,7 @@ export const dashboard = async (db: DbOrTx) => {
       count: pendingN,
       items: await top<{ id: string; campaign_id: string; campaign_title: string; applicant_name: string; quantity_requested: number; created_at: Date }>(pending, sql`q.created_at`),
     },
+    nurseries_to_verify: { count: verifyN, items: await top<{ id: string; name: string; district_name: string; created_at: Date }>(toVerify, sql`q.name`) },
     unparsed_sms: { count: smsN, items: await top<{ id: string; sender: string | null; text: string | null; reason: string | null; created_at: Date }>(sms, sql`q.created_at DESC`) },
   };
 };

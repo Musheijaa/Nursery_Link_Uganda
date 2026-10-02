@@ -85,6 +85,13 @@ const NurseryForm = () => {
         }}
       >
         <div className="flex flex-col gap-3">
+          {existing.data?.is_demo && <p role="note" className="rounded-sm bg-amber-tint px-3 py-2 text-sm text-bark">{en.nurseries.sampleNote}</p>}
+          {existing.data?.listing_note && (
+            <div role="note" className="flex flex-col gap-1 rounded-sm bg-sky-tint px-3 py-2 text-sm text-bark">
+              <p className="font-bold text-lake">{en.nurseries.importNoteTitle}</p>
+              <p>{existing.data.listing_note}</p>
+            </div>
+          )}
           {formError && <p role="alert" className="rounded-sm bg-laterite-tint px-3 py-2 font-bold text-laterite">{formError}</p>}
           <Field label={en.nurseries.name} error={errors.name?.message}>{({ id: f, describedBy, invalid }) => <Input id={f} aria-describedby={describedBy} invalid={invalid} {...register('name')} />}</Field>
           <div className="grid grid-cols-2 gap-3">

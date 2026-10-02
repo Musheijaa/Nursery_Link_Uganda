@@ -31,11 +31,11 @@ test.describe('phase 7: admin console', () => {
     await page.screenshot({ path: `${DIR}/menu-mobile.png` });
     await page.getByRole('link', { name: 'Nurseries' }).click();
     await expect(page.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-expanded', 'false');
-    await shot('nurseries', async p => { await p.goto('/nurseries'); await expect(p.getByRole('link', { name: 'Mukono Town Nursery' })).toBeVisible(); });
+    await shot('nurseries', async p => { await p.goto('/nurseries?q=Mukono'); await expect(p.getByRole('link', { name: 'Mukono Town Nursery' })).toBeVisible(); });
 
     // Nursery form: placing the pin on the map sets the location; the API derives the sub-county
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/nurseries');
+    await page.goto('/nurseries?q=Mukono');
     await page.getByRole('link', { name: 'Mukono Town Nursery' }).click();
     await expect(page.getByRole('heading', { name: 'Edit Mukono Town Nursery' })).toBeVisible();
     await expect(page.getByRole('main').getByText(/Placed in .+, Mukono/).first()).toBeVisible();

@@ -13,6 +13,8 @@ export interface NurseryFilters {
   district: string | null;
   subCounty: string | null;
   active: 'true' | 'false' | null;
+  /** 'real' = not sample data; 'demo' = sample nurseries; 'to_verify' = imported, waiting to be checked */
+  show?: 'real' | 'demo' | 'to_verify' | null;
 }
 
 export const useAdminNurseries = (f: NurseryFilters, page: number, limit = PAGE_SIZE) =>
@@ -29,6 +31,8 @@ export const useAdminNurseries = (f: NurseryFilters, page: number, limit = PAGE_
               ...(f.district ? { district_id: f.district } : {}),
               ...(f.subCounty ? { sub_county_id: f.subCounty } : {}),
               ...(f.active ? { is_active: f.active } : {}),
+              ...(f.show === 'real' ? { is_demo: 'false' as const } : f.show === 'demo' ? { is_demo: 'true' as const } : {}),
+              ...(f.show === 'to_verify' ? { to_verify: 'true' as const } : {}),
             },
           },
         })

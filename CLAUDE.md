@@ -480,3 +480,9 @@ Interpretations where the spec was silent or ambiguous. Anything touching the da
   - **The raw spreadsheets and zips** are git-ignored and must never be committed.
 - **Response compression:** the API gzips responses over 1 kB (`compression`). With ~1,500 nurseries the map's GeoJSON goes from 1.06 MB to 100 kB.
 - **Home eyebrow** reads "Tree nurseries across Uganda" now that boundaries and data are nationwide. The footer still says the pilot is Mukono.
+- **2018 certified nurseries** (October 2026, user's choice, "add hidden, pending checks"): the FAO/EU "List of certified Eucalyptus clonal nurseries, 2018 (SPGS III)", 62 rows, is in `apps/api/src/db/seed/data/certified-nurseries-2018.json`. The repo is private; the list holds real 2018 contact names and numbers.
+  - **Locations:** each town was found once on OpenStreetMap (`scripts/certified-2018/geocode.mjs`, 1 req/s). Five were re-searched inside their listed district's box. Wabiruuko wasn't found and goes at a point inside Mityana. The UBOS boundaries decide the district (e.g. Buhimba is now in Kikuube).
+  - **Seed:** creates each one once by `external_ref` (`SPGS-2018-C08`, …): switched off, certification `pending`, no stock. A business with several sites gets the town in its name.
+  - **`listing_note`:** says who to phone and what to confirm (still operating, current certification, stock, location, consent to be listed). Nothing is public until an admin ticks "Listed on the site" (Data Protection and Privacy Act 2019).
+  - **Admin:** "Needs attention" has an "Imported nurseries to verify" panel (inactive with a note). The nurseries table has a "Show" filter (real / to verify / sample) with "To verify" and "Sample" tags. The edit page shows the note.
+  - **Stale stock:** "Needs attention" ignores sample nurseries.

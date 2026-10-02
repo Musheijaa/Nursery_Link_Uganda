@@ -1,0 +1,932 @@
+{
+ "source": "List of certified Eucalyptus clonal nurseries, 2018. Certified under the Sawlog Production Grant Scheme (SPGS) III (FAO / EU). Contacts as published in 2018; unverified.",
+ "nurseries": [
+  {
+   "ref": "SPGS-2018-C01",
+   "cluster": "Central",
+   "name": "Agric-Biotec Nursery Eucalyptus Hybrid Clones",
+   "district_2018": "Wakiso",
+   "town": "Lubowa-Ndejje",
+   "contact": "Faridah Nandago",
+   "phone": "0772 439839",
+   "stars": 3,
+   "location": [
+    32.56556,
+    0.24791
+   ],
+   "located_by": "OpenStreetMap: \"Lubowa-Ndejje, Wakiso, Uganda\" → Resurrection Life Church Lubowa, Silda Road, Zana, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C02",
+   "cluster": "Central",
+   "name": "Agromax Uganda Limited",
+   "district_2018": "Wakiso",
+   "town": "Luteete",
+   "contact": "Roni Ojed",
+   "phone": "0756 622464",
+   "stars": 3,
+   "location": [
+    32.59614,
+    0.4095
+   ],
+   "located_by": "OpenStreetMap: \"Luteete, Wakiso, Uganda\" → Luteete, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C03",
+   "cluster": "Central",
+   "name": "Amazon Clonal Eucalyptus Nursery",
+   "district_2018": "Luwero",
+   "town": "Ndejje-Bombo",
+   "contact": "Victor Kajumba",
+   "phone": "0774 779680",
+   "stars": 4,
+   "location": [
+    32.48899,
+    0.60275
+   ],
+   "located_by": "OpenStreetMap: \"Ndejje, Luwero, Uganda\" → Standard High School Zzana Ndejje Campus, Ndejje - Waluleta Road, Waluleta, Luweero, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C04",
+   "cluster": "Central",
+   "name": "Bakaza Clonal Nursery",
+   "district_2018": "Mpigi",
+   "town": "Katende",
+   "contact": "Agaba John",
+   "phone": "0772 976357",
+   "stars": 3,
+   "location": [
+    32.17342,
+    0.23708
+   ],
+   "located_by": "OpenStreetMap: \"Katende\" (a Katende in Butambala, next to Mpigi; the listed one may differ) → approximate"
+  },
+  {
+   "ref": "SPGS-2018-C05",
+   "cluster": "Central",
+   "name": "Bukuwa Nurseries",
+   "district_2018": "Mpigi",
+   "town": "Mpanga",
+   "contact": "Bukuwa Charles",
+   "phone": "0783 000144",
+   "stars": 3,
+   "location": [
+    32.29205,
+    0.21035
+   ],
+   "located_by": "OpenStreetMap, within Mpigi: \"Mpanga Forest\" → Mpanga Forest, Mpanga Fr, Mpigi, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C06",
+   "cluster": "Central",
+   "name": "Buloba Green Clonal Nursery",
+   "district_2018": "Wakiso",
+   "town": "Buloba",
+   "contact": "David Walabyeki",
+   "phone": "0772 200032",
+   "stars": 3,
+   "location": [
+    32.43872,
+    0.31801
+   ],
+   "located_by": "OpenStreetMap: \"Buloba, Wakiso, Uganda\" → Buloba Bunwa Kapeeka, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C07",
+   "cluster": "Central",
+   "name": "Earth Tree Cover",
+   "district_2018": "Wakiso",
+   "town": "Kitalya",
+   "contact": "Bagambe John",
+   "phone": "0776 123479",
+   "stars": 4,
+   "location": [
+    32.22824,
+    0.43415
+   ],
+   "located_by": "OpenStreetMap: \"Kitalya, Wakiso, Uganda\" → Kitalya, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C08",
+   "cluster": "Central",
+   "name": "Enviro Green Trust Limited",
+   "district_2018": "Mukono",
+   "town": "Seeta",
+   "contact": "Michael Aboneka",
+   "phone": "0776 593286",
+   "stars": 4,
+   "location": [
+    32.71313,
+    0.36674
+   ],
+   "located_by": "OpenStreetMap: \"Seeta, Mukono, Uganda\" → Seeta, Baggala, Mukono, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C09",
+   "cluster": "Central",
+   "name": "Farm Holdings Limited",
+   "district_2018": "Wakiso",
+   "town": "Kakiri",
+   "contact": "Birungi Wycliffe",
+   "phone": "0772 402130",
+   "stars": 3,
+   "location": [
+    32.39076,
+    0.41873
+   ],
+   "located_by": "OpenStreetMap: \"Kakiri, Wakiso, Uganda\" → Kakiri, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C10",
+   "cluster": "Central",
+   "name": "Ferdsult Engineering Services Limited",
+   "district_2018": "Buikwe",
+   "town": "Luwombo",
+   "contact": "Sylvia Ayebare",
+   "phone": "0772 474431",
+   "stars": 4,
+   "location": [
+    32.99678,
+    0.32164
+   ],
+   "located_by": "OpenStreetMap: \"Luwombo, Buikwe, Uganda\" → Luwombo, Buikwe, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C11",
+   "cluster": "Central",
+   "name": "Kasangati Hatcharies Limited",
+   "district_2018": "Mukono",
+   "town": "Kyabakadde-Kalagi",
+   "contact": "Drake Mubiru",
+   "phone": "0782 415843",
+   "stars": 3,
+   "location": [
+    32.72802,
+    0.49888
+   ],
+   "located_by": "OpenStreetMap: \"Kyabakadde, Mukono, Uganda\" → Kyabakadde, Mukono, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C12",
+   "cluster": "Central",
+   "name": "Kisaana Forestry Enterprises Limited",
+   "district_2018": "Mpigi",
+   "town": "Nabusanke",
+   "contact": "Abubaker Mwima",
+   "phone": "0772 671583",
+   "stars": 3,
+   "location": [
+    32.05339,
+    0.01326
+   ],
+   "located_by": "OpenStreetMap: \"Nabusanke, Mpigi, Uganda\" → Nabusanke A, Mpigi, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C13",
+   "cluster": "Central",
+   "name": "Kisaana Forestry Enterprises Limited",
+   "district_2018": "Wakiso",
+   "town": "Kakiri-Nkoowe",
+   "contact": "Abubaker Mwima",
+   "phone": "0772 671583",
+   "stars": 3,
+   "location": [
+    32.39076,
+    0.41873
+   ],
+   "located_by": "OpenStreetMap: \"Kakiri, Wakiso, Uganda\" → Kakiri, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C14",
+   "cluster": "Central",
+   "name": "Maxi World Hidden Treasure",
+   "district_2018": "Mukono",
+   "town": "Dundu-Kalagi",
+   "contact": "Fred Kasule",
+   "phone": "0776 807423",
+   "stars": 3,
+   "location": [
+    32.74954,
+    0.50386
+   ],
+   "located_by": "OpenStreetMap: \"Kalagi, Mukono, Uganda\" → Kalagi, Mukono, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C15",
+   "cluster": "Central",
+   "name": "Nakwero Clonal Nursery",
+   "district_2018": "Wakiso",
+   "town": "Nakwero",
+   "contact": "Drake Wasswa",
+   "phone": "0701 946021",
+   "stars": 3,
+   "location": [
+    32.65,
+    0.46667
+   ],
+   "located_by": "OpenStreetMap: \"Nakwero, Wakiso, Uganda\" → Nakwero, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C16",
+   "cluster": "Central",
+   "name": "NARAEC Research and Consultant Group",
+   "district_2018": "Mpigi",
+   "town": "Nsangi",
+   "contact": "Mnason Tweheyo",
+   "phone": "0772 464155",
+   "stars": 3,
+   "location": [
+    32.42523,
+    0.30367
+   ],
+   "located_by": "OpenStreetMap: \"Nsangi, Mpigi, Uganda\" → Focus Kindergarten and Junior School, Nsangi Muzinda, Plot 218, Kampala–Mpigi Expressway, Kiwumu, Katereke, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C17",
+   "cluster": "Central",
+   "name": "Prime Tree Nurseries",
+   "district_2018": "Mpigi",
+   "town": "Kampiringisa",
+   "contact": "Justine Mundagi",
+   "phone": "0773 801823",
+   "stars": 3,
+   "location": [
+    32.24724,
+    0.18898
+   ],
+   "located_by": "OpenStreetMap: \"Kampiringisa, Mpigi, Uganda\" → Kampiringisa, Mpigi, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C18",
+   "cluster": "Central",
+   "name": "S.A.V.E Hybrid Eucalyptus Clonal Nursery",
+   "district_2018": "Luwero",
+   "town": "Semuto",
+   "contact": "Samuel Lumu",
+   "phone": "0752 333005",
+   "stars": 3,
+   "location": [
+    32.3298,
+    0.62008
+   ],
+   "located_by": "OpenStreetMap: \"Semuto, Uganda\" → Semuto, Nakaseke, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C19",
+   "cluster": "Central",
+   "name": "Schnelle Aufforstung Technologies und Projects Limited",
+   "district_2018": "Wakiso",
+   "town": "Namagoma-Nsangi",
+   "contact": "Epaineto Kamya",
+   "phone": "0704 622809",
+   "stars": 4,
+   "location": [
+    32.46965,
+    0.28656
+   ],
+   "located_by": "OpenStreetMap: \"Namagoma, Wakiso, Uganda\" → Namagoma, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C20",
+   "cluster": "Central",
+   "name": "Schnelle Aufforstung Technologies und Projects Limited",
+   "district_2018": "Wakiso",
+   "town": "Kiti-Matugga",
+   "contact": "Epaineto Kamya",
+   "phone": "0704 622809",
+   "stars": 3,
+   "location": [
+    32.56231,
+    0.45101
+   ],
+   "located_by": "OpenStreetMap: \"Kiti, Wakiso, Uganda\" → Kiti A, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C21",
+   "cluster": "Central",
+   "name": "Schnelle Aufforstung Technologies und Projects Limited",
+   "district_2018": "Nakaseke",
+   "town": "Kapeeka",
+   "contact": "Epaineto Kamya",
+   "phone": "0704 622809",
+   "stars": 3,
+   "location": [
+    32.24696,
+    0.68151
+   ],
+   "located_by": "OpenStreetMap: \"Kapeeka, Nakaseke, Uganda\" → Kapeeka, Nakaseke, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C22",
+   "cluster": "Central",
+   "name": "Uganda Tree Resources Limited",
+   "district_2018": "Wakiso",
+   "town": "Kabanyolo-Gayaza",
+   "contact": "Jefferson Ssenyondo",
+   "phone": "0751 243211",
+   "stars": 4,
+   "location": [
+    32.60837,
+    0.46943
+   ],
+   "located_by": "OpenStreetMap: \"Kabanyolo, Wakiso, Uganda\" → Kabanyolo, Wakiso, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-C23",
+   "cluster": "Central",
+   "name": "Uganda Tree Resources Limited",
+   "district_2018": "Wakiso",
+   "town": "Kabembe-Busiika",
+   "contact": "Jefferson Senyondo",
+   "phone": "0751 243211",
+   "stars": 3,
+   "location": [
+    32.6634,
+    0.58193
+   ],
+   "located_by": "OpenStreetMap: \"Busiika, Wakiso, Uganda\" → busiika adventure park, Zirobwe - Gayaza Road, Gayaza, Luweero, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-A01",
+   "cluster": "Albertine",
+   "name": "Albertine Trees",
+   "district_2018": "Hoima",
+   "town": "Mparo",
+   "contact": "Daniel Kaseregenyi",
+   "phone": "0782 455032",
+   "stars": 4,
+   "location": [
+    31.38333,
+    1.41667
+   ],
+   "located_by": "OpenStreetMap: \"Mparo, Hoima, Uganda\" → Mparo, Hoima City, Western Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-A02",
+   "cluster": "Albertine",
+   "name": "CoreWoods Limited",
+   "district_2018": "Hoima",
+   "town": "Musaijamukulu-Buhimba",
+   "contact": "Fred Babweteera",
+   "phone": "0772 466336",
+   "stars": 4,
+   "location": [
+    31.31354,
+    1.34674
+   ],
+   "located_by": "OpenStreetMap: \"Buhimba, Hoima, Uganda\" → Buhimba Vocational Training Centre, Fort Portal Road, Buhimba Central, Kikuube, Western Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-A03",
+   "cluster": "Albertine",
+   "name": "Global Woods AG. Nursery",
+   "district_2018": "Kyankwanzi",
+   "town": "Kikonda",
+   "contact": "Moses Otim",
+   "phone": "0772 000916",
+   "stars": 5,
+   "location": [
+    31.48127,
+    1.27682
+   ],
+   "located_by": "OpenStreetMap: \"Kikonda, Kyankwanzi, Uganda\" → Kikonda, Kyankwanzi, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-A04",
+   "cluster": "Albertine",
+   "name": "Tree Growers Nursery",
+   "district_2018": "Kiboga",
+   "town": "Kiboga",
+   "contact": "David Balumya",
+   "phone": "0752 842934",
+   "stars": 4,
+   "location": [
+    31.76683,
+    0.91557
+   ],
+   "located_by": "OpenStreetMap: \"Kiboga, Kiboga, Uganda\" → Kiboga, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-A05",
+   "cluster": "Albertine",
+   "name": "WND Forestry Services Limited",
+   "district_2018": "Hoima",
+   "town": "Bujawe",
+   "contact": "Wilfred Abitegeka",
+   "phone": "0782 572408",
+   "stars": 3,
+   "location": [
+    31.22934,
+    1.50122
+   ],
+   "located_by": "OpenStreetMap: \"Bujawe, Hoima, Uganda\" → Bujawe, Hoima, Western Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-E01",
+   "cluster": "Eastern",
+   "name": "Bukuwa Nurseries",
+   "district_2018": "Busia",
+   "town": "Ndaiga",
+   "contact": "Moses Murrami",
+   "phone": "0772 595545",
+   "stars": 4,
+   "location": [
+    34.04313,
+    0.57578
+   ],
+   "located_by": "OpenStreetMap: \"Ndaiga, Busia, Uganda\" → Ndaiga, Busia, Eastern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-E02",
+   "cluster": "Eastern",
+   "name": "Bukuwa Nurseries",
+   "district_2018": "Mbale",
+   "town": "Mbale Central Forest Reserve",
+   "contact": "Moses Murrami",
+   "phone": "0772 595545",
+   "stars": 4,
+   "location": [
+    34.1791,
+    1.06285
+   ],
+   "located_by": "OpenStreetMap: \"Mbale Central Forest Reserve, Mbale, Uganda\" → Mbale Central Forest Reserve, Primary, Mbale City, Bugisa sub-region, Eastern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-E03",
+   "cluster": "Eastern",
+   "name": "Busoga Forestry Company",
+   "district_2018": "Mayuge",
+   "town": "Bukaleba Central Forest Reserve",
+   "contact": "Teddy Nsamba",
+   "phone": "0772 844197",
+   "stars": 3,
+   "location": [
+    33.38333,
+    0.41667
+   ],
+   "located_by": "OpenStreetMap, within Mayuge: \"Bukaleba\" → Bukaleba, Mayuge, Eastern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-E04",
+   "cluster": "Eastern",
+   "name": "Buyindi Farmers Eye",
+   "district_2018": "Kamuli",
+   "town": "Bulongo zone",
+   "contact": "Mwidhukizi Ruth",
+   "phone": "0755 757626",
+   "stars": 3,
+   "location": [
+    33.09468,
+    0.97233
+   ],
+   "located_by": "OpenStreetMap, within Kamuli: \"Bulongo\" → Bulongo, Kamuli, Eastern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-E05",
+   "cluster": "Eastern",
+   "name": "Dolo's Clonal and Seedling Nursery",
+   "district_2018": "Tororo",
+   "town": "Kwapa",
+   "contact": "Christine Olaunah",
+   "phone": "0772 496039",
+   "stars": 3,
+   "location": [
+    34.23789,
+    0.75056
+   ],
+   "located_by": "OpenStreetMap: \"Kwapa, Tororo, Uganda\" → Kwapa, Tororo, Eastern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-E06",
+   "cluster": "Eastern",
+   "name": "Enviro Green Trust Limited",
+   "district_2018": "Kayunga",
+   "town": "Kangulumira",
+   "contact": "Michael Aboneka",
+   "phone": "0776 593286",
+   "stars": 4,
+   "location": [
+    33.02944,
+    0.58167
+   ],
+   "located_by": "OpenStreetMap: \"Kangulumira, Kayunga, Uganda\" → Kangulumira, Kayunga, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-E07",
+   "cluster": "Eastern",
+   "name": "Nileply Woods Uganda Limited",
+   "district_2018": "Jinja",
+   "town": "Kilembe",
+   "contact": "Ramesh Kumar",
+   "phone": "0772 740043",
+   "stars": 4,
+   "location": [
+    33.23538,
+    0.44071
+   ],
+   "located_by": "OpenStreetMap: \"Kilembe, Jinja, Uganda\" → Kilembe, Jinja City, Eastern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-E08",
+   "cluster": "Eastern",
+   "name": "Osio & Sons Clonal Nursery",
+   "district_2018": "Mbale",
+   "town": "Masanda",
+   "contact": "Charles Ekoom",
+   "phone": "0757 162071",
+   "stars": 3,
+   "location": [
+    34.14762,
+    1.06432
+   ],
+   "located_by": "OpenStreetMap: \"Masanda, Mbale, Uganda\" → Masanda, Mbale City, Bugisa sub-region, Eastern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-E09",
+   "cluster": "Eastern",
+   "name": "Uganda Tree Resources Limited",
+   "district_2018": "Mbale",
+   "town": "Mbale Central Forest Reserve",
+   "contact": "Tonny Ocen",
+   "phone": "0774 286199",
+   "stars": 3,
+   "location": [
+    34.1791,
+    1.06285
+   ],
+   "located_by": "OpenStreetMap: \"Mbale Central Forest Reserve, Mbale, Uganda\" → Mbale Central Forest Reserve, Primary, Mbale City, Bugisa sub-region, Eastern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-E10",
+   "cluster": "Eastern",
+   "name": "Waiswa David",
+   "district_2018": "Mayuge",
+   "town": "Bufulubi",
+   "contact": "Waiswa David",
+   "phone": "0772 909301",
+   "stars": 3,
+   "location": [
+    33.43073,
+    0.49629
+   ],
+   "located_by": "OpenStreetMap: \"Bufulubi, Mayuge, Uganda\" → Bufulubi Nursery School, Jinja - Mbale - Tororo Road, Wandago, Mayuge, Eastern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-N01",
+   "cluster": "Northern",
+   "name": "Agro Technologies Consult Uganda Limited",
+   "district_2018": "Lira",
+   "town": "Amach",
+   "contact": "Samuel Oyuku",
+   "phone": "0782 759359",
+   "stars": 3,
+   "location": [
+    33.01611,
+    2.09833
+   ],
+   "located_by": "OpenStreetMap: \"Amach, Lira, Uganda\" → Amach, Lira, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-N02",
+   "cluster": "Northern",
+   "name": "Arbeti Macht Frei Company Limited",
+   "district_2018": "Lira",
+   "town": "Ojwina",
+   "contact": "Opio Peter",
+   "phone": "0776 572157",
+   "stars": 3,
+   "location": [
+    32.88344,
+    2.24482
+   ],
+   "located_by": "OpenStreetMap: \"Ojwina, Lira, Uganda\" → Ojwina, Lira Municipality, Lira, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-N03",
+   "cluster": "Northern",
+   "name": "Clonal Solutions Uganda Limited",
+   "district_2018": "Oyam",
+   "town": "Alao B-Obangageo",
+   "contact": "Andrew Ocen",
+   "phone": "0752 466082",
+   "stars": 4,
+   "location": [
+    32.53469,
+    2.34343
+   ],
+   "located_by": "OpenStreetMap: \"Alao B, Oyam, Uganda\" → Alao B, Oyam, Northern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-N04",
+   "cluster": "Northern",
+   "name": "Garden of Africa",
+   "district_2018": "Nwoya",
+   "town": "Agung",
+   "contact": "Nicholas Callund",
+   "phone": "0752 788881",
+   "stars": 3,
+   "location": [
+    31.91306,
+    2.49343
+   ],
+   "located_by": "OpenStreetMap: \"Agung, Nwoya, Uganda\" → Agung, Nwoya, Northern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-N05",
+   "cluster": "Northern",
+   "name": "Jollian & Sons Quality Tree Nursery Limited",
+   "district_2018": "Apac",
+   "town": "Apac",
+   "contact": "Hope Ogen",
+   "phone": "0782 570378",
+   "stars": 3,
+   "location": [
+    32.53422,
+    1.98474
+   ],
+   "located_by": "OpenStreetMap: \"Apac, Apac, Uganda\" → Apac, Northern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-N06",
+   "cluster": "Northern",
+   "name": "Nile Forestry Agro Tree Seedlings Nursery",
+   "district_2018": "Lira",
+   "town": "Anai",
+   "contact": "Dorcas Angole",
+   "phone": "0772 706709",
+   "stars": 3,
+   "location": [
+    32.87521,
+    2.23023
+   ],
+   "located_by": "OpenStreetMap: \"Anai, Lira, Uganda\" → Anai-ober, Lira City, Lira, Northern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-N07",
+   "cluster": "Northern",
+   "name": "Tom Orech Omara",
+   "district_2018": "Alebtong",
+   "town": "Alyec",
+   "contact": "Tom Orech Omara",
+   "phone": "0782 530003",
+   "stars": 3,
+   "location": [
+    33.24684,
+    2.2688
+   ],
+   "located_by": "OpenStreetMap: \"Alyec, Alebtong, Uganda\" → Alyec, Alebtong, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-N08",
+   "cluster": "Northern",
+   "name": "Toughline Enterprises Limited",
+   "district_2018": "Lira",
+   "town": "Boke-Adidikgweno",
+   "contact": "Doi Fred",
+   "phone": "0772 651587",
+   "stars": 3,
+   "location": [
+    32.87966,
+    2.20642
+   ],
+   "located_by": "OpenStreetMap: \"Boke-Adidikgweno, Lira, Uganda\" → Women Guild St. Benard Boke B Chapel, Apac Road, Angwetangwet, Adekokwok, Lira City, Lira Municipality, Lira, Northern Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-N09",
+   "cluster": "Northern",
+   "name": "Tripoli Engineering Enterprises Limited",
+   "district_2018": "Lira",
+   "town": "Ngetta",
+   "contact": "Samuel Ebong",
+   "phone": "0773 401512",
+   "stars": 3,
+   "location": [
+    32.92111,
+    2.27521
+   ],
+   "located_by": "OpenStreetMap: \"Ngetta, Lira, Uganda\" → Ngetta Ginnery, Lira City, Lira, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-W01",
+   "cluster": "Western",
+   "name": "Annema Eucalyptus Nursery",
+   "district_2018": "Mityana",
+   "town": "Kireku",
+   "contact": "Annet Mubiru",
+   "phone": "0772 442762",
+   "stars": 4,
+   "location": [
+    32.03203,
+    0.44069
+   ],
+   "located_by": "OpenStreetMap: \"Kireku, Mityana, Uganda\" → Kireku (kireku), Mityana, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-W02",
+   "cluster": "Western",
+   "name": "Bakaza Clonal Nursery",
+   "district_2018": "Mubende",
+   "town": "Kagoma-Kyenda",
+   "contact": "John Agaba",
+   "phone": "0772 976357",
+   "stars": 3,
+   "location": [
+    31.4913,
+    0.5121
+   ],
+   "located_by": "OpenStreetMap: \"Kagoma, Mubende, Uganda\" → Kagoma, Mubende, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-W03",
+   "cluster": "Western",
+   "name": "Gatsby Club Tree Nurseries",
+   "district_2018": "Mubende",
+   "town": "Kaweeri",
+   "contact": "Samuel Lumu",
+   "phone": "0752 333005",
+   "stars": 4,
+   "location": [
+    31.39273,
+    0.58328
+   ],
+   "located_by": "OpenStreetMap: \"Kaweeri, Mubende, Uganda\" → KAWEERI, Fort Portal - Kampala Road, Kalonga B(kalonga), Mubende, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-W04",
+   "cluster": "Western",
+   "name": "Kisaana Forestry Enterprises Limited",
+   "district_2018": "Mityana",
+   "town": "Kisaana",
+   "contact": "Abubaker Mwima",
+   "phone": "0772 671583",
+   "stars": 3,
+   "location": [
+    32.19515,
+    0.40444
+   ],
+   "located_by": "OpenStreetMap: \"Kisaana, Mityana, Uganda\" → Kisaana A, Mityana, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-W05",
+   "cluster": "Western",
+   "name": "Rwenzori Tree Clonal Nursery",
+   "district_2018": "Kabarole",
+   "town": "Kibimba-Fort Portal",
+   "contact": "Dorcus Kanyana",
+   "phone": "0784 541013",
+   "stars": 4,
+   "location": [
+    30.26653,
+    0.65875
+   ],
+   "located_by": "OpenStreetMap: \"Fort Portal, Kabarole, Uganda\" → Uganda Pentecostal University, Rwengoma Path, Rwengoma A Iii, Fort Portal City, Western Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-W06",
+   "cluster": "Western",
+   "name": "Science Corp Technical Services",
+   "district_2018": "Mubende",
+   "town": "Kasaana",
+   "contact": "John Ssekimpi Ssozi",
+   "phone": "0772 307011",
+   "stars": 3,
+   "location": [
+    31.26656,
+    0.45913
+   ],
+   "located_by": "OpenStreetMap: \"Kasaana, Mubende, Uganda\" → Kasaana, Mubende, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-W07",
+   "cluster": "Western",
+   "name": "Uganda Timber Growers Association",
+   "district_2018": "Mityana",
+   "town": "Kiwawu",
+   "contact": "Dennis Kavuma",
+   "phone": "0773 135240",
+   "stars": 3,
+   "location": [
+    32.23333,
+    0.4
+   ],
+   "located_by": "OpenStreetMap: \"Kiwawu, Mityana, Uganda\" → Kiwawu, Mityana, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-W08",
+   "cluster": "Western",
+   "name": "Uganda Tree Resources Limited",
+   "district_2018": "Kabarole",
+   "town": "Kyembogo, Fort Portal",
+   "contact": "Maurice Munyambazi",
+   "phone": "0754 944378",
+   "stars": 4,
+   "location": [
+    30.33457,
+    0.69486
+   ],
+   "located_by": "OpenStreetMap: \"Kyembogo, Kabarole, Uganda\" → Kyembogo, Kabarole, Western Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-W09",
+   "cluster": "Western",
+   "name": "Wabiruuko Eucalyptus Nursery",
+   "district_2018": "Mityana",
+   "town": "Wabiruuko",
+   "contact": "Erusama Bukenya",
+   "phone": "0775 636059",
+   "stars": 3,
+   "location": null,
+   "located_by": null
+  },
+  {
+   "ref": "SPGS-2018-SW01",
+   "cluster": "South Western",
+   "name": "Agric-Biotec Nursery Eucalyptus Hybrid Clones",
+   "district_2018": "Lwengo",
+   "town": "Mbirizi-Bwami",
+   "contact": "Faridah Nandago",
+   "phone": "0772 439839",
+   "stars": 3,
+   "location": [
+    31.44665,
+    -0.38632
+   ],
+   "located_by": "OpenStreetMap: \"Mbirizi, Lwengo, Uganda\" → Mbirizi, Lwengo Town Council, Lwengo, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-SW02",
+   "cluster": "South Western",
+   "name": "GreenWood Clonal Nursery",
+   "district_2018": "Masaka",
+   "town": "Kyanywa-Nakiyaga",
+   "contact": "Samuel Nfuga",
+   "phone": "0703 468014",
+   "stars": 3,
+   "location": [
+    31.79264,
+    -0.41303
+   ],
+   "located_by": "OpenStreetMap: \"Nakiyaga, Masaka, Uganda\" → Nakiyaga, Masaka, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-SW03",
+   "cluster": "South Western",
+   "name": "JP2 Kirumba Clonal Nursery",
+   "district_2018": "Masaka",
+   "town": "Kirumba",
+   "contact": "Gerald Kasozi",
+   "phone": "0772 711443",
+   "stars": 3,
+   "location": [
+    31.74857,
+    -0.31709
+   ],
+   "located_by": "OpenStreetMap: \"Kirumba, Masaka, Uganda\" → Kirumba, Masaka City, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-SW04",
+   "cluster": "South Western",
+   "name": "Kagunga Clonal Nursery",
+   "district_2018": "Rukungiri",
+   "town": "Kagunga",
+   "contact": "Charles Muhoozi",
+   "phone": "0772 711443",
+   "stars": 4,
+   "location": [
+    29.96194,
+    -0.77944
+   ],
+   "located_by": "OpenStreetMap: \"Kagunga, Rukungiri, Uganda\" → Kagunga, Rukungiri, Western Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-SW05",
+   "cluster": "South Western",
+   "name": "Kyazanga Hybrid Eucalyptus clones",
+   "district_2018": "Lwengo",
+   "town": "Kyazanga",
+   "contact": "Bernard Atukwase",
+   "phone": "0758 656227",
+   "stars": 3,
+   "location": [
+    31.32223,
+    -0.38677
+   ],
+   "located_by": "OpenStreetMap: \"Kyazanga, Lwengo, Uganda\" → Kyazanga, Lwengo, Central Region, Uganda"
+  },
+  {
+   "ref": "SPGS-2018-SW06",
+   "cluster": "South Western",
+   "name": "Mbaguta Lyptus Products",
+   "district_2018": "Mbarara",
+   "town": "Ruharo",
+   "contact": "Nicholas Ahimbisibwe",
+   "phone": "0701 469405",
+   "stars": 3,
+   "location": [
+    30.63104,
+    -0.61207
+   ],
+   "located_by": "OpenStreetMap: \"Ruharo, Mbarara, Uganda\" → RUHARO MISSION HOSPITAL, Church Road, Byafula zone, Nyamitanga, Mbarara City, Western Region, Uganda"
+  }
+ ]
+}

@@ -39,7 +39,8 @@ describe('migrations and seed', () => {
       districts: 135,
       sub_counties: 1520,
       species: SPECIES.length,
-      nurseries: NURSERIES.length,
+      // The sample nurseries plus the 62 from the 2018 certified list (switched off until checked)
+      nurseries: NURSERIES.length + 62,
       inventory_rows: NURSERIES.reduce((sum, n) => sum + n.inventory.length, 0),
       delivery_rates: 2,
       campaigns: 2,
@@ -58,7 +59,8 @@ describe('migrations and seed', () => {
   it('covers every species category, and every nursery has stock', async () => {
     const { rows } = await pool.query<{ category: string }>('SELECT DISTINCT category FROM species');
     expect(rows.map(r => r.category).sort()).toEqual([...speciesCategories].sort());
-    const empty = await one<{ n: number }>('SELECT count(*)::int AS n FROM nurseries WHERE NOT EXISTS (SELECT 1 FROM inventory WHERE nursery_id = nurseries.id)');
+    // Imported nurseries start without stock: an admin adds it when switching them on
+    const empty = await one<{ n: number }>('SELECT count(*)::int AS n FROM nurseries WHERE external_ref IS NULL AND NOT EXISTS (SELECT 1 FROM inventory WHERE nursery_id = nurseries.id)');
     expect(empty.n).toBe(0);
   });
 
@@ -116,6 +118,17 @@ describe('geometry', () => {
 
     const invalid = await one<{ n: number }>(`SELECT count(*)::int AS n FROM admin_boundaries WHERE NOT ST_IsValid(geom) OR ST_IsEmpty(geom)`);
     expect(invalid.n).toBe(0);
+  });
+});
+
+describe('2018 certified nursery list', () => {
+  it('imports all 62 switched off, each with a note and a location inside its sub-county', async () => {
+    const row = await one<{ total: number; active: number; noted: number; demo: number }>(`
+      SELECT count(*)::int AS total, count(*) FILTER (WHERE is_active)::int AS active,
+             count(*) FILTER (WHERE listing_note LIKE 'Imported from the 2018 list%')::int AS noted,
+             count(*) FILTER (WHERE is_demo)::int AS demo
+      FROM nurseries WHERE external_ref LIKE 'SPGS-2018-%'`);
+    expect(row).toEqual({ total: 62, active: 0, noted: 62, demo: 0 });
   });
 });
 

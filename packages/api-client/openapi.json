@@ -13629,6 +13629,52 @@
             ],
             "additionalProperties": false
           },
+          "nurseries_to_verify": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "district_name": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "description": "ISO 8601 date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "district_name",
+                    "created_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "count",
+              "items"
+            ],
+            "additionalProperties": false,
+            "description": "Imported nurseries waiting for an admin to check them and switch them on"
+          },
           "unparsed_sms": {
             "type": "object",
             "properties": {
@@ -13718,6 +13764,7 @@
           "failed_payouts",
           "stale_stock",
           "pending_applications",
+          "nurseries_to_verify",
           "unparsed_sms",
           "thresholds"
         ],
