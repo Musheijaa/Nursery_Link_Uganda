@@ -1,5 +1,7 @@
 import { en } from '../copy/en.ts';
 import { IMAGES } from '../data/images.ts';
+// The file itself, not the package entry: this runs in Node at build time, without React
+import { BRAND_MARK_BODY, BRAND_MARK_VIEWBOX } from '../../../../packages/ui/src/icons/brandMarkSvg.ts';
 
 /**
  * The app shell: plain HTML for what a visitor sees first, painted from index.html before the app's
@@ -20,13 +22,7 @@ const NAV = [
   { to: '/news', label: en.nav.news },
 ];
 
-const MARK =
-  '<svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true" class="shrink-0 rounded-[9px] ring-1 ring-paper/15">' +
-  '<rect width="32" height="32" rx="8" fill="#123d2a"/><circle cx="24.5" cy="8" r="3" fill="#f2b705"/>' +
-  '<path d="M4 27.5c2.6-4.4 7.2-6.8 12-6.8s9.4 2.4 12 6.8Z" fill="#b8501f"/>' +
-  '<path d="M16 21.5v-7.5" stroke="#faf6ee" stroke-width="2" stroke-linecap="round"/>' +
-  '<path d="M16 14.5c.4-4.6 3.4-7.6 8-8.1-.3 4.8-3.4 7.9-8 8.1Z" fill="#faf6ee"/>' +
-  '<path d="M16 16.8c-.3-3.7-2.8-6.2-6.6-6.6.2 3.9 2.8 6.4 6.6 6.6Z" fill="#7cc48a"/></svg>';
+const MARK = `<svg width="34" height="34" viewBox="${BRAND_MARK_VIEWBOX}" aria-hidden="true" class="shrink-0 rounded-[9px] ring-1 ring-paper/15">${BRAND_MARK_BODY}</svg>`;
 
 /** The header bar (every page). Links work before the app loads; the account area is left empty. */
 const header = () =>

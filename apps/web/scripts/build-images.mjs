@@ -30,9 +30,9 @@ const svg = await readFile(join(root, 'favicon.svg'));
 for (const size of [192, 512]) {
   await sharp(svg, { density: 512 }).resize(size, size).png().toFile(join(icons, `icon-${size}.png`));
 }
-// Maskable: the mark inside the safe zone on a full-bleed Forest background
+// Maskable: the mark inside the safe zone on a full-bleed cream background (the mark's own tile)
 const inner = await sharp(svg, { density: 512 }).resize(360, 360).png().toBuffer();
-await sharp({ create: { width: 512, height: 512, channels: 4, background: '#1e5b3c' } })
+await sharp({ create: { width: 512, height: 512, channels: 4, background: '#faf6ee' } })
   .composite([{ input: inner, gravity: 'center' }])
   .png()
   .toFile(join(icons, 'icon-maskable-512.png'));

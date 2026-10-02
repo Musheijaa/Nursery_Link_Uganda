@@ -14,6 +14,7 @@ export { QuantityStepper, type QuantityStepperProps } from './components/Quantit
 export { StockMeter } from './components/Meter';
 export * from './icons/categories';
 export * from './icons/BrandMark';
+export * from './icons/brandMarkSvg';
 export * from './pins/pins';
 export { NurseryPin, ClusterPin } from './pins/Pin';
 export { safeNext, withNext } from './lib/next';

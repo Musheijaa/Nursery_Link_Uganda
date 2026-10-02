@@ -25,7 +25,7 @@ export const en = {
     account: 'Account',
   },
   footer: {
-    tagline: 'Connecting tree planters with nurseries across Uganda.',
+    tagline: 'Your trusted link to quality seedlings, connecting tree planters with nurseries across Uganda.',
     explore: 'Explore',
     about: 'About',
     country: 'Uganda',
