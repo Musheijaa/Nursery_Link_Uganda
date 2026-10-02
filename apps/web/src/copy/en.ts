@@ -130,6 +130,13 @@ export const en = {
         source: 'https://data.humdata.org/dataset/cod-ab-uga',
       },
       {
+        name: 'MTN and Airtel logos',
+        by: 'Trademarks of MTN Group and Airtel Africa, shown to name the mobile money services we take. Files from Wikimedia Commons',
+        license: 'Public domain (text logos)',
+        licenseUrl: 'https://commons.wikimedia.org/wiki/File:MTN_2022_logo.svg',
+        source: 'https://commons.wikimedia.org/wiki/File:Airtel_logo.svg',
+      },
+      {
         name: 'Map tiles and place search',
         by: 'OpenStreetMap contributors',
         license: 'ODbL',
@@ -181,6 +188,7 @@ export const en = {
     trialHeading: 'No payment needed',
     trialNote: 'Payments are switched off while we test the service. Your order is confirmed straight away and nothing is charged.',
     placeOrder: (total: string) => `Place order · ${total}`,
+    methodHint: 'Approve the payment on your phone',
     methodUnavailable: 'Not available yet',
     chooseMethod: 'Choose how you will pay.',
     payerLabel: 'Paying phone number',

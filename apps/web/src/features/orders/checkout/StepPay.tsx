@@ -1,10 +1,9 @@
 import { isApiError } from '@nurserylink/api-client';
 import { mobileMoneyNetwork, toE164UgandaMobile, type MobileMoneyMethod } from '@nurserylink/shared';
 import { Button, ErrorState, Field, Input, Skeleton, cn, formatCount, formatDistance, formatUGX } from '@nurserylink/ui';
-import { Smartphone } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { en } from '../../../copy/en';
-import { MobileMoneyBadges } from '../../../components/MobileMoneyBadges';
+import { MobileMoneyBadges, MobileMoneyMark } from '../../../components/MobileMoneyBadges';
 import { useCountdown } from '../../../lib/useCountdown';
 import { useFeatures, usePaymentMethods, useQuote, type Quote, type QuoteInput } from '../api';
 import { chosenItems, type OrderDraft } from '../draft';
@@ -54,12 +53,12 @@ const QuoteBreakdown = ({ quote, onExpired }: { quote: Quote; onExpired: () => v
 };
 
 const MethodTile = ({ method, selected, available, onSelect }: { method: MobileMoneyMethod; selected: boolean; available: boolean; onSelect: () => void }) => (
-  <label className={cn('flex min-h-14 items-center gap-3 rounded-lg bg-paper shadow-card px-4 py-3 ring-1', !available ? 'cursor-not-allowed opacity-60 ring-line' : selected ? 'cursor-pointer ring-2 ring-forest' : 'cursor-pointer ring-line hover:ring-forest')}>
+  <label className={cn('flex min-h-24 items-center gap-4 rounded-lg bg-paper px-4 py-4 shadow-card ring-1', !available ? 'cursor-not-allowed opacity-60 ring-line' : selected ? 'cursor-pointer ring-2 ring-forest' : 'cursor-pointer ring-line hover:ring-forest')}>
     <input type="radio" name="method" checked={selected} disabled={!available} onChange={onSelect} className="size-5 shrink-0 accent-forest" />
-    <Smartphone aria-hidden className="size-6 shrink-0 text-forest" />
-    <span className="flex flex-col">
-      <span className="font-bold text-canopy">{en.checkout.methods[method]}</span>
-      {!available && <span className="text-sm text-bark-muted">{en.checkout.methodUnavailable}</span>}
+    <MobileMoneyMark method={method} />
+    <span className="flex flex-col gap-0.5">
+      <span className="text-lg font-bold text-canopy">{en.checkout.methods[method]}</span>
+      <span className="text-sm text-bark-muted">{available ? en.checkout.methodHint : en.checkout.methodUnavailable}</span>
     </span>
   </label>
 );
@@ -153,14 +152,14 @@ export const StepPay = ({ nurseryId, draft, update, changes, onPay, paying, payE
           <p className="text-bark">{en.checkout.trialNote}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className="text-sm font-bold text-lake">{en.payments.comingSoon}</span>
-            <MobileMoneyBadges size="sm" />
+            <MobileMoneyBadges size="md" />
           </div>
         </section>
       )}
       {payments === true && (<>
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 font-bold">{en.checkout.payWith}</legend>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {(['mtn_momo', 'airtel_money'] as const).map(m => (
             <MethodTile key={m} method={m} selected={draft.method === m} available={methods.data?.[m] ?? true} onSelect={() => { update({ method: m }); }} />
           ))}
