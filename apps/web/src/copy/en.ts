@@ -336,8 +336,6 @@ export const en = {
   },
   payments: {
     methodsLabel: 'Mobile money services',
-    momo: 'MoMo',
-    airtelMoney: 'Money',
     comingSoon: 'Mobile money payments coming soon',
     payWith: 'Pay with mobile money',
   },

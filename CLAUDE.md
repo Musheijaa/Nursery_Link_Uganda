@@ -495,6 +495,5 @@ Interpretations where the spec was silent or ambiguous. Anything touching the da
   - **Filters:** `GET /admin/orders` takes `nursery_id`, `buyer_id` and `q` (order code, buyer name, or phone typed as 07…/+256…), all in the URL (`?nursery=&buyer=&q=`) with removable chips.
   - **Links:** buyer and nursery cells link to their orders. The order page links to "All orders from this buyer/nursery", and a nursery's edit page has an "Orders" button.
 - **MTN and Airtel logos** (user request): the real logos (`apps/web/public/brands/mtn.svg`, `airtel.svg`, public-domain text-logo files from Wikimedia Commons, credited on `/credits`) replace the coloured text badges.
-  - **Checkout:** each payment choice shows the logo large on a square brand tile (MTN on MTN yellow, Airtel on white), decorative next to the visible name (`MobileMoneyMark`).
-  - **Elsewhere:** `MobileMoneyLogo` / `MobileMoneyBadges` show logo plus "MoMo"/"Money" with an accessible name.
+  - **Checkout and badges:** the logos stand on their own, large (MTN 64 px, Airtel 80 px tall in the checkout's choices) with no tile or box, as the user asked (`MobileMoneyLogo`; decorative next to a visible name).
   - **Trademarks:** they belong to MTN Group and Airtel Africa; check each provider's merchant brand rules before launch.

@@ -3,7 +3,7 @@ import { mobileMoneyNetwork, toE164UgandaMobile, type MobileMoneyMethod } from '
 import { Button, ErrorState, Field, Input, Skeleton, cn, formatCount, formatDistance, formatUGX } from '@nurserylink/ui';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { en } from '../../../copy/en';
-import { MobileMoneyBadges, MobileMoneyMark } from '../../../components/MobileMoneyBadges';
+import { MobileMoneyBadges, MobileMoneyLogo } from '../../../components/MobileMoneyBadges';
 import { useCountdown } from '../../../lib/useCountdown';
 import { useFeatures, usePaymentMethods, useQuote, type Quote, type QuoteInput } from '../api';
 import { chosenItems, type OrderDraft } from '../draft';
@@ -53,9 +53,11 @@ const QuoteBreakdown = ({ quote, onExpired }: { quote: Quote; onExpired: () => v
 };
 
 const MethodTile = ({ method, selected, available, onSelect }: { method: MobileMoneyMethod; selected: boolean; available: boolean; onSelect: () => void }) => (
-  <label className={cn('flex min-h-24 items-center gap-4 rounded-lg bg-paper px-4 py-4 shadow-card ring-1', !available ? 'cursor-not-allowed opacity-60 ring-line' : selected ? 'cursor-pointer ring-2 ring-forest' : 'cursor-pointer ring-line hover:ring-forest')}>
+  <label className={cn('flex min-h-28 items-center gap-4 rounded-lg bg-paper px-4 py-4 shadow-card ring-1', !available ? 'cursor-not-allowed opacity-60 ring-line' : selected ? 'cursor-pointer ring-2 ring-forest' : 'cursor-pointer ring-line hover:ring-forest')}>
     <input type="radio" name="method" checked={selected} disabled={!available} onChange={onSelect} className="size-5 shrink-0 accent-forest" />
-    <MobileMoneyMark method={method} />
+    <span className="flex w-24 shrink-0 justify-center">
+      <MobileMoneyLogo method={method} size="xl" decorative />
+    </span>
     <span className="flex flex-col gap-0.5">
       <span className="text-lg font-bold text-canopy">{en.checkout.methods[method]}</span>
       <span className="text-sm text-bark-muted">{available ? en.checkout.methodHint : en.checkout.methodUnavailable}</span>
