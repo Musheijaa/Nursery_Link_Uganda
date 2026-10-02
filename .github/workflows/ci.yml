@@ -22,7 +22,8 @@ jobs:
       - uses: pnpm/action-setup@v4 # version from package.json "packageManager"
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          # pnpm 11 needs Node 22.13+; this is also what development uses
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
@@ -57,7 +58,8 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          # pnpm 11 needs Node 22.13+; this is also what development uses
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Throwaway values for this run only: random secrets and a test admin (placeholder number, example.org)
