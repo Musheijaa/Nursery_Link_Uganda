@@ -14,6 +14,7 @@ databases:
     databaseName: nurserylink
     user: nurserylink
     plan: free # expires after 30 days on Render's free plan: move to basic-256mb to keep the data
+    region: frankfurt # must match the API's region: the internal database address only resolves within one region
     postgresMajorVersion: "16" # PostGIS, pg_trgm and pgcrypto are created by the first migration
 
 services:
