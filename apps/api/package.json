@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch --conditions=source --env-file=../../.env src/server.ts",
     "serve:source": "tsx --conditions=source --env-file=../../.env src/server.ts",
-    "build": "pnpm --filter @nurserylink/shared build && tsc -p tsconfig.build.json && cp -r src/db/migrations dist/db/",
+    "build": "pnpm --filter @nurserylink/shared build && tsc -p tsconfig.build.json && cp -r src/db/migrations dist/db/ && mkdir -p dist/db/seed && cp -r src/db/seed/data dist/db/seed/",
     "start": "node --env-file=../../.env dist/server.js",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",

@@ -88,7 +88,7 @@ describe('admin nurseries', () => {
     const created = data<{ id: string; sub_county: { name: string }; district: { name: string }; contact_phone: string; certification_status: string }>(res);
     try {
       expect(created).toMatchObject({
-        sub_county: { name: 'Mukono Central Division' },
+        sub_county: { name: 'Central Division' },
         district: { name: 'Mukono' },
         contact_phone: '+256772300400',
         certification_status: 'unverified',
@@ -103,7 +103,7 @@ describe('admin nurseries', () => {
       expect(data<{ sub_county: { name: string }; certification_status: string }>(moved)).toMatchObject({ sub_county: { name: 'Ntenjeru' }, certification_status: 'certified' });
       expect(await lastAudit('nursery', created.id)).toMatchObject({
         action: 'nursery.update',
-        before: { sub_county: { name: 'Mukono Central Division' } },
+        before: { sub_county: { name: 'Central Division' } },
         after: { sub_county: { name: 'Ntenjeru' } },
       });
 
@@ -118,7 +118,7 @@ describe('admin nurseries', () => {
   });
 
   it('rejects locations outside the covered boundaries and empty updates', async () => {
-    const res = await request(app).post('/api/v1/admin/nurseries').set(admin).send({ ...newNursery, location: { lat: 2.77, lng: 32.3 } }).expect(400);
+    const res = await request(app).post('/api/v1/admin/nurseries').set(admin).send({ ...newNursery, location: { lat: -1.29, lng: 36.82 } }).expect(400); // Nairobi, outside Uganda
     expect(errorOf(res).message).toMatch(/outside every sub-county/);
     const id = await idOf(`SELECT id FROM nurseries WHERE name = 'Kasangalabi Tree Nursery'`);
     await request(app).patch(`/api/v1/admin/nurseries/${id}`).set(admin).send({}).expect(400);

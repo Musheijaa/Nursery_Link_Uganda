@@ -30,13 +30,14 @@ const one = async <T extends Record<string, unknown>>(sql: string, params: unkno
 };
 
 describe('migrations and seed', () => {
-  it('seeds the expected Mukono pilot data', async () => {
+  it('seeds the official boundaries and the Mukono pilot data', async () => {
     expect(firstSeed?.news_posts).toBeGreaterThanOrEqual(NEWS_POSTS.length);
     const seeded = await one<{ n: number }>('SELECT count(*)::int AS n FROM news_posts WHERE slug = ANY($1)', [NEWS_POSTS.map(p => p.slug)]);
     expect(seeded.n).toBe(NEWS_POSTS.length);
     expect(withoutNews(firstSeed)).toEqual({
-      districts: 1,
-      sub_counties: 15,
+      // UBOS 2020: 135 districts, 1,520 sub-counties (scripts/boundaries/build.sh)
+      districts: 135,
+      sub_counties: 1520,
       species: SPECIES.length,
       nurseries: NURSERIES.length,
       inventory_rows: NURSERIES.reduce((sum, n) => sum + n.inventory.length, 0),
@@ -106,10 +107,11 @@ describe('geometry', () => {
       WHERE NOT ST_Contains(sc.geom, n.location) OR sc.parent_id <> n.district_id`);
     expect(misplaced.n).toBe(0);
 
+    // Repairing the simplified shapes (ST_MakeValid) leaves a few slivers of ~20 m²; anything bigger is a real error
     const outside = await one<{ n: number }>(`
       SELECT count(*)::int AS n FROM admin_boundaries sc
       JOIN admin_boundaries d ON d.id = sc.parent_id
-      WHERE NOT ST_CoveredBy(sc.geom, ST_Buffer(d.geom, 0.000001))`);
+      WHERE ST_Area(ST_Difference(sc.geom, d.geom)::geography) > 100`);
     expect(outside.n).toBe(0);
 
     const invalid = await one<{ n: number }>(`SELECT count(*)::int AS n FROM admin_boundaries WHERE NOT ST_IsValid(geom) OR ST_IsEmpty(geom)`);

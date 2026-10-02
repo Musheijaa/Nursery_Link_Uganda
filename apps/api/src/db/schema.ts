@@ -142,6 +142,8 @@ export const adminBoundaries = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
+    /** Official place code (UBOS P-code, e.g. UG1131 for Mukono); null only for boundaries drawn by hand */
+    code: text('code').unique(),
     level: boundaryLevelEnum('level').notNull(),
     parentId: uuid('parent_id').references((): AnyPgColumn => adminBoundaries.id, { onDelete: 'restrict' }),
     geom: geometry('geom', 'MultiPolygon').notNull(),

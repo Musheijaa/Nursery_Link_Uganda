@@ -126,7 +126,14 @@ Interpretations where the spec was silent or ambiguous. Anything touching the da
 - **OSRM:** the service runs under the compose profile `routing`, so `docker compose up` works before the road network has been prepared. The image is pinned to `v6.0.0`.
 - **growth_pace:** an enum (`fast` | `moderate` | `slow`), since the spec gave it no type.
 - **Boundaries:** `admin_boundaries` is unique on `(level, parent_id, name)` with `NULLS NOT DISTINCT`. A check enforces "a district has no parent; a sub-county has one".
-- **Placeholder geometry:** Mukono is a hand-drawn outline plus the Koome islands. Its 15 sub-counties/divisions are Voronoi cells of approximate centres, clipped to that outline. See the `TODO(boundaries)` in `apps/api/src/db/seed/boundaries.ts` for the real UBOS/OSM sources.
+- **Boundaries (nationwide, October 2026, user's choice):** the official UBOS boundaries via OCHA HDX `cod-ab-uga` (CC BY-IGO 3.0, credited on `/credits`). GADM was offered but its licence forbids commercial use.
+  - **Levels:** 135 districts (admin 2) and 1,520 sub-counties (admin 4), keyed by P-code in `admin_boundaries.code` (migration `0004`).
+  - **Data file:** `scripts/boundaries/build.sh` simplifies them to 20% with mapshaper (shared borders stay shared; 94 m average and 207 m p95 deviation) into `apps/api/src/db/seed/data/uga-boundaries.geojson.gz` (1.9 MB). Districts are dissolved from their own sub-counties. The API build copies the file to `dist/db/seed/data`.
+  - **Seed:** upserts by code in two statements (~2 s); geometry is rewritten only when it changes. The old hand-drawn Mukono rows were adopted by name first (Mukono Central Division → Central Division, Seeta-Namuganga → Seeta Namuganga, Koome → Koome Island), so ids and references survive. Every nursery's district and sub-county are re-derived from its point. Unreferenced leftovers are deleted.
+  - **Sample nurseries:** 8 were moved into the sub-county they're named after (`PREVIOUS_SEED_LOCATIONS`, only if still at the old point). Namilyango Tree Growers is now (correctly) in Goma Division.
+  - **Names repeat:** names like "Central Division" exist in many districts. Look sub-counties up together with their district.
+  - **Lakes:** lake-shore districts include their part of Lake Victoria, so "outside every sub-county" means outside Uganda.
+  - **Slivers:** `ST_MakeValid` leaves a few slivers of ~20 m² outside their district; the geometry test allows up to 100 m².
 - **Integrity rules at database level**, as a last line of defence behind the services:
   - Order totals add up (`grand_total = items_total + delivery_fee`, `line_total = quantity × price`).
   - FR-25: a delivery order has a point and an address, and a pickup order has no fee.

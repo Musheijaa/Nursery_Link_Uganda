@@ -19,9 +19,12 @@ type Boundary = { id: string; name: string; level: string; parent_id: string | n
 describe('boundaries (FR-07)', () => {
   it('feeds the cascading District → Sub-county dropdowns', async () => {
     const districts = (await request(app).get('/api/v1/boundaries?level=district').expect(200)).body as { data: Boundary[] };
-    expect(districts.data).toEqual([expect.objectContaining({ name: 'Mukono', level: 'district', parent_id: null })]);
+    expect(districts.data).toHaveLength(135);
+    expect(districts.data.every(d => d.level === 'district' && d.parent_id === null)).toBe(true);
+    const mukono = districts.data.find(d => d.name === 'Mukono');
+    expect(mukono).toBeDefined();
 
-    const districtId = districts.data[0]?.id ?? '';
+    const districtId = mukono?.id ?? '';
     const subs = (await request(app).get(`/api/v1/boundaries?level=sub_county&parent_id=${districtId}`).expect(200)).body as { data: Boundary[] };
     expect(subs.data).toHaveLength(15);
     expect(subs.data.every(s => s.parent_id === districtId)).toBe(true);
@@ -31,7 +34,7 @@ describe('boundaries (FR-07)', () => {
 
   it('returns one boundary as a GeoJSON feature', async () => {
     const { data } = (await request(app).get('/api/v1/boundaries?level=district').expect(200)).body as { data: Boundary[] };
-    const res = await request(app).get(`/api/v1/boundaries/${data[0]?.id ?? ''}/geojson`).expect(200);
+    const res = await request(app).get(`/api/v1/boundaries/${data.find(d => d.name === 'Mukono')?.id ?? ''}/geojson`).expect(200);
     expect(res.body).toMatchObject({ data: { type: 'Feature', geometry: { type: 'MultiPolygon' }, properties: { name: 'Mukono', level: 'district' } } });
     await request(app).get('/api/v1/boundaries/00000000-0000-4000-8000-000000000000/geojson').expect(404);
     await request(app).get('/api/v1/boundaries?level=county').expect(400);

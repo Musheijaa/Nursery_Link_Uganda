@@ -3,13 +3,29 @@ import { IMAGES } from '../data/images';
 import { Picture } from '../components/Picture';
 import { usePageTitle } from '../components/usePageTitle';
 
-/** Attribution for every photo (required by their Creative Commons licences). */
+/** Attribution for the map data and every photo (required by their licences). */
 const Credits = () => {
   usePageTitle(en.credits.title);
   return (
     <div className="flex flex-col gap-6">
+      <h1 className="text-2xl">{en.credits.title}</h1>
+      <section aria-labelledby="credits-data" className="flex flex-col gap-3">
+        <h2 id="credits-data" className="text-xl">{en.credits.dataHeading}</h2>
+        <ul className="grid gap-3 md:grid-cols-2">
+          {en.credits.data.map(d => (
+            <li key={d.name} className="flex flex-col gap-1 rounded-lg bg-paper p-4 text-sm shadow-card ring-1 ring-line">
+              <p className="font-bold text-canopy">{d.name}</p>
+              <p className="text-bark-muted">
+                {d.by} ·{' '}
+                <a href={d.licenseUrl} rel="noopener noreferrer license" className="underline">{d.license}</a> ·{' '}
+                <a href={d.source} rel="noopener noreferrer" className="underline">{en.credits.source}</a>
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl">{en.credits.title}</h1>
+        <h2 className="text-xl">{en.credits.photosHeading}</h2>
         <p className="max-w-2xl text-bark-muted">{en.credits.intro}</p>
       </div>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

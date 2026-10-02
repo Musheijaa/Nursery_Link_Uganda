@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 import type pg from 'pg';
 import { and, eq, sql } from 'drizzle-orm';
 import { toE164UgandaMobile } from '@nurserylink/shared';
@@ -18,9 +20,8 @@ import {
   speciesMedia,
   users,
 } from '../schema.js';
-import { DISTRICT_NAME, KOOME_ISLANDS, MUKONO_MAINLAND, SUB_COUNTIES, ringToWkt } from './boundaries.js';
 import { SPECIES } from './species.js';
-import { NURSERIES } from './nurseries.js';
+import { NURSERIES, PREVIOUS_SEED_LOCATIONS } from './nurseries.js';
 import { CAMPAIGNS, DELIVERY_RATES, NEWS_POSTS } from './content.js';
 
 export interface SeedOptions {
@@ -38,38 +39,101 @@ export const seedOptionsFromConfig = (config: Config): SeedOptions => {
   return { admin: { fullName: ADMIN_FULL_NAME, phone: ADMIN_PHONE, email: ADMIN_EMAIL, password: ADMIN_PASSWORD } };
 };
 
+/** The pilot district; seeded campaigns and the forest-loss sample are here. */
+const PILOT_DISTRICT = 'Mukono';
+
+/**
+ * Names of the hand-drawn Mukono pilot boundaries (before October 2026) that UBOS spells differently.
+ * Renaming them first lets existing rows take their official codes, so ids and references survive.
+ */
+const RENAMED_SUB_COUNTIES: Record<string, string> = {
+  'Mukono Central Division': 'Central Division',
+  'Seeta-Namuganga': 'Seeta Namuganga',
+  Koome: 'Koome Island',
+};
+
+interface BoundaryFeature {
+  properties: { code: string; name: string; level: 'district' | 'sub_county'; parent_code: string | null };
+  geometry: unknown;
+}
+
+/** Official districts and sub-counties (UBOS via OCHA HDX, CC BY-IGO; see scripts/boundaries/build.sh). */
+const loadBoundaryFile = (): BoundaryFeature[] => {
+  const file = new URL('./data/uga-boundaries.geojson.gz', import.meta.url);
+  const parsed = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8')) as { features: BoundaryFeature[] };
+  return parsed.features;
+};
+
+/**
+ * Upserts every district and sub-county by its official code. Rows from the old hand-drawn pilot are
+ * matched by name first (so nurseries, campaigns and shadow zones keep pointing at the same ids),
+ * and leftovers nothing refers to are removed. Returns the pilot district's id.
+ */
 const seedBoundaries = async (tx: Tx) => {
-  const districtGeom = sql`ST_Multi(ST_Union(
-    ST_GeomFromText(${`POLYGON(${ringToWkt(MUKONO_MAINLAND)})`}, 4326),
-    ST_GeomFromText(${`POLYGON(${ringToWkt(KOOME_ISLANDS)})`}, 4326)))`;
+  const features = loadBoundaryFile();
+  const rows = (level: 'district' | 'sub_county') =>
+    JSON.stringify(features.filter(f => f.properties.level === level).map(f => ({ ...f.properties, geometry: f.geometry })));
+
+  // 1. Adopt hand-drawn rows: official spelling, then the official code of the same-named boundary
+  for (const [from, to] of Object.entries(RENAMED_SUB_COUNTIES)) {
+    await tx.execute(sql`
+      UPDATE admin_boundaries b SET name = ${to}
+      FROM admin_boundaries d
+      WHERE b.code IS NULL AND b.level = 'sub_county' AND b.name = ${from} AND d.id = b.parent_id AND d.name = ${PILOT_DISTRICT}`);
+  }
+  await tx.execute(sql`
+    UPDATE admin_boundaries b SET code = f.code
+    FROM json_to_recordset(${rows('district')}::json) AS f(code text, name text)
+    WHERE b.code IS NULL AND b.level = 'district' AND b.name = f.name`);
+  await tx.execute(sql`
+    UPDATE admin_boundaries b SET code = f.code
+    FROM json_to_recordset(${rows('sub_county')}::json) AS f(code text, name text, parent_code text), admin_boundaries d
+    WHERE b.code IS NULL AND b.level = 'sub_county' AND b.name = f.name AND d.id = b.parent_id AND d.code = f.parent_code`);
+
+  // 2. Upsert everything by code; geometry is only rewritten when it changed
+  const geom = sql`ST_Multi(ST_CollectionExtract(ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(f.geometry), 4326)), 3))`;
+  await tx.execute(sql`
+    INSERT INTO admin_boundaries (code, name, level, parent_id, geom)
+    SELECT f.code, f.name, 'district', NULL, ${geom}
+    FROM json_to_recordset(${rows('district')}::json) AS f(code text, name text, geometry text)
+    ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, geom = EXCLUDED.geom
+      WHERE admin_boundaries.name IS DISTINCT FROM EXCLUDED.name OR NOT ST_Equals(admin_boundaries.geom, EXCLUDED.geom)`);
+  await tx.execute(sql`
+    INSERT INTO admin_boundaries (code, name, level, parent_id, geom)
+    SELECT f.code, f.name, 'sub_county', d.id, ${geom}
+    FROM json_to_recordset(${rows('sub_county')}::json) AS f(code text, name text, parent_code text, geometry text)
+    JOIN admin_boundaries d ON d.code = f.parent_code
+    ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, parent_id = EXCLUDED.parent_id, geom = EXCLUDED.geom
+      WHERE admin_boundaries.name IS DISTINCT FROM EXCLUDED.name OR admin_boundaries.parent_id IS DISTINCT FROM EXCLUDED.parent_id
+         OR NOT ST_Equals(admin_boundaries.geom, EXCLUDED.geom)`);
+
+  // 3. Sample nurseries still where the hand-drawn map put them move into the sub-county they're named after
+  for (const [name, [lng, lat]] of Object.entries(PREVIOUS_SEED_LOCATIONS)) {
+    const target = NURSERIES.find(n => n.name === name);
+    if (!target) continue;
+    await tx.execute(sql`
+      UPDATE nurseries SET location = ${point(target.location)}
+      WHERE name = ${name} AND ST_Equals(location, ${point([lng, lat])})`);
+  }
+  // Every nursery's district and sub-county follow from where it is, as for admin edits
+  await tx.execute(sql`
+    UPDATE nurseries n SET sub_county_id = sc.id, district_id = sc.parent_id
+    FROM admin_boundaries sc
+    WHERE sc.level = 'sub_county' AND sc.code IS NOT NULL AND ST_Contains(sc.geom, n.location)
+      AND (n.sub_county_id IS DISTINCT FROM sc.id OR n.district_id IS DISTINCT FROM sc.parent_id)`);
+
+  // 4. Hand-drawn leftovers that nothing refers to any more
+  await tx.execute(sql`
+    DELETE FROM admin_boundaries b
+    WHERE b.code IS NULL AND b.level = 'sub_county'
+      AND NOT EXISTS (SELECT 1 FROM nurseries n WHERE n.sub_county_id = b.id)
+      AND NOT EXISTS (SELECT 1 FROM campaigns c WHERE c.sub_county_id = b.id)`);
 
   const [district] = await tx
-    .insert(adminBoundaries)
-    .values({ name: DISTRICT_NAME, level: 'district', parentId: null, geom: districtGeom })
-    .onConflictDoUpdate({ target: [adminBoundaries.level, adminBoundaries.parentId, adminBoundaries.name], set: { geom: districtGeom } })
-    .returning({ id: adminBoundaries.id });
-  if (!district) throw new Error('District upsert returned no row');
-
-  // Placeholder sub-county polygons: Voronoi cells of approximate centres, clipped to the district
-  const centres = sql.join(
-    SUB_COUNTIES.map(s => sql`(${s.name}, ${point(s.centre)})`),
-    sql`, `
-  );
-  await tx.execute(sql`
-    WITH centres(name, pt) AS (VALUES ${centres}),
-    district AS (SELECT geom FROM admin_boundaries WHERE id = ${district.id}),
-    cells AS (
-      SELECT (ST_Dump(ST_VoronoiPolygons(ST_Collect(pt), 0, ST_Expand((SELECT ST_Envelope(geom) FROM district), 0.5)))).geom AS cell
-      FROM centres
-    )
-    INSERT INTO admin_boundaries (name, level, parent_id, geom)
-    SELECT c.name, 'sub_county', ${district.id}, ST_Multi(ST_CollectionExtract(ST_Intersection(cells.cell, d.geom), 3))
-    FROM centres c
-    JOIN cells ON ST_Contains(cells.cell, c.pt)
-    CROSS JOIN district d
-    ON CONFLICT (level, parent_id, name) DO UPDATE SET geom = EXCLUDED.geom
-  `);
-
+    .select({ id: adminBoundaries.id })
+    .from(adminBoundaries)
+    .where(and(eq(adminBoundaries.level, 'district'), eq(adminBoundaries.name, PILOT_DISTRICT)));
+  if (!district) throw new Error(`The boundary file has no district called ${PILOT_DISTRICT}`);
   return district.id;
 };
 

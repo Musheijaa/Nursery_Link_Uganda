@@ -16,6 +16,22 @@ export interface SeedNursery {
   inventory: [string, number, number][];
 }
 
+/**
+ * Where these sample nurseries were seeded before the official UBOS boundaries replaced the hand-drawn
+ * ones (October 2026). The seed moves a nursery still at its old point into the sub-county its name
+ * refers to; one an admin has moved since is left alone.
+ */
+export const PREVIOUS_SEED_LOCATIONS: Record<string, [number, number]> = {
+  'Kimenyedde Green Nursery': [32.745, 0.56],
+  'Kyampisi Agroforestry Group': [32.7, 0.27],
+  "Mpatta Women's Nursery": [32.87, 0.21],
+  'Mpunge Riverside Nursery': [32.905, 0.265],
+  'Nabbaale Tree Hub': [32.67, 0.5],
+  'Nagojje Seedling Centre': [32.89, 0.52],
+  'Ntunda Hills Nursery': [32.87, 0.64],
+  'Seeta-Namuganga Nursery': [32.815, 0.47],
+};
+
 // Sample nurseries for development. Names, people and phone numbers are fictional.
 export const NURSERIES: SeedNursery[] = [
   {
@@ -69,7 +85,7 @@ export const NURSERIES: SeedNursery[] = [
   {
     name: 'Kyampisi Agroforestry Group',
     type: 'community',
-    location: [32.7, 0.27],
+    location: [32.7046, 0.5012],
     operatorName: 'Harriet Nabukenya',
     contactPhone: '+256700100105',
     payoutPhone: '+256700100105',
@@ -93,7 +109,7 @@ export const NURSERIES: SeedNursery[] = [
   {
     name: "Mpatta Women's Nursery",
     type: 'community',
-    location: [32.87, 0.21],
+    location: [32.6913, 0.2072],
     operatorName: 'Esther Namukasa',
     contactPhone: '+256700100107',
     payoutPhone: '+256700100107',
@@ -117,7 +133,7 @@ export const NURSERIES: SeedNursery[] = [
   {
     name: 'Nagojje Seedling Centre',
     type: 'commercial',
-    location: [32.89, 0.52],
+    location: [32.9026, 0.4422],
     operatorName: 'Denis Mukasa',
     contactPhone: '+256700100109',
     payoutPhone: '+256700100109',
@@ -129,7 +145,7 @@ export const NURSERIES: SeedNursery[] = [
   {
     name: 'Ntunda Hills Nursery',
     type: 'private',
-    location: [32.87, 0.64],
+    location: [32.9352, 0.5832],
     operatorName: 'Annet Nansubuga',
     contactPhone: '+256700100110',
     payoutPhone: '+256700100110',
@@ -141,7 +157,7 @@ export const NURSERIES: SeedNursery[] = [
   {
     name: 'Kimenyedde Green Nursery',
     type: 'private',
-    location: [32.745, 0.56],
+    location: [32.8437, 0.5296],
     operatorName: 'Isaac Wasswa',
     contactPhone: '+256700100111',
     payoutPhone: '+256700100111',
@@ -153,7 +169,7 @@ export const NURSERIES: SeedNursery[] = [
   {
     name: 'Nabbaale Tree Hub',
     type: 'commercial',
-    location: [32.67, 0.5],
+    location: [32.7549, 0.5662],
     operatorName: 'Peter Kato',
     contactPhone: '+256700100112',
     payoutPhone: '+256700100112',
@@ -165,7 +181,7 @@ export const NURSERIES: SeedNursery[] = [
   {
     name: 'Seeta-Namuganga Nursery',
     type: 'community',
-    location: [32.815, 0.47],
+    location: [32.8078, 0.7418],
     operatorName: 'Christine Nanyonga',
     contactPhone: '+256700100113',
     payoutPhone: '+256700100113',
@@ -189,7 +205,7 @@ export const NURSERIES: SeedNursery[] = [
   {
     name: 'Mpunge Riverside Nursery',
     type: 'private',
-    location: [32.905, 0.265],
+    location: [32.7196, 0.1146],
     operatorName: 'Rose Nakimuli',
     contactPhone: '+256700100115',
     payoutPhone: '+256700100115',

@@ -30,6 +30,8 @@ coverage/
 
 # OSRM road network data (large; produced by scripts/osrm/prepare.sh)
 data/
+# ...but the seed's reference data (official boundaries) is committed
+!apps/api/src/db/seed/data/
 
 # Python (scripts/forest-loss)
 __pycache__/

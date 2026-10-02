@@ -27,7 +27,12 @@ const names = (body: ListBody) => body.data.map(n => n.name);
 const MUKONO_TOWN = { lat: 0.358, lng: 32.757 };
 
 const boundaryId = async (name: string) => {
-  const { rows } = await pool.query<{ id: string }>('SELECT id FROM admin_boundaries WHERE name = $1', [name]);
+  // Names like "Central Division" repeat across districts: the pilot's are in Mukono
+  const { rows } = await pool.query<{ id: string }>(
+    `SELECT b.id FROM admin_boundaries b LEFT JOIN admin_boundaries d ON d.id = b.parent_id
+     WHERE b.name = $1 AND (b.level = 'district' OR d.name = 'Mukono')`,
+    [name]
+  );
   const id = rows[0]?.id;
   if (!id) throw new Error(`No boundary ${name}`);
   return id;
@@ -58,8 +63,10 @@ describe('GET /nurseries', () => {
 
   it('filters by district and sub-county', async () => {
     expect((await list(`?district_id=${await boundaryId('Mukono')}`)).meta.total).toBe(15);
-    const central = await list(`?sub_county_id=${await boundaryId('Mukono Central Division')}`);
-    expect(names(central)).toEqual(['Mukono Town Nursery', 'Namilyango Tree Growers']);
+    const central = await list(`?sub_county_id=${await boundaryId('Central Division')}`);
+    expect(names(central)).toEqual(['Mukono Town Nursery']);
+    const goma = await list(`?sub_county_id=${await boundaryId('Goma Division')}`);
+    expect(names(goma)).toEqual(['Namilyango Tree Growers', 'Seeta Fruit & Tree Seedlings']);
   });
 
   it('matches species by common, scientific or local name, case-insensitively', async () => {
