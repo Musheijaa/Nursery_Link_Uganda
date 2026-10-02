@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+@import '@nurserylink/ui/styles.css';
+
+/* Tailwind scans this app and the shared UI package for class names */
+@source '../../../packages/ui/src';
+
+/* Map: custom pins carry their own styling; Leaflet's default div-icon box is removed */
+.nl-pin,
+.nl-cluster {
+  background: none;
+  border: 0;
+}
+.nl-pin:focus-visible,
+.nl-cluster:focus-visible {
+  outline: 3px solid var(--color-forest);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+.leaflet-tooltip.nl-pin-label {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  color: var(--color-canopy);
+  font: 700 0.8125rem/1.1 var(--font-sans);
+  padding: 2px 6px;
+}
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--color-mist);
+}
+/* Larger zoom buttons: 44 px targets */
+.leaflet-bar a {
+  width: 44px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+}
+/* Phones: keep the map credit clear of the floating search box */
+.nl-map-compact .leaflet-top.leaflet-right {
+  margin-top: 4.5rem;
+}

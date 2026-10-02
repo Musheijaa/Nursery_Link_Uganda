@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#123d2a" />
+    <meta name="description" content="Find tree nurseries near you in Uganda, compare stock and prices, order seedlings with mobile money, and apply for free seedlings." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- Map tiles come from here; connecting early takes several round trips off the first map view -->
+    <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <title>Nursery Link Uganda</title>
+    <!-- Home's hero photo is its largest element: start loading it with the page, not after the app renders.
+         srcset and sizes must match the <img> in routes/Home.tsx so the browser reuses this download. -->
+    <script>
+      if (location.pathname === '/') {
+        var l = document.createElement('link');
+        l.rel = 'preload'; l.as = 'image'; l.type = 'image/webp'; l.fetchPriority = 'high';
+        l.imageSrcset = '/images/greenhouse-kamuli-480.webp 480w, /images/greenhouse-kamuli-960.webp 960w, /images/greenhouse-kamuli-1400.webp 1400w';
+        l.imageSizes = '(min-width: 768px) 62vw, 50vw';
+        document.head.appendChild(l);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>Nursery Link needs JavaScript. Please turn it on in your browser settings.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+# GDAL's Python bindings must match the system GDAL (>= 3.6, with the PostgreSQL driver):
+#   pip install "GDAL==$(gdal-config --version)"
+# Or skip installing anything and use the ghcr.io/osgeo/gdal image (see README.md).
+GDAL>=3.6
+numpy>=1.24

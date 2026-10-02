@@ -1,0 +1,145 @@
+/*
+ * Nursery Link design tokens (docs/design-plan.md). Apps import this after "tailwindcss":
+ *   @import "tailwindcss";
+ *   @import "@nurserylink/ui/styles.css";
+ *   @source "../../../packages/ui/src";
+ * Tailwind's default palette is removed, so only these named colours exist in class names.
+ */
+@import '@fontsource-variable/atkinson-hyperlegible-next';
+/* Headings: Fraunces, a warm "old-style" serif with an organic, hand-cut feel (35 KB, upright only) */
+@import '@fontsource-variable/fraunces/wght.css';
+
+@theme {
+  --color-*: initial;
+  /* "Earth & canopy": Uganda's green hills and red murram earth, on warm cream */
+  --color-canopy: #123d2a; /* deep canopy green: headers, headings, dark bands */
+  --color-forest: #1e5b3c; /* primary actions and links */
+  --color-seedling: #2a7d45; /* banana-leaf green: in stock, paid, success (5.1:1 on white) */
+  --color-murram: #b8501f; /* red murram earth: accents, highlights (4.6:1 on cream) */
+  --color-sun: #f2b705; /* free seedlings and campaigns only */
+  --color-mist: #faf6ee; /* warm cream page background */
+  --color-bark: #2a211b; /* body text, warm near-black */
+  --color-paper: #ffffff;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  /* Functional tints */
+  --color-bark-muted: #5e5248;
+  --color-line: #e7dece;
+  --color-field: #7a6e62;
+  --color-seedling-tint: #e3f2e3;
+  --color-forest-tint: #e8efe7;
+  --color-murram-tint: #f7e5d8;
+  --color-murram-light: #f0b48f; /* murram on dark green (6.7:1 on canopy) */
+  --color-sand: #f1e8d8; /* a deeper cream for alternating bands */
+  /* Lake Victoria blues: light sky for bands and washes, deep lake for text and accents */
+  --color-lake: #2b6a97; /* 5.8:1 on white, 5.1:1 on sky-tint */
+  --color-sky-tint: #e5f1f9;
+  --color-sky: #a8d4ef; /* on dark green (7.7:1 on canopy) */
+  --color-amber: #8a5300;
+  --color-amber-tint: #fff1db;
+  --color-laterite: #b42318;
+  --color-laterite-tint: #fdecea;
+  --color-sun-tint: #fdf3cf;
+
+  --font-sans: 'Atkinson Hyperlegible Next Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Display: headings and large statements. Body text stays Atkinson Hyperlegible, for easy reading */
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  /* Scientific names (italic, loaded on Library routes only: library-fonts.css) */
+  --font-serif: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.625rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.125rem;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 2.5rem;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-float: 0 8px 24px rgb(42 33 27 / 0.16), 0 1px 3px rgb(42 33 27 / 0.12);
+  --shadow-card: 0 1px 2px rgb(42 33 27 / 0.06), 0 6px 18px -8px rgb(42 33 27 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(42 33 27 / 0.08), 0 16px 32px -12px rgb(42 33 27 / 0.28);
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-sheet-in: sheet-in 200ms var(--ease-out);
+  --animate-drawer-in: drawer-in 200ms var(--ease-out);
+  --animate-fade-in: fade-in 150ms var(--ease-out);
+
+  @keyframes sheet-in {
+    from { transform: translateY(24px); opacity: 0; }
+  }
+  @keyframes drawer-in {
+    from { transform: translateX(24px); opacity: 0; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-mist font-sans text-base text-bark antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  /* One visible focus style everywhere: a Forest ring offset from the element */
+  :focus-visible {
+    outline: 3px solid var(--color-forest);
+    outline-offset: 2px;
+  }
+  .on-dark :focus-visible {
+    outline-color: var(--color-paper);
+  }
+  a {
+    @apply text-forest underline-offset-2;
+  }
+  /* Headings in Fraunces: semi-bold, slightly tightened, and balanced over their lines */
+  h1, h2, h3 {
+    @apply font-display text-canopy;
+    font-weight: 620;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    font-optical-sizing: auto;
+  }
+  h1 {
+    letter-spacing: -0.025em;
+  }
+  /* Body copy: no lonely last words */
+  p, li, dd {
+    text-wrap: pretty;
+  }
+}
+
+/* Motion only shows change, and never for people who ask for less */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Native <select> with our chevron (Forest), drawn as a background so the control stays native */
+@layer components {
+  .nl-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%231e5b3c' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px;
+  }
+}

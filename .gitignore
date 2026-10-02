@@ -24,3 +24,20 @@ Thumbs.db
 
 # Local agent worktrees
 .kilo/
+
+# Test output
+coverage/
+
+# OSRM road network data (large; produced by scripts/osrm/prepare.sh)
+data/
+
+# Python (scripts/forest-loss)
+__pycache__/
+*.pyc
+.venv/
+e2e/.results/
+
+# Generated test reports (E2E HTML report, Lighthouse runs)
+e2e/.report/
+docs/lighthouse/
+docs/screenshots/
