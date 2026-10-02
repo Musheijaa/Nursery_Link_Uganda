@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Dependency install scripts are opt-in. esbuild (tsx, vite) needs its binary check;
+# the others are optional native add-ons (Docker over SSH, protobuf version check) we don't use,
+# and @scarf/scarf is swagger-ui-dist's install-time analytics ping.
+allowBuilds:
+  esbuild: true
+  protobufjs: false
+  cpu-features: false
+  ssh2: false
+  '@scarf/scarf': false

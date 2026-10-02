@@ -1,0 +1,500 @@
+# Nursery Link Uganda: working notes
+
+Web-GIS marketplace for tree seedlings (pilot: Mukono District). Domain background: `docs/Nursery_Link_Uganda_SRS.pdf` and `docs/Nursery_Link_Uganda_SDD.pdf`. **Where they conflict with the decisions below, these decisions win.**
+
+Workspaces: `apps/api` (REST API), `apps/web` (public site + PWA), `apps/admin` (admin console), `packages/shared` (Zod schemas, enums), `packages/api-client` (generated typed client), `packages/ui` (design tokens, primitives, pins, icons). The frontend design is fixed in `docs/design-plan.md`.
+
+## Fixed decisions (do not change without asking)
+
+- **Two sites, one API.** `apps/web` (public) and `apps/admin` both call `apps/api`.
+- **Roles:** `buyer` and `admin` only. Visitors are unauthenticated and can use all public GET endpoints. **No nursery-operator accounts.** Nurseries are data records managed by admins (this overrides SRS FR-23 and SDD's operator dashboard).
+- **Stack:** Node 20, TypeScript strict, Express, PostgreSQL 16 + PostGIS 3.4, Drizzle ORM (raw `sql` for spatial queries), Zod, pg-boss (no Redis), Vitest + Supertest + Testcontainers, pino.
+- **Monorepo:** pnpm workspaces: `apps/api`, `packages/shared` (Zod schemas + types shared with frontends).
+- **Local dev:** `docker-compose.yml` with `postgis/postgis:16-3.4` and OSRM (Uganda extract, car profile).
+- **Money:** UGX as `integer`. **Geometry:** SRID 4326 everywhere; GiST index on every geometry column.
+- **External services behind interfaces**, each with a Mock selected by env var; build and test against Mocks first:
+  - `PaymentProvider`: requestToPay, getPaymentStatus, disburse, getDisbursementStatus (MockPayment, MtnMomo, AirtelMoney).
+  - `SmsProvider`: send + inbound parser (MockSms, AfricasTalking).
+  - `RoutingProvider`: route, table, isochrone (Osrm; MockRouting = haversine × 1.3).
+  - `EmailProvider`: send (MockEmail, Smtp).
+- **Config:** everything via env, validated with Zod at startup (`apps/api/src/config.ts`). Never hardcode secrets or invent real credentials.
+
+## Conventions
+
+- **Layers are strict.**
+  - `*.routes.ts` does HTTP and validation only.
+  - `*.service.ts` holds business rules and transactions, and never touches `req`/`res`.
+  - `*.repo.ts` holds SQL only.
+- **Layout:** `apps/api/src/{middleware,modules/<name>,providers,jobs,db,lib}`, as in the spec.
+- **Responses:**
+  - Success: `{ data, meta? }`.
+  - Error: `{ error: { code, message, details? } }`.
+  - Throw an `AppError` subclass from `lib/errors.ts`; `middleware/errorHandler.ts` is the only place that maps errors to HTTP.
+- **Pagination:** `?page=&limit=` (limit ≤ 100), with `meta: { page, limit, total }`, via `lib/pagination.ts`.
+- **Routes:** all under `/api/v1`. The OpenAPI spec is generated from the Zod schemas at `/api/v1/docs` (Phase 8).
+- **Audit:** every admin write and every order or payment state change writes to `audit_log`.
+- **Admin writes and audit:** every admin write runs in a transaction that also calls `writeAudit(tx, …)` from `lib/audit.ts`, with `before`/`after` snapshots in API shape, so the change and its audit row commit together.
+- **Row locks:** lock the row first (`SELECT … FOR UPDATE`) before taking the "before" snapshot. Postgres forbids `FOR UPDATE` with window functions such as `count(*) OVER ()`, so lock with a separate statement when the read query uses one.
+- **Code rules:** no `any`; no silent catches; money and stock changes always happen inside a DB transaction.
+- **Validation:** use `validate({ body, query, params })` from `middleware/validate.ts`; handlers read `res.locals.validated`.
+- **Shared code:** enums (roles, statuses, categories…) live in `packages/shared/src/enums.ts`. Drizzle `pgEnum`s are built from them; never duplicate the literals.
+- **Phone numbers:** stored as E.164 (`+2567XXXXXXXX`). Normalise with `toE164UgandaMobile` / `ugandaPhoneSchema` from `@nurserylink/shared`.
+- **Schema changes:** edit `apps/api/src/db/schema.ts`, run `db:generate`, and review the SQL before committing. Hand-written SQL (extensions, triggers) goes in `drizzle-kit generate --custom` migrations. Never edit an applied migration.
+- **Geometry:** write it with SQL (`ST_SetSRID(ST_MakePoint(lng, lat), 4326)`) and read it through spatial SQL (`ST_AsGeoJSON`, `ST_X/ST_Y`). The Drizzle `geometry` column type only carries raw EWKB.
+- **Workspace imports:** `@nurserylink/shared` resolves to TypeScript source via the `source` export condition in dev, tests and type-checking (`customConditions`, `tsx --conditions=source`, vitest `resolve.conditions`); production builds use `dist/`.
+
+## Commands
+
+```bash
+docker compose up -d db          # PostGIS on 127.0.0.1:5433
+pnpm install
+pnpm dev                         # API (tsx watch) + web (vite)
+pnpm test                        # Vitest; integration tests start their own PostGIS via Testcontainers
+pnpm lint                        # ESLint (typescript-eslint strictTypeChecked) on apps/api + packages/shared
+pnpm typecheck                   # tsc in every package
+pnpm db:migrate | db:seed | db:reset
+pnpm --filter @nurserylink/api db:generate   # after editing src/db/schema.ts: generates the next SQL migration
+pnpm --filter @nurserylink/api db:forest-sample   # DEV ONLY: synthetic forest-loss cells for the Nursery Shadow (never real data)
+pnpm --filter @nurserylink/api db:demo-activity   # DEV ONLY: a year of invented orders for the Insights charts (never real data)
+pnpm api:generate                # after changing API routes/schemas: re-export OpenAPI + regenerate the client types
+pnpm --filter @nurserylink/web build && pnpm --filter @nurserylink/web size   # build + initial-JS budget (200 KB gzip)
+npx playwright test              # E2E, screenshots, axe and Lighthouse (installed Chrome). Starts its own API (:4100, database
+                                 # nurserylink_e2e, reset + seeded first) and production previews of web (:4183) and admin (:4184)
+npx playwright test e2e/a11y.spec.ts         # accessibility scan only (WCAG 2.1 AA, every screen)
+npx playwright test e2e/lighthouse.spec.ts   # Lighthouse budgets only (reports in docs/lighthouse/)
+pnpm --filter @nurserylink/web images   # rebuild WebP variants + PWA icons after adding photos
+scripts/osrm/prepare.sh          # download + preprocess Uganda OSM for OSRM (once)
+docker compose --profile routing up -d osrm
+```
+
+## Frontend conventions
+
+- **Stack:** Vite 8, React 18, TypeScript strict, React Router 7 (library mode, lazy route modules), TanStack Query 5 (all server state), React Hook Form + `@hookform/resolvers/zod` with the **shared** schemas from `@nurserylink/shared` (never re-declare validation), Tailwind 4, Radix primitives, `vaul` (bottom sheet), lucide icons. Admin adds TanStack Table.
+- **API access** only through `@nurserylink/api-client`: `const { data, meta } = await unwrap(api.GET('/path', { params }))`. Types come from the generated `src/schema.ts` (`Schemas['NurseryProfile']`); never hand-write API types or `fetch` calls. Errors are `ApiError` (`code`, `status`, `fieldErrors()`, `isOffline`); `applyApiError()` puts field errors next to the form fields.
+- **Session:** access token in memory (`session`), refresh cookie httpOnly. `restoreSession()` on start-up; the client does one shared silent refresh + retry on a 401. `useSession()` / `RequireAuth` (web) / `RequireAdmin` (admin).
+- **Layout:** `src/routes/` (route modules), `src/features/<feature>/` (components, hooks, API calls), `src/components/`, `src/copy/en.ts` (**every** user-facing string), `src/lib/`. Shared primitives in `packages/ui`.
+- **State:** server data lives only in TanStack Query; UI state in component state or URL params (filters must be shareable links). Queries use `networkMode: 'offlineFirst'` so the service worker can answer offline.
+- **Every data view** handles loading (skeleton, not spinner), empty (what to do next), error (with retry) and offline (cached data + "Last updated …" from `Result.fromCache`/`fetchedAt`).
+- **Tokens:** colours, type scale, radii come from `packages/ui/src/styles.css` (`@theme`; Tailwind's default palette is removed). Palette "Earth & canopy": canopy green, forest, banana-leaf seedling, red murram (accents; `murram-light` on dark green), warm cream background, bark text. Sun yellow is only for free-seedling/campaign elements. Tap targets ≥ 44 px on the public site (admin uses the denser `size="sm"`).
+- **Formatting:** `formatUGX`, `formatDistance` (road vs "approx."), `formatPhone`, `formatRelative` from `@nurserylink/ui`.
+- **Images:** `public/images/<name>.jpg` + generated `-480/-960.webp`, rendered with `<Picture>` (WebP with JPEG fallback for iOS 13, fixed size, lazy).
+- **PWA** (`apps/web/src/sw.ts`, injectManifest): app shell precached; public GETs (`/nurseries`, `/species`, `/boundaries`, `/news`, `/campaigns`) NetworkFirst with a 4 s timeout and an `x-from-cache: 1` marker; viewed map tiles (≤ 400) and photos (≤ 80) CacheFirst. Auth, orders, applications and admin are never cached.
+- **Tests:** Vitest + Testing Library; MSW handlers via `openapi-msw` typed from the OpenAPI paths (`src/test/msw.ts`), so mocks can't drift from the API. Playwright in `e2e/` (screenshots per phase in `docs/screenshots/phase-N/`).
+- **Lint:** the same strict TypeScript rules plus `react-hooks` and `jsx-a11y` for browser code. `jsx-a11y/no-autofocus` allows components to take focus (the SMS code screen) but not raw DOM `autoFocus`.
+
+## Phase checklist
+
+A phase is done only when lint, typecheck and all tests pass and the seed runs from a clean DB. After each phase, stop and wait for the go-ahead.
+
+- [x] 0. Scaffold: monorepo, docker-compose, config, errors, logging, `/api/v1/health`, this file
+- [x] 1. Schema, migrations, seed
+- [x] 2. Auth
+- [x] 3. Public catalog
+- [x] 4. Admin CRUD, CSV import, audit, exports
+- [x] 5. Orders, payments, SMS, webhooks, state machine, jobs
+- [x] 6. Campaign applications
+- [x] 7. Forest-loss script and Nursery Shadow engine
+- [x] 8. Hardening: OpenAPI docs, rate limits, security headers, input limits, MTN MoMo provider
+
+Frontend (stop after each phase):
+
+- [x] F1. Design plan (`docs/design-plan.md`)
+- [x] F2. `packages/ui`, `packages/api-client`, app shells, routing, auth screens, PWA/offline base
+- [x] F3. `/nurseries`: map, filters, list, nearest, nursery card, directions
+- [x] F4. Library, News, Home
+- [x] F5. Order flow and My orders
+- [x] F6. Free seedlings and campaign applications
+- [x] F7. Admin console (except Shadow)
+- [x] F8. Admin Nursery Shadow
+- [ ] F9. Hardening: budgets, Lighthouse, accessibility, full Playwright suite
+
+## Decisions made
+
+Interpretations where the spec was silent or ambiguous. Anything touching the data model or money flow was agreed first.
+
+- **Agreed:** `payments.msisdn` (E.164) records the number charged or paid, since `POST /orders` takes `payer_phone` and payouts go to `nurseries.payout_phone`.
+- **Agreed:** `otp_codes.consumed_at` stops a correct code being replayed within its 10 minutes.
+- **Node:** 22 is installed locally; the target is Node 20 (`engines`, `.nvmrc`), with no Node-22-only APIs.
+- **TypeScript:** `~6.0.3` for api/shared (the newest typescript-eslint supports). `apps/web` stays on 5.9 so it runs unchanged.
+- **Password hashing:** argon2 via `@node-rs/argon2` (prebuilt binaries, no native toolchain).
+- **Tests:** one PostGIS Testcontainer per test run (`test/globalSetup.ts`, URL via `inject('databaseUrl')`). Tests never read `DATABASE_URL`.
+- **Config:** a blank variable (`KEY=`) is treated as unset.
+- **Species primary key** is a UUID (as in the SDD); `slug` is the public identifier.
+- **"Flag for admin" events** (unrecognised inbound SMS, exhausted payout retries) go to `audit_log` (`sms.unrecognised`, `payout.flagged`), with no extra tables.
+- **Build scripts:** pnpm install scripts are opt-in (`allowBuilds` in `pnpm-workspace.yaml`). Only esbuild is allowed; ssh2, cpu-features and protobufjs are optional add-ons we don't use.
+- **Lint scope:** lint covers `apps/api` and `packages/shared`. `apps/web` is excluded until it is reconnected.
+- **OSRM:** the service runs under the compose profile `routing`, so `docker compose up` works before the road network has been prepared. The image is pinned to `v6.0.0`.
+- **growth_pace:** an enum (`fast` | `moderate` | `slow`), since the spec gave it no type.
+- **Boundaries:** `admin_boundaries` is unique on `(level, parent_id, name)` with `NULLS NOT DISTINCT`. A check enforces "a district has no parent; a sub-county has one".
+- **Boundaries (nationwide, October 2026, user's choice):** the official UBOS boundaries via OCHA HDX `cod-ab-uga` (CC BY-IGO 3.0, credited on `/credits`). GADM was offered but its licence forbids commercial use.
+  - **Levels:** 135 districts (admin 2) and 1,520 sub-counties (admin 4), keyed by P-code in `admin_boundaries.code` (migration `0004`).
+  - **Data file:** `scripts/boundaries/build.sh` simplifies them to 20% with mapshaper (shared borders stay shared; 94 m average and 207 m p95 deviation) into `apps/api/src/db/seed/data/uga-boundaries.geojson.gz` (1.9 MB). Districts are dissolved from their own sub-counties. The API build copies the file to `dist/db/seed/data`.
+  - **Seed:** upserts by code in two statements (~2 s); geometry is rewritten only when it changes. The old hand-drawn Mukono rows were adopted by name first (Mukono Central Division → Central Division, Seeta-Namuganga → Seeta Namuganga, Koome → Koome Island), so ids and references survive. Every nursery's district and sub-county are re-derived from its point. Unreferenced leftovers are deleted.
+  - **Sample nurseries:** 8 were moved into the sub-county they're named after (`PREVIOUS_SEED_LOCATIONS`, only if still at the old point). Namilyango Tree Growers is now (correctly) in Goma Division.
+  - **Names repeat:** names like "Central Division" exist in many districts. Look sub-counties up together with their district.
+  - **Lakes:** lake-shore districts include their part of Lake Victoria, so "outside every sub-county" means outside Uganda.
+  - **Slivers:** `ST_MakeValid` leaves a few slivers of ~20 m² outside their district; the geometry test allows up to 100 m².
+- **Integrity rules at database level**, as a last line of defence behind the services:
+  - Order totals add up (`grand_total = items_total + delivery_fee`, `line_total = quantity × price`).
+  - FR-25: a delivery order has a point and an address, and a pickup order has no fee.
+  - Stock and campaign `remaining_stock` stay in range.
+  - At most one successful collection payment per order; `(provider, provider_ref)` is unique.
+- **Triggers:** `updated_at` is maintained by a trigger (nurseries, inventory, orders, payments), so raw-SQL updates are covered.
+- **Append-only audit log:** `audit_log` rejects UPDATE, DELETE and TRUNCATE by trigger. Test clean-up must never truncate it.
+- **Emails** are stored lower-case (check constraint). Normalise before writing.
+- **Species local names:** at most one per language per species (primary key `(species_id, language)`).
+- **Species photos:** `species_media` URLs point at the Wikimedia Commons photos served by `apps/web` (`/images/...`), with the photographer and licence in the caption.
+- **Nursery deletion:** nurseries can't be deleted while they have stock, orders or campaigns (FK restrict). Deactivate with `is_active` instead.
+- **Seed:** idempotent and safe to run on every deploy.
+  - Reference data (boundaries, species, local names, media) is upserted.
+  - Nurseries, inventory, rates, news and campaigns are created only if missing, so admin edits survive.
+  - The admin's password is never overwritten.
+- **Production build:** it copies `src/db/migrations` into `dist/db/`, so `node dist/db/migrate.js` works.
+- **Shell-safe `.env`:** values containing spaces or `<>` are quoted (e.g. `EMAIL_FROM`), so the file can also be `source`d by shell scripts.
+- **Refresh token:** the 30-day, rotating refresh token lives only in an httpOnly, `SameSite=Lax` cookie `nl_refresh` scoped to `Path=/api/v1/auth`. `Secure` is set in production, and `COOKIE_DOMAIN` is optional for sharing it across subdomains. The 15-minute access token is returned in the JSON body; the frontends keep it in memory and send `Authorization: Bearer`.
+- **Refresh token rotation:** every `/auth/refresh` revokes the presented token and issues a new one, under a row lock. Presenting an already-revoked token is treated as theft and revokes all of that user's sessions.
+- **Verification before sign-in:** register → SMS code → `POST /auth/verify` confirms the phone and signs in. Login with an unverified phone returns 403 `phone_not_verified`.
+- **Re-claiming unverified numbers:** a number that was registered but never verified can be registered again, which replaces the abandoned details, so whoever actually holds the SIM can claim it. Verified numbers return 409.
+- **SMS codes:** 6 digits, stored as HMAC-SHA256 (`OTP_HMAC_SECRET`) of `phone:purpose:code`.
+  - Expiry and attempts: 10-minute expiry, 5 attempts, single use (`consumed_at`); only the newest code for a phone and purpose counts.
+  - Sending limits: a 60-second resend cooldown and 5 codes per hour per number, enforced in the database so they hold across API instances.
+- **Password reset:** a phone number gets an SMS code; an email address gets a link (`PUBLIC_WEB_URL/reset-password?token=…`, 30 minutes).
+  - **Link token:** a signed JWT bound to a fingerprint of the current password hash, so it works once and dies when the password changes, with no extra table.
+  - **After a reset:** every session is revoked. An SMS reset also marks the phone as verified.
+- **No account enumeration:**
+  - Resending codes and "forgot password" always return 202, whether or not the account exists.
+  - Login returns the same 401 for an unknown account and a wrong password, and runs argon2 against a dummy hash for unknown accounts so timing matches.
+- **Rate limits:**
+  - **Per IP:** in-memory and generous (100 per 15 minutes), because Ugandan mobile networks put many users behind carrier-grade NAT.
+  - **Per phone, email or identifier:** 10 per 15 minutes on verify, login, forgot and reset. IPv6 falls back to `ipKeyGenerator`, grouped by /56.
+  - **Multiple instances:** the in-memory limits are per instance, so the API is deployed as a single instance (Phase 8 decision). Moving to several instances needs a shared store (e.g. a Postgres-backed rate-limit store). The per-number SMS limits are already database-backed.
+- **Admin router:** `/api/v1/admin/*` is mounted behind `requireRole('admin')`, so unknown admin paths return 401 to visitors and 403 to buyers before any 404.
+- **Tokens:** HS256 JWTs with `iss=nurserylink-api`, `aud=nurserylink` and a `typ` claim (`access` or `reset`); a token of the wrong type is rejected. The access and reset tokens share `JWT_ACCESS_SECRET`, and the `typ` claim keeps them from being swapped.
+- **Port conflicts:** the server exits with a fatal log if it can't bind its port (e.g. `EADDRINUSE`).
+- **Nearest-first (`sort=nearest`):**
+  - It picks the 20 closest active nurseries by straight line (KNN `<->` on the GiST index, after filters), then asks `RoutingProvider.table` for road distances and sorts by `road_km`. Unreachable nurseries go last, with straight line breaking ties.
+  - It returns one ranked page of up to `limit` (≤ 20) and ignores `page`. `meta.total` is the number of candidates.
+  - It falls back to straight-line order only on `ProviderUnavailableError`, logs a warning, and sets `meta.distance_mode = 'straight_line'`.
+- **Straight-line distance** (`straight_km`) is PostGIS's ellipsoidal distance (`geography`). It's added to list items whenever `lat`/`lng` are given, even without `sort=nearest` (`distance_mode = 'straight_line'`).
+- **GeoJSON (`format=geojson`):** it's for the map, so it's unpaginated (capped at 2,000 features). `meta` carries `total` and `distance_mode`. Properties are the list item without `location`, which becomes the Point geometry.
+- **Nursery profile distance:** `distance_km` uses `RoutingProvider.table` (the road) and falls back to straight line, with `distance_mode`. `GET /nurseries/:id/route` does **not** fall back, because a route must follow roads, so it returns 503 when routing is down.
+- **Stock visibility:** the species filter, species `nursery_count` and FR-20 lists only count active nurseries with stock above 0 for that species. Lists only show `is_active` nurseries, and inactive ones return 404 on the profile.
+- **Campaigns:** the public list shows *running* campaigns (switched on and within their dates), soonest-closing first. `is_open` also requires stock remaining, and only open campaigns set a nursery's `has_active_campaign` (the gift pin). `GET /campaigns/:id` returns any campaign, including ended ones, with `is_open`.
+- **News:** only published posts whose `published_at` has passed are visible, so drafts and scheduled posts return 404.
+- **Search text** is matched literally (`%`, `_` and `\` are escaped) with `ILIKE`; trigram GIN indexes keep it fast.
+- **Boundary GeoJSON** is rounded to 6 decimal places (about 0.1 m) to keep payloads small (NFR-9.2).
+- **Read-only modules** (boundaries, news, public campaigns) are routes plus repo with no service, because they have no business rules. A service is added when rules appear (campaign applications in Phase 6).
+- **Routing:** `MockRouting` uses straight line × 1.3 at 30 km/h. `OsrmRouting` takes an injectable `fetch`, so its parsing is unit-tested with canned OSRM responses. `isochrone` is covered in the Nursery Shadow entries below.
+- **Nursery boundaries:** an admin-created or moved nursery gets its `sub_county_id` and `district_id` from the sub-county polygon containing its location. Clients can't set them directly, so they always match the map. A location outside every sub-county returns 400.
+- **Deletes:** hard deletes are refused with 409 when anything depends on the record: a nursery with stock, orders or campaigns; a species used by stock, orders or campaigns; a stock line in an order; a campaign with applications. The message says to deactivate instead (`is_active` or quantity 0).
+- **Species edits:** `local_names` and `media` are edited as whole lists; sending a list replaces the current one. Media URLs must be a site path (`/images/…`) or `https://`. Slugs are generated from the common name, or the news title, when omitted.
+- **News publishing:** publishing without a date means "now". A future `published_at` schedules the post, and the public feed hides it until then.
+- **Campaign allocation:** a campaign's allocation is always the sum of its items. When the items change, `remaining_stock` moves by the same difference (seedlings already given out stay given out), and a change that would push it below 0 returns 409.
+- **CSV inventory import** (`POST /admin/inventory/import`, body `text/csv`, up to 2 MB and 5,000 rows):
+  - **Columns:** `nursery_id` or `nursery_name`, then `species_slug`, `quantity`, `unit_price`. Headers are case-insensitive and in any order. A BOM and thousands separators are accepted.
+  - **Nursery names:** matched exactly, ignoring case. An ambiguous name is a row error; use `nursery_id` instead.
+  - **Dry run:** the default. It returns row errors (line numbers count the header as line 1) and every change as `create`, `update` or `unchanged`, with before and after.
+  - **Commit:** `?commit=true` applies all rows in one transaction with row locks. It writes a per-row `inventory.create` or `inventory.update` audit entry plus one `inventory.import` summary, and skips unchanged rows. Nothing is applied if any row has an error (400, with the full result in `details`).
+- **Exports** (`/admin/export/nurseries.csv|.geojson`):
+  - **Payout numbers are left out**, because exports are meant for partners and reporting.
+  - **CSV format:** a UTF-8 BOM so Excel reads it correctly, and CRLF line endings. Stock goes in one cell as `slug:quantity@price; …`.
+  - **Formula protection:** cells starting with `= + - @ \t \r` get a leading `'` to prevent CSV formula injection. Phone numbers therefore appear as `'+256…` in spreadsheets.
+- **Audit-log filters:** `action=inventory` matches `inventory` and every `inventory.*` action.
+- **Database errors:** the error handler reads Postgres error codes through Drizzle's wrapper (`err.cause`). 23505 → 409, 23503 → 409 ("still referenced"), 23514/22P02 → 400.
+- **Source files:** never paste invisible characters such as a BOM into source; use the `\uFEFF` escape. ESLint's `no-irregular-whitespace` enforces this.
+- **Job queue:** uses pg-boss **10.4.x**, because pg-boss 11 and later need Node 22 and the target is Node 20. Jobs live in the `pgboss` schema.
+  - **Where jobs are enqueued:** services enqueue through the `JobQueue` interface. Tests use `RecordingQueue` and run the handlers directly.
+  - **Jobs and schedules:**
+    - `payment-timeout`: runs 15 minutes after the payment request.
+    - `sms-send`: 3 attempts with exponential backoff.
+    - `payout-check`: runs after each disbursement or refund.
+    - `auto-release`: runs every 15 minutes.
+- **Quotes:**
+  - **Distance:** delivery is priced on road distance only. If routing is unavailable, the quote returns 503 instead of guessing a price.
+  - **Rate choice:** the cheapest active rate that fits both `max_items` and `max_km` wins. Ties go to the smaller vehicle. If no rate fits, the quote returns 400 with `reason: too_many_items | too_far`.
+  - **Quote token:** a 10-minute HS256 JWT signed with `QUOTE_TOKEN_SECRET`, holding the priced lines.
+  - **One order per quote:** the quote's `jti` becomes the collection payment's `idempotency_key`, so reusing a quote returns 409.
+- **Placing an order:**
+  - **Locking:** stock lines are locked `FOR UPDATE` in id order, so parallel orders cannot deadlock.
+  - **Changes since the quote:** a price change, too little stock, or an item that is no longer listed returns 409 with per-line details. The client must re-quote.
+  - **Short codes:** 6 characters, excluding 0/O/1/I.
+- **Payer phone and network:** the payer phone must match the chosen method. MTN numbers start 076–079 and Airtel numbers 070/074/075. Unknown prefixes are allowed.
+  - **Mock mode:** every method uses `MockPayment`.
+  - **Live mode:** MTN and Airtel are fail-loud stubs (503) until Phase 8.
+- **Payment webhooks:** the body is used only to find the payment, by our idempotency key or the provider reference. The outcome is always read back from the provider with `getPaymentStatus`, so forged or replayed callbacks change nothing.
+  - **Duplicates:** a duplicate callback returns 200 `duplicate`.
+  - **Late success:** a collection we had failed (timed out) is checked once more. A success that arrives after cancellation is recorded and automatically refunded to the payer.
+- **Nursery SMS:**
+  - **Map link:** `${PUBLIC_WEB_URL}/o/{short_code}`. The web app must provide this page (not built yet), showing the delivery point without exposing it in the SMS.
+  - **Replies:** only replies from the nursery's `contact_phone` or `payout_phone` count.
+    - `1` moves an order from `escrow_held` to `dispatched`. Once the order has moved on, it is logged as `sms.unrecognised` instead.
+    - `2` moves the order to `disputed` and writes an `order.flagged` audit entry.
+    - Anything else writes an `sms.unrecognised` audit entry with the reason.
+  - **Callback secret:** the inbound webhook checks `?token=SMS_INBOUND_TOKEN`, which is required when `SMS_PROVIDER=africastalking`.
+  - **Buyer messages:** the buyer also gets SMS on payment received, dispatch, out-of-stock, and refund.
+- **Payouts:**
+  - **Where the money goes:** confirming delivery (or auto-release) creates a disbursement of `grand_total` to the nursery's `payout_phone`. The order moves to `released` only when the provider reports success. The platform takes no fee yet.
+  - **Retries:** a failed payout is retried as a new payment row with a new idempotency key, with 1-minute and 2-minute backoff. After 3 attempts, a `payout.flagged` audit entry is written. An admin can retry via `POST /admin/payouts/:id/retry`, which works only on the latest failed attempt.
+  - **One at a time:** an order can have only one pending or successful payout of any kind.
+- **Admin order actions** (reason required, 5–500 characters):
+  - **Refund:** `refunded` (or `POST /refund`) first moves `escrow_held` or `dispatched` to `disputed`, then refunds the collected amount to the number that paid. The order becomes `refunded` when the provider reports success.
+  - **Stock on refund:** refunds do **not** restore stock. The usual cause is the nursery lacking stock.
+  - **Release:** `released` pays out from `dispatched` (via `delivered`), `delivered` or `disputed`.
+  - **Dispatch:** `dispatched` is allowed from `escrow_held` or `disputed`.
+- **Dev-only endpoint:** `POST /api/v1/dev/mock-payments/settle {order_id, status}` stands in for the buyer approving the prompt. It is mounted only when `PAYMENT_PROVIDER_MODE=mock` and `NODE_ENV` is not `production`.
+- **Order visibility:** `GET /orders/:id` returns 404, not 403, for other buyers' orders. Admins can read every order but cannot place or confirm orders.
+- **Campaign applications** (FR-17):
+  - **Applying:** `POST /campaigns/:id/apply` (buyers only) is accepted only while the campaign is open: switched on, within its dates, and with stock left. `quantity_requested` may not exceed the current `remaining_stock`.
+  - **Stock:** applying reserves nothing; stock moves only on approval.
+  - **One per buyer:** each buyer gets one application per campaign (unique constraint → 409). Answers that fail validation are not stored, so they don't use up that one application.
+  - **Eligibility rules:**
+    - Every required question must be answered with the right type.
+    - Answers to questions the campaign doesn't ask are rejected.
+    - A required yes/no question must be answered **yes**; it's a condition of eligibility, such as "I have an LC1 letter".
+    - Numbers must be finite and 0 or more. Text is trimmed, and blank optional answers are dropped.
+    - All problems come back together as `details: [{path, message}]`.
+  - **Buyers' own list:** `GET /campaigns/applications/me`. Applicant details (name, phone) appear only in admin responses.
+  - **Review:** `PUT /admin/applications/:id {status, note?}`.
+    - Allowed moves: `pending → approved | rejected` and `approved → collected` (seedlings picked up). Anything else returns 409.
+    - Approval locks the campaign row and decrements `remaining_stock` in the same transaction. It returns 409 with `remaining_stock` if there isn't enough.
+    - Rejecting or collecting doesn't change stock.
+    - Each decision writes an `application.<status>` audit entry (with the note and the new remaining stock). The applicant gets an SMS on approval (with the pickup nursery) or rejection.
+- **Isochrones:** `RoutingProvider.isochrone(origin, kms)` returns the sampled points reachable within each distance, not polygons. The caller, which has the database, draws the polygon with `ST_ConcaveHull`, so providers stay database-free.
+  - **Sampling:** rings every 0.5 km out to the largest distance, in 36 directions (1,440 points for 20 km).
+  - **OSRM:** measures the samples with `/table`, in batches of 99 to fit osrm-routed's default `--max-table-size 100`.
+    - A sample more than 1 km from any road is dropped (e.g. out on the lake). The walk from the road counts towards the distance.
+    - Distances are never shorter than the straight line.
+  - **Mock:** reaches `km ÷ 1.3` in a straight line in every direction.
+- **Service areas** (`service_zones`): each 5/10/20 km area is `ST_ConcaveHull(points, 0.9)`, then buffered by 250 m (geography), made valid, and stored as a MultiPolygon.
+  - **Why 0.9:** `postgis/postgis:16-3.4` ships GEOS 3.9, so PostGIS uses its older concave-hull algorithm. That takes ~20 ms per area at 0.9 but ~1.5 s at 0.7. With GEOS ≥ 3.11 the target could be lowered.
+- **Forest-loss cells:** one row per 1 km cell **per year** (`loss_year_from = loss_year_to`), with `loss_pct` as the share of the cell's valid land pixels lost that year. A run sums a cell's years `>= since_year`, capped at 100. Hansen gives each pixel a single loss year, so the sum is the share lost over the period.
+  - **The loader** (`scripts/forest-loss/forest_loss.py`) replaces the table in one transaction and writes a `forest_loss.load` audit entry.
+  - **Grid:** a 25 m grid in UTM 36N, snapped to whole kilometres. Each grid corner is transformed once, so neighbouring cells share exact coordinates and dissolve cleanly.
+  - **Denominator:** `loss_pct` is measured against all of a cell's valid land, not just what was forest in 2000. This is simpler and means "share of the land cleared". It can be switched to use `treecover2000` later.
+- **Shadow zones** (`shadow_zones`): cells whose summed loss is `>= threshold_pct` and that don't touch the union of all 20 km areas (`NOT ST_Intersects`, i.e. entirely outside).
+  - **Dissolving:** cells are merged with `ST_Union` and split into connected zones (`ST_Dump`).
+  - **Each zone records:** its area-weighted `loss_pct`, its `area_km2` (geography), and the district it overlaps most.
+- **Shadow runs:**
+  - **Starting a run:** `POST /admin/shadow/runs` returns **202** with `meta.outcome: new` and queues the `shadow-run` job. It returns **200** with:
+    - `in_progress` when an identical run is already queued or running;
+    - `cached` when the latest successful run with the same parameters used identical inputs.
+  - **Inputs fingerprint:** an md5 of the active nurseries' ids and locations, plus a summary of `forest_loss_cells` (count, max id, sum, year range). It's stored in `shadow_runs.params.inputs_hash` (jsonb, so no schema change). Changes to the OSRM road data are **not** detected; start a run with different parameters, or clear old runs, after rebuilding OSRM.
+  - **Failures:** a failed run is marked `failed` with the error, its partial results are removed, and it is never reused. The job doesn't retry on its own.
+  - **No data warning:** when `forest_loss_cells` is empty, the run still succeeds with no shadows, and the POST response includes `meta.warnings`.
+  - **Viewing results:** `GET /admin/shadow/runs/:id/geojson?layer=zones|shadows|cells` (default `shadows`) and `GET /admin/export/shadow/:runId.geojson` (attachment) return 409 until the run has succeeded. Coordinates are rounded to 6 decimal places.
+- **Python:** the forest-loss loader needs only GDAL (with its PostgreSQL driver) and numpy, with no psycopg. It runs in `ghcr.io/osgeo/gdal:ubuntu-small-3.9.3`, and its unit tests run there too (`python3 -m unittest`). It isn't part of `pnpm test`.
+- **OpenAPI** (`src/openapi/`): `operations.ts` lists every operation with the **same Zod schemas the routes validate with**. `document.ts` turns them into OpenAPI 3.1 with `z.toJSONSchema` (input side).
+  - **Serving:** Swagger UI at `/api/v1/docs` and JSON at `/api/v1/docs/openapi.json`, from local `swagger-ui-dist` assets (no CDN). `API_DOCS=false` turns them off.
+  - **Drift test:** every documented operation must route to a real handler, and the number of Express route handlers must equal the operations plus 2 (`openapi.json` and the dev settle route). **Adding a route without documenting it fails the tests.**
+  - **Responses:** documented as the generic envelope, not per-field schemas, since response DTOs aren't Zod schemas.
+  - **Analytics blocked:** `@scarf/scarf` (swagger-ui-dist's install-time analytics) is blocked in `allowBuilds`.
+- **Security headers:** API responses get a strict CSP (`default-src 'none'`), `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, a 1-year HSTS, `nosniff`, and `Cache-Control: no-store` on everything, because responses carry live stock, prices and personal data. The docs page gets a CSP allowing its own scripts and styles.
+- **CORS:** only `CORS_ORIGINS`, with credentials, explicit methods and headers, 10-minute preflight caching, and `X-Request-Id`, the rate-limit headers and `Content-Disposition` exposed.
+- **Input limits:**
+  - **Bodies:** 100 kB JSON, 10 kB inbound-SMS form, 2 MB CSV import.
+  - **URLs:** over 2,048 characters → 400. Pagination is capped at 100.
+  - **Server timeouts:** headers 20 s, request 30 s, keep-alive 65 s (longer than typical load-balancer idle timeouts).
+- **Rate limits** (in-memory; per account when signed in, else per IP):
+  - 300/min overall.
+  - Quotes: 30/min.
+  - Orders and delivery confirmation: 10/min.
+  - Campaign applications: 10/hour.
+  - Route requests: 60/min.
+  - Shadow runs: 20/hour per admin.
+  - Webhooks: 600/min per IP, outside the overall limit.
+  - Health: unlimited.
+  - **`RATE_LIMIT_SCALE`** multiplies every in-memory limit. It's 1 in production and 1000 in the test config, so functional tests aren't throttled; `security.test.ts` checks the real limits.
+- **`TRUST_PROXY`** (default 0) sets Express `trust proxy`. At 0, `X-Forwarded-For` is ignored, so it can't be forged to dodge IP limits. Behind one proxy, set 1. Production logs a warning when it's 0.
+- **MTN MoMo** (`providers/payment/mtnMomo.ts`, Open API collection and disbursement):
+  - **References:** our payment `idempotency_key` (UUID v4) is sent as `X-Reference-Id` **and** `externalId`. A 409 on create means an earlier attempt got through, so it's never a double charge. Callbacks are matched by `externalId`.
+  - **Tokens:** OAuth tokens are cached per product until a minute before expiry. A 401 gets one retry with a fresh token.
+  - **Statuses:** `PENDING`, `SUCCESSFUL`, and `FAILED`/`REJECTED`/`TIMEOUT` (as failed). A 404 on a status check means failed.
+  - **Errors:** 503 with MTN's error code only, never credentials.
+  - **Sandbox:** only accepts EUR (amounts stay whole shillings). Outside the sandbox, config requires `MTN_CURRENCY=UGX`.
+- **Payment polling:** after each prompt, `payment-poll` jobs check the status at 20 s, 1 min and 3 min, so buyers aren't left waiting for the 15-minute timeout when a callback is missing. Polls apply only final results and log (not retry) provider outages.
+- **Airtel Money:** still a stub, so its credentials aren't required in live mode.
+  - **Orders:** `POST /orders` with `airtel_money` returns 503 **before** anything is created.
+  - **Payouts:** payouts to Airtel numbers fail and are flagged (`payout.flagged`) for an admin to settle by hand.
+- **Version** comes from `apps/api/package.json` (read at startup, works from `src/` and `dist/`), not `npm_package_version`.
+- **Typed API responses:** every response has a strict Zod schema in `packages/shared/src/schemas/responses.ts`, attached to its operation in `apps/api/src/openapi/operations.ts` and published as named OpenAPI components (`Order`, `NurseryProfile`, …). With `VALIDATE_RESPONSES=true` (the test config) every JSON success response is checked against its schema, so the whole API suite doubles as a contract test; a mismatch is a 500 naming the field.
+- **Admin campaigns** use the same DTO as the public directory (`campaigns.dto.ts`; nested `sub_county`/`pickup_nursery`, ISO dates).
+- **Admin nurseries** include `stock_updated_at` (newest stock line change), for the stale-stock flag.
+- **E2E helper:** `GET /api/v1/dev/sms-outbox?to=` lists texts the mock SMS provider "sent" (newest first). Like the mock-payment settle route it exists only outside production and only with the mock provider.
+- **Login and refresh errors are documented:** `/auth/login` 401 (wrong details) and 403 (`phone_not_verified`), `/auth/refresh` 401, so typed clients and mocks know them.
+- **Photos:** WebP at quality 55 with smart subsampling. The originals are already compressed foliage photos, so 960 px WebP saves little; the real saving is the 480 px set phones use (avg ≈ 41 KB vs 70–340 KB JPEGs). JPEGs stay as the iOS 13 fallback.
+- **Service worker** is hand-written (injectManifest), because a generated one can't carry the plugin that marks cache-served responses.
+- **Fonts** are self-hosted (`@fontsource`): Atkinson Hyperlegible Next (variable, ≈ 36 KB Latin) everywhere; Source Serif 4 italic only on Library routes.
+- **`fetch` is resolved per call** in the API client (not captured at import), so MSW, polyfills and test tools that patch it later still apply.
+- **One search box** (`/nurseries?q=`): the API's `q` matches a nursery's name **or** any tree it has in stock (common, scientific or local name), so "Mvule" finds nurseries selling Mvule. `species=` stays for exact deep links (FR-20: `/nurseries?species=mvule&sort=nearest`).
+- **/nurseries data:** one `format=geojson` request (all matches, ≤ 2,000) feeds both the map and the alphabetical list. "Sort by nearest" makes a second request (`sort=nearest`, the 20 closest ranked by road). Distances read "approx." whenever they're straight-line.
+- **/nurseries URL state:** `q`, `district`, `sub_county`, `species`, `sort`, `view` (`map|list`), `nursery` (open card), `directions`. Choosing a new district clears the sub-county; closing the card ends directions. Typing replaces history, so it doesn't fill the back button.
+- **Map levels:** supercluster clusters up to zoom 13. A cluster shows a Sun badge if it contains a free-seedlings nursery. From zoom 10, the districts of the nurseries in view are outlined (dashed). From zoom 12, pins show name labels (when ≤ 60 are visible). The selected district or sub-county filter is outlined and the map flies to it.
+- **Pins** are cached Leaflet divIcons built from `@nurserylink/ui` SVGs. They're keyboard-focusable, and their `aria-label` gives the name, distance and free-seedling flag.
+- **Location:** an explanation dialog comes before the browser prompt. The position is rounded to ~100 m and kept in `sessionStorage` for the session only. Refusing keeps the alphabetical list with a note pointing to the district filter.
+- **Phones:** a full-screen map with a floating search and Map/List toggle, plus the list in a custom bottom sheet. The sheet is a labelled region, not a dialog, and its handle is a button that steps through peek/half/full and also drags. `vaul` was dropped because it `aria-hidden`s the rest of the page even when non-modal. On phones the map has no zoom buttons (pinch to zoom), and the OSM credit sits top-right so the sheet never covers it. "List" view doesn't load the map at all, which saves data.
+- **Coordinates from openapi-fetch** arrive as `number[]` (its response types widen tuples), so map code reads them through `toLatLng()` rather than assuming tuples.
+- **Request timeout:** the API client gives up after 20 s and returns a `network_error` ("The connection is too slow right now…"), so a stalled request on a weak signal shows "Try again" instead of loading forever.
+- **Tree library:** the index loads every species (100 per request, up to 2,000) so the A–Z jump links work without paging. Filters are in the URL (`?category=`, `?q=`). Species pages are the "specimen sheet": a white mount with a thin Canopy frame, the scientific name in Source Serif 4 italic (loaded only on Library routes), a growth chart drawn as height over years with tree glyphs, and canopy/root notes as a labelled specimen drawing.
+- **Growth chart** lays itself out at its real width (ResizeObserver) so labels stay 13 px on phones. Year labels that would overlap are dropped from the drawing; the SVG title reads every milestone to screen readers.
+- **News bodies** are Markdown, rendered with `marked` and sanitised with DOMPurify. Both load only in the article chunk.
+- **Home campaigns strip:** running campaigns, nearest pickup point first when the user's location is already known this session (straight-line ordering only), otherwise soonest-closing first.
+- **3-tap rule (NFR-3.1)** is an E2E check: Home → Find nurseries → a nursery (card open) → Order & deliver, on phone and desktop.
+- **Order map link (nursery SMS):** the "Map:" link is `${PUBLIC_WEB_URL}/o/{code}?k={key}`, where `key` is the first 12 base64url characters of HMAC-SHA256(`OTP_HMAC_SECRET`, `order-map:{code}`). `GET /orders/by-code/{code}?k=` is public but needs the key. A wrong code or key gives the same 404, and it's rate-limited to 30/min. It returns only what the nursery needs: the delivery pin and address, the items, and the buyer's name and phone (already in the SMS).
+- **`/health` includes `payment_methods`** (`mtn_momo`, `airtel_money`), so the checkout shows Airtel as "Not available yet" in live mode instead of failing at payment.
+- **Checkout** (`/nurseries/:id/order?step=seedlings|delivery|pay`, buyers only):
+  - **Draft:** the choices (quantities, delivery, payment method, paying number) are kept in `sessionStorage` per nursery. The draft survives a refresh and "Try again", and is cleared once an order is paid.
+  - **Validation:** errors are derived from the draft and shown after the first "Next". Each disappears as soon as its field is valid (FR-25: delivery needs a pin and an address of 5+ letters).
+  - **Quote:** fetched for exactly the current choices, with a countdown, and re-fetched automatically when it expires.
+  - **409 handling** (from the quote or the order): quantities are capped to the stock left and removed items dropped. The buyer sees exactly what changed (price, stock, gone), then it re-quotes.
+  - **Paying number:** checked against the chosen network before submitting.
+- **Order page:** polls every 3 s while `pending_payment` ("Check your phone and approve the payment").
+  - **Outcomes:** `cancelled` shows "The payment didn't go through", with **Try again** back to the quote. `escrow_held` shows "Order placed" and what happens next.
+  - **Confirming delivery:** `dispatched` shows **Confirm delivery** (a dialog says it releases the payment) and the 72-hour auto-confirm time.
+- **Timeline:** Ordered → Paid → On the way / Ready (collection) → Delivered → Completed. The first unfinished step is "in progress". Cancelled, refunded and disputed orders show no step in progress.
+- **E2E helpers** (`e2e/helpers.ts`) read SMS codes from the dev outbox and approve or decline payments with the dev settle route. Nursery replies go through the real inbound-SMS webhook.
+- **Dev hygiene:** pg-boss workers in **any** running API process take jobs from the shared database. Stop stray API processes before E2E runs, or their in-memory mock SMS outbox will receive the texts instead.
+- **Eligibility rules are shared:** `checkEligibility` lives in `packages/shared/src/eligibility.ts`, and both the API and the web application form use it. The form (`EligibilityForm`) is generated from `eligibility_rules`: yes/no becomes a checkbox, number a decimal field, text a text field. Its React Hook Form resolver calls `checkEligibility`, so the form can't accept what the API refuses.
+- **`packages/shared` build:** it has its own tests now (`vitest`). `tsconfig.build.json` excludes them from `dist`.
+- **Free seedlings:** the directory filters by sub-county (all sub-counties, grouped by district) and purpose text, both in the URL. A campaign page shows its checklist to everyone. Signed-in buyers get the form, or their application status if they've already applied. Closed campaigns say so and point to the running ones.
+- **`remaining_pct`** is rounded down, so 100% only means nothing has been given out yet.
+- **Admin console screens** (`apps/admin/src/routes/`, one lazy chunk each):
+  - **Needs attention (dashboard):** six lists, each with a count, the top 5 items and what to do. `GET /admin/dashboard`; refreshes every minute.
+  - **Tables:** TanStack Table v8 (v9's API differs), server-paged, 36 px rows. Filters and the page number live in the URL.
+  - **Wide tables on phones** scroll inside their own box; the page never scrolls sideways (an E2E check covers every admin screen at 375 px). Below 1024 px the sidebar becomes a top bar with a menu.
+- **Order state machine is shared:** `ORDER_TRANSITIONS` and `adminOrderActions(status)` live in `packages/shared/src/orderStateMachine.ts`. The API refuses (409) any admin action that isn't in `adminOrderActions` for the current status, and the order page offers exactly those, so the two can't disagree.
+- **Admin order page:** every action opens a reason dialog (5–500 characters, the same rule as the API). History is the order's audit entries (`entity=order`), shown as "Paid, held → Dispatched", with the reason and who did it (or "automatic"). While an order is `disputed` or `delivered` it re-checks every 10 s, because refunds and payouts finish when the provider confirms. `GET /admin/orders/:id` adds the buyer and the collection payment.
+- **Nursery location picker:** click the map, drag the pin, or paste "lat, lng". The district and sub-county selects only move the map; the API still derives the boundaries from the point. The map re-measures itself with a ResizeObserver, because Leaflet measures its box only once.
+- **Campaign rule builder:** a new rule's key is made from its label (`snake_case`, numbered if taken, `q_` prefix if it starts with a digit). Saved rules keep their key, because existing answers use it. The live preview is the real `EligibilityForm` (moved to `packages/ui`, with its wording passed in as `labels`), so it shows exactly what buyers will see. The form validates with the shared `campaignCreateSchema` before sending.
+- **Campaign dates** are whole local days: a start date means 00:00 and an end date 23:59:59.
+- **Applications queue** opens on Pending, with the stock left always in view. Approve is disabled when a request exceeds the stock left. Notes are optional.
+- **Photo upload:** `POST /admin/media` (multipart, field `file`, JPEG/PNG/WebP ≤ 5 MB, 413 when larger).
+  - It writes `{uuid}-480.webp` and `{uuid}-960.webp` (EXIF stripped, rotated upright) to `MEDIA_DIR` (default `data/media`).
+  - The API serves them at `MEDIA_PUBLIC_PATH` (`/media`), cached for a year (immutable) and embeddable cross-origin.
+  - It writes a `media.upload` audit entry. Both Vite configs proxy `/media`.
+- **Seeded photos in the admin:** the `/images/...` photos belong to the public site. The admin loads them from `VITE_PUBLIC_WEB_URL` (empty means same origin), and its dev and preview servers proxy `/images` to the web server (`WEB_PROXY_TARGET`, default :5173 for dev and :4173 for preview).
+- **CSV import screen:** the dry run starts as soon as a file is chosen. A file with row errors shows them (the API's 400 carries the full result in `details`) and offers no commit. Commit sends the same text with `?commit=true`. The template is a download made in the browser.
+- **Stock grid:** each row saves on its own (Save or Enter). Save appears only on a row with unsaved changes, which is tinted.
+- **Select chevron** is the `nl-select` class in `packages/ui/src/styles.css`. An arbitrary `bg-[url(...)]` class was never generated by Tailwind, and tailwind-merge dropped `bg-paper` next to the old `bg-[length:…]` classes, so selects had looked grey with no arrow on both sites.
+- **Tests sharing one database** run in parallel, so they must not assert exact totals of shared tables. Assert "at least" and find your own rows (the seed test checks news posts by slug).
+- **Dashboard queries** select DTO columns explicitly. A `SELECT *` leaked `status` into failed payouts and broke the strict response schema whenever a payout had failed.
+- **E2E data:** the Phase 7 journeys create a hidden (inactive) "E2E Test Nursery …" on each run, and buyers with random numbers, in the dev database. `pnpm db:reset` clears them.
+- **Shadow map `cells` layer** (`?layer=cells`): the run's forest-loss cells summed from its `since_year` (capped at 100), only those at or above **half** the threshold, worst first, at most 20,000. Each has `loss_pct` and `in_shadow` (its interior point lies in one of the run's shadow zones). Coordinates are rounded to 6 decimals. It shows the loss building up near the threshold, not only the zones that crossed it.
+- **Synthetic forest-loss sample** (`db:forest-sample`, `src/db/forestLossSample.ts`) is for development and demos only. It refuses to run when `NODE_ENV=production`.
+  - It replaces `forest_loss_cells` with a 0.009° grid over Mukono: four invented hotspots (two on Koome Island, dry land ~27 km beyond every sample nursery's reach, and two on the mainland inside it; moved there when the official boundary, which includes Lake Victoria waters, replaced the hand-drawn one; the exponent is capped so far lake cells don't underflow) plus faint deterministic noise, 2001–2023.
+  - Like the real loader, it writes a `forest_loss.load` audit entry, with `sources: ['synthetic_dev_sample']`.
+  - The Shadow screen reads the latest `forest_loss.load` entry and shows an amber "invented sample data… do not use for decisions" warning above the results whenever the source is the sample.
+  - The Phase 8 E2E loads the sample only when the table is empty or already holds the sample, so real data is never replaced.
+- **Nursery Shadow screen** (`/shadow?run=`):
+  - **Layout:** settings (validated with the shared `shadowRunCreateSchema`), earlier runs, and the chosen run. Without `?run` it opens the newest finished run.
+  - **While a run works:** the run and the list poll every 3 s.
+  - **Outcome messages:** "Started…" disappears once that run has finished; "cached" and "in progress" are explained.
+  - **Map layers:**
+    - Forest-loss squares in three tones relative to the threshold (½×–1×, 1×–2×, 2×+), on a canvas renderer.
+    - Shadow zones with a dashed laterite outline; the selected one has a solid Canopy outline.
+    - Nursery reach: 20 km filled, 5 and 10 km dashed. It is off by default and loaded only when switched on.
+    - Nursery pins.
+  - **Zones table** (largest first, with "Show on map") is the text alternative to the map. GeoJSON export goes through the authenticated client as a blob download.
+  - **Phones:** the results come before the settings.
+- **Redesign, "Earth & canopy"** (chosen by the user, October 2026; supersedes the colour, type and icon sections of `docs/design-plan.md`, see its addendum):
+  - **Palette:** canopy `#123d2a`, forest `#1e5b3c`, banana-leaf seedling `#2a7d45` (5.1:1 on white), red murram `#b8501f` (4.6:1 on cream), sun `#f2b705` (free seedlings only), cream background `#faf6ee`, bark text `#2a211b`, plus `murram-light` `#f0b48f` for murram on dark green (6.7:1). Every text pair passes WCAG AA.
+  - **Photos instead of stock icons**, as the user asked: real Ugandan photos (Wikimedia Commons, credited) lead Home (full-width hero; the module tiles are photo cards) and the Library, News and Free seedlings page bands (`PageHero`). Decorative icons are gone. Categories are colour-coded text pills (`components/Pills.tsx`). Trees without a photo show their initial in Fraunces italic. Small functional icons remain: search, location, arrows, show password, sign in and out.
+  - **Uganda in the copy:** mobile money (MTN MoMo, Airtel Money), boda boda delivery, "your garden", popular local trees as one-tap searches. A woven murram, sun and green band tops the footer, after Ugandan basketry and bark-cloth patterns.
+  - **Type:** headings, card titles and the wordmark use Fraunces (variable, upright 35 KB everywhere; italic 44 KB only on Library routes, for scientific names; Source Serif is gone). Body text stays Atkinson Hyperlegible for legibility. Headings are semi-bold (620), slightly tightened, `text-wrap: balance`; paragraphs `text-wrap: pretty`.
+  - **Brand mark** (October 2026, the owner's chosen logo, "Your Trusted Link to Quality Seedlings"): a seedling rising from a map of Uganda inside a lake-blue chain link, on a cream tile. The Uganda outline is the UBOS boundary, simplified. The drawing lives once in `packages/ui/src/icons/brandMarkSvg.ts` and feeds `BrandMark`, the static app shell, both `favicon.svg` files (a test checks they match) and the PWA icons (`pnpm --filter @nurserylink/web images`). The owner's other gallery images are AI-generated (Google content credentials), so they are not used as photos.
+  - **Buttons:** `accent` (murram, the one standout action on dark or photo backgrounds) and `onDark` (light outline) variants. Cards are `rounded-lg` with `shadow-card` (`shadow-lift` on hover).
+- **Loading speed** (Phase 9 work done alongside the redesign):
+  - **App shell:** a Vite plugin (`appShell` in `apps/web/vite.config.ts`) writes static HTML for the header (every page) and Home's hero into `index.html`, from `src/shell/appShell.ts`. That file uses the same copy and photo data as the app and mirrors the markup of `Layout`, `Logo` and `Home`, so change them together. It paints before the JavaScript; React then replaces it.
+  - **Scripts after first paint:** production builds start the app's JavaScript one frame after the first paint (or after 150 ms in a background tab), so the CSS, fonts and hero photo get the bandwidth first.
+  - **Fonts and hero photo:** the two Latin font files are preloaded. Home's hero is preloaded by an inline script on `/` only (its `srcset`/`sizes` match the `<img>`). Phones get the 480 px hero (q40; it sits under a dark wash), and wide screens a 1400 px version.
+  - **Smaller first load:** Home is part of the main bundle, not a lazy chunk. The phone menu (Radix Dialog) loads on first tap. The `Toaster` (Radix Toast) loads just after the first render: `toast()` lives in `toastStore.ts`, and queued toasts wait there. Initial JS is 122.9 KB gzip.
+  - **Result:** Home on Lighthouse mobile (simulated slow 4G) scores performance 96 with LCP 1.96 s and CLS 0 (it was 84 with LCP 4.1 s).
+  - **`/nurseries`:** its largest element is a map tile, so its LCP depends on the OpenStreetMap tile server, which is a third party. It loads the map code as soon as the page code arrives and preconnects to the tile server.
+- **E2E isolation:** Playwright runs its own API (`:4100`, database `nurserylink_e2e`, reset and seeded at start by `db:reset`, which now creates the database if missing and clears `pgboss`) and production previews of web (`:4183`) and admin (`:4184`) (`e2e/env.ts`). It never touches the dev database or dev servers. The previews are built with `NODE_ENV=production`: `.env`'s `development` would otherwise give React's dev build and no service worker.
+- **Offline E2E:** Playwright's `setOffline` doesn't reach a service worker's own requests, so `journeys.offline.spec.ts` routes the browser through a local proxy with an off switch (`e2e/netswitch.ts`) and drops every connection for real.
+- **Accessibility scan:** `e2e/a11y.spec.ts` runs axe (WCAG 2.1 A/AA) on every public screen at 375 and 1280 px (including the open nursery card and checkout), and on every admin screen (desktop, plus the busiest on a phone). It fails on any violation and lists them all.
+- **Lighthouse:** `e2e/lighthouse.spec.ts` runs `scripts/lighthouse.mjs` (plain Node: Lighthouse breaks under Playwright's transpiler) on `/` and `/nurseries`. It asserts performance ≥ 85, accessibility ≥ 95 and LCP < 2.5 s, and saves reports to `docs/lighthouse/`.
+- **CI** (`.github/workflows/ci.yml`):
+  - **Checks job:** lint, typecheck, all tests (Testcontainers on the runner's Docker), the API client regenerated and diffed, both apps built, and the size budget.
+  - **E2E job:** a PostGIS service, a generated throwaway `.env` (random secrets, a test admin on a placeholder number), then the whole Playwright suite on the runner's Google Chrome. The reports are uploaded as artifacts.
+- **Links in running text are underlined.** axe's link-in-text-block rule: colour alone isn't enough.
+- **Page-level headings:** the 404 and route-error pages use `headingLevel={1}` (`EmptyState`/`ErrorState`), so every page has an h1.
+- **Leaflet markers:** display-only markers use `keyboard={false}`; Leaflet otherwise gives every marker `role="button"`, unnamed. Interactive pins are labelled on `add` as well as on ref.
+- **Admin Insights** (`/insights`, `GET /admin/analytics?range=30d|90d|12m`), added at the user's request. It sits alongside "Needs attention", which stays the admin home: Needs attention lists what to act on, Insights shows how things are going.
+  - **Definitions:** sales are paid orders (`paid_at` in the period) that were not refunded. The order-status chart counts every order created in the period, by its status now. Each headline figure is compared with the period just before.
+  - **Buckets:** days, weeks or months in Kampala time, empty ones included, so the chart's points add up to the headline figures (tested).
+  - **Shown:** sales, orders, seedlings sold, average order, new buyers and free seedlings approved, plus sales over time, order status, delivery vs collection, MTN vs Airtel, the top 8 trees and nurseries, stock by category (active nurseries, today) and campaign progress.
+  - **Read-only:** routes plus repo (`analytics.repo.ts`), no service.
+  - **Charts** are hand-drawn SVG (`apps/admin/src/features/insights/charts.tsx`; no chart library): an area chart, donuts and bar lists in the palette.
+    - Each chart is drawn at its measured width.
+    - Donuts sit beside their legend only when the card is wide enough (a container query).
+    - Every chart has a text alternative: a visually hidden table or a full legend with figures and shares.
+- **Demo activity** (`db:demo-activity`, `src/db/demoActivity.ts`) is for development and demos only, and refuses production.
+  - **Buyers:** 24 "Demo buyer N" accounts on placeholder numbers (`+25677299…`) that can't sign in.
+  - **Orders:** about 300 orders over a year with valid totals and a successful collection payment each. They follow Uganda's planting calendar (more in March–May and September–November) and grow over the year, with some refunded, cancelled and disputed.
+  - **Stock:** not reduced.
+  - **Re-running** replaces the previous demo data. It writes a `demo.load` audit entry. The admin redesign E2E loads it into the E2E database.
+- **Admin look:** the same "Earth & canopy" tokens and Fraunces headings as the public site.
+  - **Sidebar:** brand mark with "Admin console", a murram bar on the active section, the woven band, and the admin's initials.
+  - **Sign-in:** a card over a darkened nursery photo.
+  - **Needs attention:** large counts with a coloured edge (red urgent, green clear), and a Luganda greeting ("Oli otya", meaning "How are you?").
+  - **Cards and tables:** rounded with soft shadows; table headers are sand.
+- **Trial switches** (agreed with the user, October 2026). They let the whole system be tried before SMS and mobile money are live. Both are off in the dev `.env`, and the defaults (and `.env.example`) are the full flows.
+  - **`PHONE_VERIFICATION=off`:** registering confirms the account at once (no SMS code). `POST /auth/register` then returns `tokens` and sets the refresh cookie, so the person is signed in; with verification required it returns `verification` and `tokens: null` as before. Login stops refusing unverified numbers.
+  - **`PAYMENTS=off`:** checkout has no payment step. `POST /orders` ignores `payment_method` and `payer_phone` (both optional now; required while payments are on) and records the order with payment method `trial`. The collection payment is against the mock provider, on the buyer's own number.
+    - It is confirmed at once through the normal `applyCollectionResult` path, so the order moves to `escrow_held` and the nursery and buyer get their (mock) SMS.
+    - Dispatch, delivery, refunds and release work as usual; payouts go through the mock, so no money moves.
+    - It requires `PAYMENT_PROVIDER_MODE=mock`, and config validation refuses `PAYMENTS=off` with live payments.
+  - **`/health`** reports `features: { phone_verification, payments }`. The web app hides the code screen and the payment step from it, and trial orders read "Confirmed — nursery notified" / "No payment (trial)" instead of "Paid".
+  - **`trial` payment method:** a new `payment_method` enum value (migration `0003`). Buyers can only choose `mobileMoneyMethods`.
+  - **Tests:** the E2E suite pins both switches on, so the full flows stay tested. `trial.test.ts` covers trial mode.
+- **Dev database reset** (October 2026, at the user's request): `pnpm db:reset` cleared every test and demo record (buyers, orders, demo activity, leftover E2E nurseries, Shadow runs, the forest sample). Only the seed remains: 15 nurseries, 21 trees, 2 campaigns, 3 news posts and the admin.
+- **Light blue** (user request): Lake Victoria blues joined the palette.
+  - **Tokens:** `lake` `#2b6a97` for text and accents (5.8:1 on white), `sky-tint` `#e5f1f9` for bands, `sky` `#a8d4ef` on dark green (7.7:1).
+  - **Where it's used:** Home's sky wash under the hero and the sky "three steps" band, weather pills, a lake stripe in the woven band, the trial note at checkout, and "Delivered" in the Insights delivery chart.
+- **Home hero photo:** a shade-net tree nursery at Kiige, Kamuli District ("Greenhouse in Uganda" by Phionah Boonabaana, CC BY-SA 4.0), straightened and cropped as the credits page says. The "three steps" band shows seedlings being unloaded from a truck ("Off-Loading Seedlings" by Surge2016, CC BY-SA 4.0).
+
+- **News & advice page** (user request, October 2026):
+  - **List:** the newest post on page 1 is the large lead story. Every card has a photo: the post's cover, or a photo for its category (`features/news/photos.ts`).
+  - **Side panel** (beside the list on wide screens, after it on phones): a planting calendar and links to nurseries, free seedlings and the library.
+  - **Planting calendar:** the seasons are hard-coded for central Uganda: rains March–May and September–November, "get ready" the month before each, dry otherwise. It marks the current month in Kampala time and says what to do now.
+  - **Articles:** reading time (200 words a minute), the cover or category photo, a next step by category (weather and market → Find nurseries, policy → Library, grant → Free seedlings), and up to 3 more recent posts.
+- **Typo-tolerant search** (user request, October 2026; PostgreSQL `pg_trgm`, not Elasticsearch, by agreement):
+  - **Scoring** (`search.repo.ts`): 1.0 when a word in the name starts with the text, 0.9 when it appears anywhere, otherwise `word_similarity`. Matches below 0.3 are dropped (tuned on the seed: "mvulle" → Mvule 0.63, "eucaliptus" → Eucalyptus 0.57).
+  - **Suggestions:** `GET /search/suggest?q=&types=species,nursery,place` (120/min) covers trees (common, scientific and local names, with `matched` when a local name hit), active nurseries, and districts and sub-counties (with a point inside each). Trees win ties.
+  - **Spelling fallback:** when `/nurseries` or `/species` match nothing as typed, the service retries with up to 3 close tree (or nursery) names and returns `meta.corrected_q`. Exact matches are never "corrected", so "mango" doesn't pull in Mangada. The web app shows "No exact match for “mvulle”. Showing results for Mvule."
+  - **Choosing a suggestion:** on `/nurseries`, a tree searches for it, a nursery opens its card, and a place sets the district/sub-county filter (`update` keeps a sub-county set together with its district). In the Library a tree opens its page. On Home it goes to `/nurseries` accordingly.
+  - **`Combobox`** (`apps/web/src/components/Combobox.tsx`) is the WAI-ARIA 1.2 combobox: focus stays in the box, `aria-activedescendant`, and the count is announced. The list is labelled "Suggestions" and its options render only while open. `inline` puts the list in the flow (inside dialogs that scroll).
+- **Place search** (`GET /places?q=`, 30/min): our districts and sub-counties first, then OpenStreetMap results via `GeocodingProvider` (`GEOCODER_PROVIDER=mock|nominatim`, `NOMINATIM_URL`, `GEOCODER_CONTACT`, required for Nominatim).
+  - **Nominatim's usage policy:** at most 1 request/s with an identifying User-Agent, cached, and no search-as-you-type. So the client queues requests ≥ 1.1 s apart and gives up (503 → our places only, `meta.osm: 'unavailable'`) rather than wait over 4 s. It caches results for 24 h (1,000 entries).
+  - **In the web app:** our places are suggested as you type, and OpenStreetMap is asked only when the person presses Search. `MockGeocoding` returns one labelled test place near Mukono.
+  - **Where it's used:** the location dialog ("Or type where you are"; the place becomes the session location like a GPS fix) and checkout's delivery step (moves the pin; fills the address only if it's empty).
+- **Sample (demo) nurseries** (October 2026, user's choice): the owner's two spreadsheets (1,500 nurseries, 6,735 stock lines) turned out to be generated: placeholder sub-counties, 10 manager names, and coordinates scattered across whole regions. But their phones and emails are real-format and could belong to real people.
+  - **Cleaned file:** `scripts/demo-nurseries/convert.py` keeps only safe fields and writes `apps/api/src/db/demo/demo-nurseries.json.gz`. It drops phones, emails, villages, certificate numbers, the invented sponsors (WWF, ECOTRUST, the Ministry) and the 1,699 lines priced 0. Each nursery gets a fixed point at least ~1 km inside its named district and off the big lakes (Natural Earth lakes, public domain), seeded by its reference.
+  - **Loader:** `pnpm --filter @nurserylink/api db:demo-nurseries` (`--remove` to delete) upserts by `external_ref`, and dev only. It writes a `demo.load` audit entry. Sample nurseries that orders or campaigns refer to are switched off rather than deleted.
+  - **`nurseries.is_demo`** (migration `0005`, with `external_ref` and `listing_note`):
+    - Public responses give `is_demo` and `contact_phone: null`; the placeholder number (+256 7009 xxxxx) is never shown.
+    - The card says "Sample nursery… don't travel there", and list rows carry a "Sample" tag.
+    - Lists sort real nurseries first.
+    - Sample nurseries are never texted (order and payout SMS are skipped).
+    - With `PAYMENT_PROVIDER_MODE=live`, quoting or ordering from one returns 409.
+  - **The raw spreadsheets and zips** are git-ignored and must never be committed.
+- **Response compression:** the API gzips responses over 1 kB (`compression`). With ~1,500 nurseries the map's GeoJSON goes from 1.06 MB to 100 kB.
+- **Home eyebrow** reads "Tree nurseries across Uganda" now that boundaries and data are nationwide. The footer still says the pilot is Mukono.
+- **2018 certified nurseries** (October 2026, user's choice, "add hidden, pending checks"): the FAO/EU "List of certified Eucalyptus clonal nurseries, 2018 (SPGS III)", 62 rows, is in `apps/api/src/db/seed/data/certified-nurseries-2018.json`. The repo is private; the list holds real 2018 contact names and numbers.
+  - **Locations:** each town was found once on OpenStreetMap (`scripts/certified-2018/geocode.mjs`, 1 req/s). Five were re-searched inside their listed district's box. Wabiruuko wasn't found and goes at a point inside Mityana. The UBOS boundaries decide the district (e.g. Buhimba is now in Kikuube).
+  - **Seed:** creates each one once by `external_ref` (`SPGS-2018-C08`, …): switched off, certification `pending`, no stock. A business with several sites gets the town in its name.
+  - **`listing_note`:** says who to phone and what to confirm (still operating, current certification, stock, location, consent to be listed). Nothing is public until an admin ticks "Listed on the site" (Data Protection and Privacy Act 2019).
+  - **Admin:** "Needs attention" has an "Imported nurseries to verify" panel (inactive with a note). The nurseries table has a "Show" filter (real / to verify / sample) with "To verify" and "Sample" tags. The edit page shows the note.
+  - **Stale stock:** "Needs attention" ignores sample nurseries.
+- **NFA reference prices:** `species.reference_price_ugx` and `reference_pot_inches` (migration `0006`) come from the National Forestry Authority price list of January 2024 (`docs/`). Each is the price for the smallest pot NFA lists; mango and avocado are NFA's grafted prices, eucalyptus local *E. grandis*. They are seeded from `NFA_PRICES` in `seed/species.ts`; Bottlebrush isn't listed.
+  - **Tree pages** show it as a "Price guide" next to nursery prices, linking to the seeded market post `nfa-seedling-price-guide`, which cites the source.
+- **Page frame** (`apps/web/src/lib/layout.ts`, user request): content runs up to 1,600 px (`max-w-[100rem]`) with side padding growing to 56 px, so wide screens aren't left with big empty margins. Header, footer, `main`, Home and `PageHero` share `PAGE_FRAME`, and so does the static app shell. Heroes limit their text column with an inner width (`md:w-1/2`, Home `52%`), never `pr-[…%]` on the frame, whose responsive padding would override it.
+- **Orders in the admin console** (user request: "orders are not reflecting on the admin side"):
+  - **New orders:** they appear on "Needs attention" first, as "New orders to dispatch" (`orders_to_dispatch`: every `escrow_held` order, newest payment first). The sidebar's Orders item shows that count, from the same `useDashboard` query, refreshed every 30 s and on returning to the tab.
+  - **List refresh:** the Orders list also refreshes every 30 s and on focus.
+  - **Filters:** `GET /admin/orders` takes `nursery_id`, `buyer_id` and `q` (order code, buyer name, or phone typed as 07…/+256…), all in the URL (`?nursery=&buyer=&q=`) with removable chips.
+  - **Links:** buyer and nursery cells link to their orders. The order page links to "All orders from this buyer/nursery", and a nursery's edit page has an "Orders" button.
+- **MTN MoMo and Airtel Money logos** (user request): the project owner's own images (`Mtn money.jpeg`, `Airtel Money.jpeg` in the repo root, resized into `apps/web/public/brands/mtn-momo.jpg` and `airtel-money.jpg`), shown whole in their own artwork, never cropped or boxed (`MobileMoneyLogo`, 96 px tall in the checkout's payment choices; decorative next to the visible name). They're the providers' trademarks (credited on `/credits`); confirm their merchant brand rules before launch. The MTN image is MTN Ghana's MoMo artwork (a GH₵ note): swap in MTN Uganda's when available.
+- **Separate sessions for the two apps** (found while chasing "orders aren't reaching the admin side"): browsers share cookies between ports of one host (and subdomains with `COOKIE_DOMAIN`). Signing in to the admin console at :5174 therefore also signed the public site at :5173 in as the admin. The API refuses orders from admins (403 at the quote), so the checkout failed at its last step and no order was ever created.
+  - **The fix:** the admin console's API client sends `X-Client: admin` (`createApiClient({ app: 'admin' })`). Auth routes then keep its refresh token in `nl_admin_refresh`; the public site keeps `nl_refresh`. Each app only ever reads its own cookie. `X-Client` is allowed by CORS.
+  - **Admins on the public site:** the checkout opens with "Admin accounts can't place orders" and a "Sign out and use a buyer account" button, which returns to the checkout after sign-in.

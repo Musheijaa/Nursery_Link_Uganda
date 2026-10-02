@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "noEmit": true,
+    "types": ["node"],
+    // Resolve workspace packages to their TypeScript source in dev, tests and type-checking
+    "customConditions": ["source"]
+  },
+  "include": ["src", "test", "*.config.ts"]
+}

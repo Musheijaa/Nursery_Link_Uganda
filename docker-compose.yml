@@ -1,0 +1,37 @@
+# Local development services.
+#   docker compose up -d db                  # database only (enough for dev and tests)
+#   scripts/osrm/prepare.sh                  # once: download + preprocess the Uganda road network
+#   docker compose --profile routing up -d   # database + OSRM routing
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: nurserylink-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nurserylink
+      POSTGRES_USER: nurserylink
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nurserylink_dev}
+    ports:
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nurserylink -d nurserylink"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend:v6.0.0
+    container_name: nurserylink-osrm
+    profiles: ["routing"]
+    restart: unless-stopped
+    command: osrm-routed --algorithm mld --max-table-size 1000 /data/uganda-latest.osrm
+    ports:
+      - "127.0.0.1:${OSRM_PORT:-5000}:5000"
+    volumes:
+      - ./data/osrm:/data:ro
+
+volumes:
+  db-data:

@@ -24,3 +24,28 @@ Thumbs.db
 
 # Local agent worktrees
 .kilo/
+
+# Test output
+coverage/
+
+# OSRM road network data (large; produced by scripts/osrm/prepare.sh)
+data/
+# ...but the seed's reference data (official boundaries) is committed
+!apps/api/src/db/seed/data/
+
+# Python (scripts/forest-loss)
+__pycache__/
+*.pyc
+.venv/
+e2e/.results/
+
+# Generated test reports (E2E HTML report, Lighthouse runs)
+e2e/.report/
+docs/lighthouse/
+docs/screenshots/
+
+# Raw source material shared by the project owner. Never commit: the spreadsheets hold phone numbers
+# and emails that may belong to real people (see scripts/demo-nurseries/convert.py), and the zips are large
+/File *.xlsx
+/Demo photo gallery*.zip
+/gadm41_UGA_shp.zip

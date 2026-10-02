@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, typecheck, tests, budgets
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # version from package.json "packageManager"
+      - uses: actions/setup-node@v4
+        with:
+          # pnpm 11 needs Node 22.13+; this is also what development uses
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      # API integration tests start their own PostGIS with Testcontainers (Docker is on the runner)
+      - run: pnpm test
+      - name: Client is up to date with the API
+        run: pnpm api:generate && git diff --exit-code -- packages/api-client
+      - name: Build both apps; initial JS budget (200 KB gzip)
+        run: |
+          pnpm --filter @nurserylink/web build
+          pnpm --filter @nurserylink/web size
+          pnpm --filter @nurserylink/admin build
+
+  e2e:
+    name: End-to-end, accessibility, Lighthouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: checks
+    services:
+      db:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: nurserylink
+          POSTGRES_PASSWORD: nurserylink_ci
+          POSTGRES_DB: nurserylink
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U nurserylink" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          # pnpm 11 needs Node 22.13+; this is also what development uses
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Throwaway values for this run only: random secrets and a test admin (placeholder number, example.org)
+      - name: Write .env
+        run: |
+          cp .env.example .env
+          secret() { openssl rand -hex 32; }
+          sed -i \
+            -e "s|^DATABASE_URL=.*|DATABASE_URL=postgres://nurserylink:nurserylink_ci@localhost:5432/nurserylink|" \
+            -e "s|^JWT_ACCESS_SECRET=.*|JWT_ACCESS_SECRET=$(secret)|" \
+            -e "s|^OTP_HMAC_SECRET=.*|OTP_HMAC_SECRET=$(secret)|" \
+            -e "s|^QUOTE_TOKEN_SECRET=.*|QUOTE_TOKEN_SECRET=$(secret)|" \
+            -e "s|^ADMIN_FULL_NAME=.*|ADMIN_FULL_NAME=\"CI Administrator\"|" \
+            -e "s|^ADMIN_PHONE=.*|ADMIN_PHONE=0772000001|" \
+            -e "s|^ADMIN_EMAIL=.*|ADMIN_EMAIL=admin@example.org|" \
+            -e "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=$(secret)|" \
+            .env
+      # The suite uses the runner's preinstalled Google Chrome (channel: chrome), as it does locally
+      - run: google-chrome --version
+      - name: Playwright (journeys, screenshots, accessibility, Lighthouse)
+        run: pnpm exec playwright test
+      - name: Upload report, traces and Lighthouse reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            e2e/.report
+            e2e/.results
+            docs/lighthouse
+          retention-days: 14
