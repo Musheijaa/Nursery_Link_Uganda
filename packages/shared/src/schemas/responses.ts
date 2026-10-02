@@ -16,6 +16,8 @@ import {
   paymentProviderSchema,
   paymentStatusSchema,
   roleSchema,
+  serviceRequestStatusSchema,
+  serviceTypeSchema,
   shadowRunStatusSchema,
   speciesCategorySchema,
   vehicleSchema,
@@ -304,6 +306,26 @@ export const adminApplicationSchema = s({
   reviewed_by: z.uuid().nullable(),
 });
 
+// ── Service requests ───────────────────────────────────────
+
+const serviceRequestCore = {
+  id: z.uuid(),
+  service: serviceTypeSchema,
+  location: z.string(),
+  land_acres: z.number().nullable(),
+  notes: z.string().nullable(),
+  status: serviceRequestStatusSchema,
+  admin_note: z.string().nullable().describe('Latest note from the team, e.g. the agreed date'),
+  created_at: isoDate,
+  updated_at: isoDate,
+};
+export const serviceRequestSchema = s(serviceRequestCore);
+export const adminServiceRequestSchema = s({
+  ...serviceRequestCore,
+  requester: s({ id: z.uuid(), full_name: z.string(), phone: z.string() }),
+  handled_by: z.uuid().nullable(),
+});
+
 // ── Orders ─────────────────────────────────────────────────
 
 const orderItem = s({
@@ -564,6 +586,8 @@ export type SpeciesProfileDto = z.infer<typeof speciesProfileSchema>;
 export type CampaignDto = z.infer<typeof campaignSchema>;
 export type ApplicationDtoShape = z.infer<typeof applicationSchema>;
 export type AdminApplicationDto = z.infer<typeof adminApplicationSchema>;
+export type ServiceRequestDtoShape = z.infer<typeof serviceRequestSchema>;
+export type AdminServiceRequestDto = z.infer<typeof adminServiceRequestSchema>;
 export type QuoteDto = z.infer<typeof quoteSchema>;
 export type OrderDtoShape = z.infer<typeof orderSchema>;
 export type OrderMapDto = z.infer<typeof orderMapSchema>;
@@ -598,6 +622,8 @@ export const namedResponseSchemas = {
   Campaign: campaignSchema,
   Application: applicationSchema,
   AdminApplication: adminApplicationSchema,
+  ServiceRequest: serviceRequestSchema,
+  AdminServiceRequest: adminServiceRequestSchema,
   Quote: quoteSchema,
   Order: orderSchema,
   OrderMap: orderMapSchema,

@@ -8,6 +8,7 @@ import type { SmsProvider } from './providers/sms/sms.js';
 import { ApplicationsService } from './modules/campaigns/applications.service.js';
 import { MediaService } from './modules/media/media.service.js';
 import { ShadowService } from './modules/shadow/shadow.service.js';
+import { ServiceRequestsService } from './modules/serviceRequests/serviceRequests.service.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { NurseriesService } from './modules/nurseries/nurseries.service.js';
 import { SearchService } from './modules/search/search.service.js';
@@ -34,6 +35,7 @@ export interface Services {
   payments: PaymentsService;
   orders: OrdersService;
   applications: ApplicationsService;
+  serviceRequests: ServiceRequestsService;
   shadow: ShadowService;
   media: MediaService;
 }
@@ -54,6 +56,7 @@ export const buildServices = ({ config, pool, logger, providers, queue }: AppDep
     search,
     payments,
     applications: new ApplicationsService({ db, queue }),
+    serviceRequests: new ServiceRequestsService({ db }),
     shadow: new ShadowService({ db, routing: providers.routing, queue, logger }),
     media: new MediaService({ db, dir: config.MEDIA_DIR, publicPath: config.MEDIA_PUBLIC_PATH }),
     orders: new OrdersService({ db, config, routing: providers.routing, providers: providers.payments, payments, notifications, logger }),

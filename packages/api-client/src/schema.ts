@@ -544,6 +544,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/service-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask for a tree-planting service
+         * @description Buyers only.
+         */
+        post: operations["postServiceRequests"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/service-requests/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My service requests
+         * @description Buyers only.
+         */
+        get: operations["getServiceRequestsMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orders/quote": {
         parameters: {
             query?: never;
@@ -1029,6 +1069,46 @@ export interface paths {
          * @description Admins only. Approval takes the seedlings from the campaign's remaining stock in the same transaction.
          */
         put: operations["putAdminApplicationsId"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/service-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Service requests to phone back
+         * @description Admins only.
+         */
+        get: operations["getAdminServiceRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/service-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Mark a request contacted, scheduled, done or cancelled
+         * @description Admins only.
+         */
+        put: operations["putAdminServiceRequestsId"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1927,6 +2007,47 @@ export interface components {
                 phone: string;
             };
             reviewed_by: string | null;
+        };
+        ServiceRequest: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            service: "farm_plan" | "site_visit" | "planting" | "watering" | "orchard_care" | "survival_check" | "training";
+            location: string;
+            land_acres: number | null;
+            notes: string | null;
+            /** @enum {string} */
+            status: "new" | "contacted" | "scheduled" | "done" | "cancelled";
+            /** @description Latest note from the team, e.g. the agreed date */
+            admin_note: string | null;
+            /** @description ISO 8601 date-time */
+            created_at: string;
+            /** @description ISO 8601 date-time */
+            updated_at: string;
+        };
+        AdminServiceRequest: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            service: "farm_plan" | "site_visit" | "planting" | "watering" | "orchard_care" | "survival_check" | "training";
+            location: string;
+            land_acres: number | null;
+            notes: string | null;
+            /** @enum {string} */
+            status: "new" | "contacted" | "scheduled" | "done" | "cancelled";
+            /** @description Latest note from the team, e.g. the agreed date */
+            admin_note: string | null;
+            /** @description ISO 8601 date-time */
+            created_at: string;
+            /** @description ISO 8601 date-time */
+            updated_at: string;
+            requester: {
+                /** Format: uuid */
+                id: string;
+                full_name: string;
+                phone: string;
+            };
+            handled_by: string | null;
         };
         Quote: {
             nursery: {
@@ -3915,6 +4036,136 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["Application"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    postServiceRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    service: "farm_plan" | "site_visit" | "planting" | "watering" | "orchard_care" | "survival_check" | "training";
+                    location: string;
+                    land_acres?: number;
+                    notes?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Request recorded; the team phones the buyer back */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ServiceRequest"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getServiceRequestsMe: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Requests, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ServiceRequest"][];
                         meta: components["schemas"]["PageMeta"];
                     };
                 };
@@ -6542,6 +6793,156 @@ export interface operations {
                 };
             };
             /** @description Not allowed from the current status, or not enough seedlings left */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAdminServiceRequests: {
+        parameters: {
+            query?: {
+                status?: "new" | "contacted" | "scheduled" | "done" | "cancelled";
+                service?: "farm_plan" | "site_visit" | "planting" | "watering" | "orchard_care" | "survival_check" | "training";
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Requests with the requester's name and phone, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminServiceRequest"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    putAdminServiceRequestsId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    status: "contacted" | "scheduled" | "done" | "cancelled";
+                    note?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminServiceRequest"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not a valid next step from its current status */
             409: {
                 headers: {
                     [name: string]: unknown;

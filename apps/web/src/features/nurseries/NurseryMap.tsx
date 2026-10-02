@@ -174,7 +174,7 @@ const DistrictOutlines = ({ features }: { features: NurseryFeature[] }) => {
             key={s.data.id}
             data={s.data as unknown as GeoFeature}
             interactive={false}
-            style={{ color: '#123d2a', weight: 2, opacity: 0.6, dashArray: '6 6', fill: false }}
+            style={{ color: '#1b6e44', weight: 2, opacity: 0.6, dashArray: '6 6', fill: false }}
           />
         ) : null
       )}
@@ -191,7 +191,7 @@ const SelectedBoundary = ({ shape }: { shape: GeoFeature | null }) => {
     map.flyToBounds(layer.getBounds(), { padding: [24, 24], duration: 0.6 });
   }, [shape, map]);
   if (!shape) return null;
-  return <GeoJSON key={String(shape.id)} data={shape} interactive={false} style={{ color: '#1e5b3c', weight: 3, fillColor: '#1e5b3c', fillOpacity: 0.07 }} />;
+  return <GeoJSON key={String(shape.id)} data={shape} interactive={false} style={{ color: '#1d7647', weight: 3, fillColor: '#1d7647', fillOpacity: 0.07 }} />;
 };
 
 /** Fits the view to the nurseries the first time they arrive, and after the filters change. */
@@ -229,7 +229,7 @@ const RouteLine = ({ coordinates }: { coordinates: number[][] | null }) => {
   return (
     <>
       <Polyline positions={positions} pathOptions={{ color: '#ffffff', weight: 9, opacity: 0.9 }} interactive={false} />
-      <Polyline positions={positions} pathOptions={{ color: '#1e5b3c', weight: 5 }} interactive={false} />
+      <Polyline positions={positions} pathOptions={{ color: '#1d7647', weight: 5 }} interactive={false} />
     </>
   );
 };
@@ -275,7 +275,7 @@ const NurseryMap = ({ features, fitKey, selectedId, onSelect, boundary, route, p
         <SelectedBoundary shape={boundary} />
         <RouteLine coordinates={route} />
         {position && (
-          <CircleMarker center={[position.lat, position.lng]} radius={8} pathOptions={{ color: '#ffffff', weight: 3, fillColor: '#123d2a', fillOpacity: 1 }} interactive={false} />
+          <CircleMarker center={[position.lat, position.lng]} radius={8} pathOptions={{ color: '#ffffff', weight: 3, fillColor: '#1b6e44', fillOpacity: 1 }} interactive={false} />
         )}
         <Pins features={features} selectedId={selectedId} onSelect={onSelect} />
       </MapContainer>

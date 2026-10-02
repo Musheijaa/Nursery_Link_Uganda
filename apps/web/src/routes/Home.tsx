@@ -135,7 +135,7 @@ const Home = () => {
                 {en.home.useLocation}
               </Link>
             </Button>
-            <span className="ml-1 text-mist/80">{en.home.popular}</span>
+            <span className="ml-1 text-mist/90">{en.home.popular}</span>
             <ul className="flex flex-wrap gap-1.5">
               {en.home.popularTrees.map(t => (
                 <li key={t}>
@@ -176,7 +176,7 @@ const Home = () => {
                       )}
                       <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-canopy via-canopy/55 to-transparent" />
                       {'gift' in m && (
-                        <span className="absolute top-3 left-3 rounded-full bg-sun px-2.5 py-0.5 text-xs font-bold text-canopy ring-1 ring-canopy">{en.home.freeBadge}</span>
+                        <span className="absolute top-3 left-3 rounded-full bg-sun px-2.5 py-0.5 text-xs font-bold text-bark ring-1 ring-canopy">{en.home.freeBadge}</span>
                       )}
                       <span className="relative flex flex-col gap-0.5 p-3 md:p-4">
                         <span className="flex items-center justify-between gap-2 font-display text-xl leading-tight font-semibold text-paper">

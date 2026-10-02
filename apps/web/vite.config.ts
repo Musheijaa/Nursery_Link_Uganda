@@ -50,14 +50,14 @@ const scriptsAfterFirstPaint = (): Plugin => ({
   },
 });
 
-/** Preloads the two Latin font files every page uses, so text doesn't reflow when they arrive late. */
+/** Preloads the Latin font file every page uses, so text doesn't reflow when they arrive late. */
 const preloadFonts = (): Plugin => ({
   name: 'nurserylink-preload-fonts',
   apply: 'build',
   transformIndexHtml: {
     order: 'post',
     handler: (html, ctx) => {
-      const files = Object.keys(ctx.bundle ?? {}).filter(f => /(fraunces-latin-wght-normal|atkinson-hyperlegible-next-latin-wght-normal)-[\w-]+\.woff2$/.test(f));
+      const files = Object.keys(ctx.bundle ?? {}).filter(f => /plus-jakarta-sans-latin-wght-normal-[\w-]+\.woff2$/.test(f));
       const links = files.map(f => `<link rel="preload" href="/${f}" as="font" type="font/woff2" crossorigin>`).join('\n    ');
       return html.replace('</title>', `</title>\n    ${links}`);
     },
@@ -92,7 +92,7 @@ export default defineConfig(({ mode }) => {
           start_url: '/',
           display: 'standalone',
           background_color: '#faf6ee',
-          theme_color: '#123d2a',
+          theme_color: '#1b6e44',
           icons: [
             { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
             { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },

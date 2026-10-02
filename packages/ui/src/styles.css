@@ -5,19 +5,18 @@
  *   @source "../../../packages/ui/src";
  * Tailwind's default palette is removed, so only these named colours exist in class names.
  */
-@import '@fontsource-variable/atkinson-hyperlegible-next';
-/* Headings: Fraunces, a warm "old-style" serif with an organic, hand-cut feel (35 KB, upright only) */
-@import '@fontsource-variable/fraunces/wght.css';
+/* One smooth, modern sans for everything: Plus Jakarta Sans (variable, 27 KB Latin, upright) */
+@import '@fontsource-variable/plus-jakarta-sans/wght.css';
 
 @theme {
   --color-*: initial;
   /* "Earth & canopy": Uganda's green hills and red murram earth, on warm cream */
-  --color-canopy: #123d2a; /* deep canopy green: headers, headings, dark bands */
-  --color-forest: #1e5b3c; /* primary actions and links */
-  --color-seedling: #2a7d45; /* banana-leaf green: in stock, paid, success (5.1:1 on white) */
+  --color-canopy: #1b6e44; /* fresh canopy green: headers, headings, green bands (6.3:1 with white) */
+  --color-forest: #1d7647; /* primary actions and links (5.6:1 on white, 5.3:1 on cream) */
+  --color-seedling: #22804d; /* banana-leaf green: in stock, paid, success (4.9:1 on white) */
   --color-murram: #b8501f; /* red murram earth: accents, highlights (4.6:1 on cream) */
   --color-sun: #f2b705; /* free seedlings and campaigns only */
-  --color-mist: #faf6ee; /* warm cream page background */
+  --color-mist: #fbf8f1; /* light warm cream page background */
   --color-bark: #2a211b; /* body text, warm near-black */
   --color-paper: #ffffff;
   --color-transparent: transparent;
@@ -26,26 +25,26 @@
   --color-bark-muted: #5e5248;
   --color-line: #e7dece;
   --color-field: #7a6e62;
-  --color-seedling-tint: #e3f2e3;
-  --color-forest-tint: #e8efe7;
+  --color-seedling-tint: #e8f6ea;
+  --color-forest-tint: #e4f3e6;
   --color-murram-tint: #f7e5d8;
-  --color-murram-light: #f0b48f; /* murram on dark green (6.7:1 on canopy) */
+  --color-murram-light: #ffd9c2; /* murram on green (4.8:1 on canopy) */
   --color-sand: #f1e8d8; /* a deeper cream for alternating bands */
   /* Lake Victoria blues: light sky for bands and washes, deep lake for text and accents */
   --color-lake: #2b6a97; /* 5.8:1 on white, 5.1:1 on sky-tint */
   --color-sky-tint: #e5f1f9;
-  --color-sky: #a8d4ef; /* on dark green (7.7:1 on canopy) */
+  --color-sky: #d2ebfa; /* on green (5.1:1 on canopy) */
   --color-amber: #8a5300;
   --color-amber-tint: #fff1db;
   --color-laterite: #b42318;
   --color-laterite-tint: #fdecea;
   --color-sun-tint: #fdf3cf;
 
-  --font-sans: 'Atkinson Hyperlegible Next Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  /* Display: headings and large statements. Body text stays Atkinson Hyperlegible, for easy reading */
-  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
-  /* Scientific names (italic, loaded on Library routes only: library-fonts.css) */
-  --font-serif: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Plus Jakarta Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Display: headings and large statements, in the same family as the body for one calm voice */
+  --font-display: 'Plus Jakarta Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Scientific names (the italic is loaded on Library routes only: library-fonts.css) */
+  --font-serif: 'Plus Jakarta Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
   --text-xs: 0.8125rem;
@@ -107,16 +106,16 @@
   a {
     @apply text-forest underline-offset-2;
   }
-  /* Headings in Fraunces: semi-bold, slightly tightened, and balanced over their lines */
+  /* Headings: bold, slightly tightened, and balanced over their lines */
   h1, h2, h3 {
     @apply font-display text-canopy;
-    font-weight: 620;
-    letter-spacing: -0.015em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
     text-wrap: balance;
-    font-optical-sizing: auto;
   }
   h1 {
-    letter-spacing: -0.025em;
+    font-weight: 800;
+    letter-spacing: -0.03em;
   }
   /* Body copy: no lonely last words */
   p, li, dd {
@@ -137,7 +136,7 @@
 /* Native <select> with our chevron (Forest), drawn as a background so the control stays native */
 @layer components {
   .nl-select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%231e5b3c' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%231d7647' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
     background-size: 20px;

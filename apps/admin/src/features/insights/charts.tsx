@@ -11,12 +11,12 @@ import { en } from '../../copy/en';
  */
 
 export const CHART = {
-  canopy: '#123d2a',
-  forest: '#1e5b3c',
-  leaf: '#2a7d45',
+  canopy: '#1b6e44',
+  forest: '#1d7647',
+  leaf: '#22804d',
   leafLight: '#7cc48a',
   murram: '#b8501f',
-  murramLight: '#f0b48f',
+  murramLight: '#ffd9c2',
   sun: '#f2b705',
   sand: '#d9c9a8',
   bark: '#5e5248',
@@ -174,7 +174,7 @@ export const AreaChart = ({ points, format, axisFormat, label, height = 240 }: {
           style={{ left: Math.min(Math.max(x(hover), 70), w - 70), top: y(active.value) - 10 }}
         >
           <span className="block font-bold">{format(active.value)}</span>
-          <span className="text-mist/80">{active.long}</span>
+          <span className="text-mist/90">{active.long}</span>
         </div>
       )}
       <table className="sr-only">
