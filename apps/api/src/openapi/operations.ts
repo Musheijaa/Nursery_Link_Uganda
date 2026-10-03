@@ -24,6 +24,8 @@ import {
   resetPasswordSchema,
   serviceRequestCreateSchema,
   serviceRequestUpdateSchema,
+  feedbackCreateSchema,
+  feedbackUpdateSchema,
   shadowRunCreateSchema,
   speciesCreateSchema,
   speciesUpdateSchema,
@@ -146,6 +148,8 @@ export const operations: Operation[] = [
   // ── Service requests ─────────────────────────────────────
   { method: 'post', path: '/service-requests', tag: 'Services', summary: 'Ask for a tree-planting service', response: { data: r.serviceRequestSchema }, access: 'buyer',
     body: serviceRequestCreateSchema, success: { status: 201, description: 'Request recorded; the team phones the buyer back' } },
+  { method: 'post', path: '/feedback', tag: 'Feedback', summary: 'Leave feedback (anyone; signed-in people are linked to their account)', response: { data: r.feedbackReceiptSchema }, access: 'public',
+    body: feedbackCreateSchema, success: { status: 201, description: 'Feedback recorded' } },
   { method: 'get', path: '/service-requests/me', tag: 'Services', summary: 'My service requests', response: { data: z.array(r.serviceRequestSchema), meta: r.pageMetaSchema }, access: 'buyer',
     query: paginationQuerySchema, success: { status: 200, description: 'Requests, newest first' } },
 
@@ -243,6 +247,10 @@ export const operations: Operation[] = [
     description: 'Approval takes the seedlings from the campaign\'s remaining stock in the same transaction.',
     params: id, body: applicationReviewSchema, success: { status: 200, description: 'Reviewed; the applicant is sent an SMS' },
     errors: { 409: 'Not allowed from the current status, or not enough seedlings left' } },
+  { method: 'get', path: '/admin/feedback', tag: 'Admin: feedback', summary: 'Feedback from people using the site', response: { data: z.array(r.adminFeedbackSchema), meta: r.pageMetaSchema }, access: 'admin',
+    query: admin.feedbackQuery, success: { status: 200, description: 'Feedback, newest first' } },
+  { method: 'put', path: '/admin/feedback/:id', tag: 'Admin: feedback', summary: 'Mark feedback new, read or done', response: { data: r.adminFeedbackSchema }, access: 'admin',
+    params: id, body: feedbackUpdateSchema, success: { status: 200, description: 'Updated' } },
   { method: 'get', path: '/admin/service-requests', tag: 'Admin: service requests', summary: 'Service requests to phone back', response: { data: z.array(r.adminServiceRequestSchema), meta: r.pageMetaSchema }, access: 'admin',
     query: admin.serviceRequestsQuery, success: { status: 200, description: 'Requests with the requester\'s name and phone, newest first' } },
   { method: 'put', path: '/admin/service-requests/:id', tag: 'Admin: service requests', summary: 'Mark a request contacted, scheduled, done or cancelled', response: { data: r.adminServiceRequestSchema }, access: 'admin',

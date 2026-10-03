@@ -39,6 +39,9 @@
       "name": "Services"
     },
     {
+      "name": "Feedback"
+    },
+    {
       "name": "Orders"
     },
     {
@@ -55,6 +58,9 @@
     },
     {
       "name": "Admin: campaigns"
+    },
+    {
+      "name": "Admin: feedback"
     },
     {
       "name": "Admin: service requests"
@@ -959,6 +965,23 @@
             }
           },
           {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "indigenous",
+                "agroforestry",
+                "exotic",
+                "ornamental",
+                "medicinal",
+                "coffee",
+                "cocoa"
+              ]
+            }
+          },
+          {
             "name": "q",
             "in": "query",
             "required": false,
@@ -1408,7 +1431,9 @@
                 "agroforestry",
                 "exotic",
                 "ornamental",
-                "medicinal"
+                "medicinal",
+                "coffee",
+                "cocoa"
               ]
             }
           },
@@ -2796,6 +2821,101 @@
           },
           "403": {
             "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/feedback": {
+      "post": {
+        "operationId": "postFeedback",
+        "tags": [
+          "Feedback"
+        ],
+        "summary": "Leave feedback (anyone; signed-in people are linked to their account)",
+        "description": "Public.",
+        "security": [],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "experience",
+                      "suggestion",
+                      "problem"
+                    ]
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 2000
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "contact": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "page": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "pattern": "^\\/[^\\s]*$"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "message"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Feedback recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FeedbackReceipt"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
             "content": {
               "application/json": {
                 "schema": {
@@ -5116,7 +5236,9 @@
                 "agroforestry",
                 "exotic",
                 "ornamental",
-                "medicinal"
+                "medicinal",
+                "coffee",
+                "cocoa"
               ]
             }
           },
@@ -5242,7 +5364,9 @@
                       "agroforestry",
                       "exotic",
                       "ornamental",
-                      "medicinal"
+                      "medicinal",
+                      "coffee",
+                      "cocoa"
                     ]
                   },
                   "growth_pace": {
@@ -5585,7 +5709,9 @@
                       "agroforestry",
                       "exotic",
                       "ornamental",
-                      "medicinal"
+                      "medicinal",
+                      "coffee",
+                      "cocoa"
                     ]
                   },
                   "growth_pace": {
@@ -7451,6 +7577,264 @@
           },
           "409": {
             "description": "Not allowed from the current status, or not enough seedlings left",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/feedback": {
+      "get": {
+        "operationId": "getAdminFeedback",
+        "tags": [
+          "Admin: feedback"
+        ],
+        "summary": "Feedback from people using the site",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "read",
+                "done"
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "experience",
+                "suggestion",
+                "problem"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feedback, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminFeedback"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PageMeta"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/feedback/{id}": {
+      "put": {
+        "operationId": "putAdminFeedbackId",
+        "tags": [
+          "Admin: feedback"
+        ],
+        "summary": "Mark feedback new, read or done",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "new",
+                      "read",
+                      "done"
+                    ]
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminFeedback"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -10035,6 +10419,13 @@
           "version": {
             "type": "string"
           },
+          "commit": {
+            "description": "The deployed Git commit, when the host provides it",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "providers": {
             "type": "object",
             "properties": {
@@ -10094,15 +10485,43 @@
               "payments"
             ],
             "additionalProperties": false
+          },
+          "site": {
+            "type": "object",
+            "properties": {
+              "demo_notice": {
+                "type": "boolean",
+                "description": "Show the \"sample data, still being built\" notice on first visit"
+              },
+              "survey_url": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The needs-assessment survey (e.g. a Google Form), or null when there is none"
+              }
+            },
+            "required": [
+              "demo_notice",
+              "survey_url"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
           "status",
           "db",
           "version",
+          "commit",
           "providers",
           "payment_methods",
-          "features"
+          "features",
+          "site"
         ],
         "additionalProperties": false
       },
@@ -10583,7 +11002,9 @@
                   "agroforestry",
                   "exotic",
                   "ornamental",
-                  "medicinal"
+                  "medicinal",
+                  "coffee",
+                  "cocoa"
                 ]
               }
             },
@@ -10776,7 +11197,9 @@
                 "agroforestry",
                 "exotic",
                 "ornamental",
-                "medicinal"
+                "medicinal",
+                "coffee",
+                "cocoa"
               ]
             }
           },
@@ -10997,7 +11420,9 @@
               "agroforestry",
               "exotic",
               "ornamental",
-              "medicinal"
+              "medicinal",
+              "coffee",
+              "cocoa"
             ]
           },
           "growth_pace": {
@@ -11076,7 +11501,9 @@
               "agroforestry",
               "exotic",
               "ornamental",
-              "medicinal"
+              "medicinal",
+              "coffee",
+              "cocoa"
             ]
           },
           "growth_pace": {
@@ -12406,6 +12833,127 @@
           "updated_at",
           "requester",
           "handled_by"
+        ],
+        "additionalProperties": false
+      },
+      "FeedbackReceipt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601 date-time"
+          }
+        },
+        "required": [
+          "id",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "AdminFeedback": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "experience",
+              "suggestion",
+              "problem"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "name": {
+            "description": "The account's name when signed in, else what they typed",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contact": {
+            "description": "The account's phone when signed in, else what they typed",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "read",
+              "done"
+            ]
+          },
+          "admin_note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "handled_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO 8601 date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "ISO 8601 date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "message",
+          "name",
+          "contact",
+          "page",
+          "user_id",
+          "status",
+          "admin_note",
+          "handled_by",
+          "created_at",
+          "updated_at"
         ],
         "additionalProperties": false
       },
@@ -14933,7 +15481,9 @@
                     "agroforestry",
                     "exotic",
                     "ornamental",
-                    "medicinal"
+                    "medicinal",
+                    "coffee",
+                    "cocoa"
                   ]
                 },
                 "seedlings": {

@@ -73,8 +73,8 @@ const Campaign = () => {
         <h2 id="trees" className="text-lg">{en.freeSeedlings.trees}</h2>
         <ul className="flex flex-col divide-y divide-line">
           {c.species.map(s => (
-            <li key={s.slug} className="flex justify-between gap-3 py-2">
-              <Link to={`/library/${s.slug}`} className="underline">{s.common_name}</Link>
+            <li key={s.slug} className="flex items-center justify-between gap-3">
+              <Link to={`/library/${s.slug}`} className="flex min-h-11 items-center underline">{s.common_name}</Link>
               <span className="font-bold">{formatCount(s.quantity)}</span>
             </li>
           ))}
@@ -84,7 +84,7 @@ const Campaign = () => {
       <section aria-labelledby="pickup" className="flex flex-col gap-3 rounded-lg bg-paper shadow-card p-5 ring-1 ring-line">
         <h2 id="pickup" className="text-lg">{en.freeSeedlings.pickupHeading}</h2>
         <p className="flex items-center gap-2">
-          <Link to={`/nurseries?nursery=${c.pickup_nursery.id}`} className="underline">{en.freeSeedlings.pickupAt(c.pickup_nursery.name, c.sub_county.name)}</Link>
+          <Link to={`/nurseries?nursery=${c.pickup_nursery.id}`} className="flex min-h-11 items-center underline">{en.freeSeedlings.pickupAt(c.pickup_nursery.name, c.sub_county.name)}</Link>
         </p>
         <Suspense fallback={<Skeleton className="h-72 rounded-md" />}>
           <LocationMap nursery={c.pickup_nursery.location} label={en.freeSeedlings.pickupHeading} />

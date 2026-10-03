@@ -34,6 +34,7 @@ export const router = createBrowserRouter([
       page('/orders/:id', () => import('../routes/OrderDetail')),
       page('/payouts', () => import('../routes/Payouts')),
       page('/service-requests', () => import('../routes/ServiceRequests')),
+      page('/feedback', () => import('../routes/Feedback')),
       page('/audit-log', () => import('../routes/AuditLog')),
       page('/shadow', () => import('../routes/Shadow')),
       { path: '*', element: <NotFound /> },

@@ -18,7 +18,7 @@ export const certificationStatuses = ['certified', 'pending', 'unverified'] as c
 export const certificationStatusSchema = z.enum(certificationStatuses);
 export type CertificationStatus = z.infer<typeof certificationStatusSchema>;
 
-export const speciesCategories = ['indigenous', 'agroforestry', 'exotic', 'ornamental', 'medicinal'] as const;
+export const speciesCategories = ['indigenous', 'agroforestry', 'exotic', 'ornamental', 'medicinal', 'coffee', 'cocoa'] as const;
 export const speciesCategorySchema = z.enum(speciesCategories);
 export type SpeciesCategory = z.infer<typeof speciesCategorySchema>;
 
@@ -116,3 +116,12 @@ export type ServiceType = z.infer<typeof serviceTypeSchema>;
 export const serviceRequestStatuses = ['new', 'contacted', 'scheduled', 'done', 'cancelled'] as const;
 export const serviceRequestStatusSchema = z.enum(serviceRequestStatuses);
 export type ServiceRequestStatus = z.infer<typeof serviceRequestStatusSchema>;
+
+/** Feedback from anyone using the site (/feedback): how it went, an idea, or something that broke. */
+export const feedbackKinds = ['experience', 'suggestion', 'problem'] as const;
+export const feedbackKindSchema = z.enum(feedbackKinds);
+export type FeedbackKind = z.infer<typeof feedbackKindSchema>;
+
+export const feedbackStatuses = ['new', 'read', 'done'] as const;
+export const feedbackStatusSchema = z.enum(feedbackStatuses);
+export type FeedbackStatus = z.infer<typeof feedbackStatusSchema>;

@@ -32,6 +32,8 @@ export const router = createBrowserRouter([
       page('/free-seedlings', () => import('../routes/FreeSeedlings')),
       page('/free-seedlings/:id', () => import('../routes/Campaign')),
       page('/services', () => import('../routes/Services')),
+      page('/feedback', () => import('../routes/Feedback')),
+      page('/survey', () => import('../routes/Survey')),
       page('/orders', () => import('../routes/Orders'), { auth: true }),
       page('/orders/:id', () => import('../routes/Order'), { auth: true }),
       // The nursery's order map, from the order SMS (no account; the link carries a key)

@@ -1,6 +1,6 @@
 import { BrandMark, Button, OfflineBanner, Toaster, cn } from '@nurserylink/ui';
 import {
-  AlertCircle, Banknote, BarChart3, BookOpen, ClipboardList, Gift, Layers, LogOut, Map as MapIcon, Menu, Newspaper, Package, ScrollText, Sprout, Truck, X, type LucideIcon,
+  AlertCircle, Banknote, BarChart3, BookOpen, ClipboardList, Gift, Layers, LogOut, Map as MapIcon, Menu, MessageSquare, Newspaper, Package, ScrollText, Sprout, Truck, X, type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router';
@@ -35,6 +35,7 @@ const SECTIONS: { title?: string; items: Item[] }[] = [
   {
     title: en.nav.sections.analysis,
     items: [
+      { to: '/feedback', label: en.nav.feedback, icon: MessageSquare },
       { to: '/shadow', label: en.nav.shadow, icon: ClipboardList },
       { to: '/audit-log', label: en.nav.audit, icon: ScrollText },
     ],
