@@ -50,16 +50,18 @@ const scriptsAfterFirstPaint = (): Plugin => ({
   },
 });
 
-/** Preloads the Latin font file every page uses, so text doesn't reflow when they arrive late. */
+/** Preloads Home's first-screen fonts (Taviraj headings, Lora text), so its text doesn't reflow when they arrive late. */
 const preloadFonts = (): Plugin => ({
   name: 'nurserylink-preload-fonts',
   apply: 'build',
   transformIndexHtml: {
     order: 'post',
     handler: (html, ctx) => {
-      const files = Object.keys(ctx.bundle ?? {}).filter(f => /plus-jakarta-sans-latin-wght-normal-[\w-]+\.woff2$/.test(f));
-      const links = files.map(f => `<link rel="preload" href="/${f}" as="font" type="font/woff2" crossorigin>`).join('\n    ');
-      return html.replace('</title>', `</title>\n    ${links}`);
+      const files = Object.keys(ctx.bundle ?? {}).filter(f => /(taviraj|lora)-latin-400-normal-[\w-]+\.woff2$/.test(f));
+      // Only on Home, where these fonts are the first screen. Elsewhere (the map) they would take
+      // bandwidth from the page's code, which the largest element (a map tile) waits for.
+      const script = `<script>if(location.pathname==='/'){${JSON.stringify(files)}.forEach(function(f){var l=document.createElement('link');l.rel='preload';l.as='font';l.type='font/woff2';l.crossOrigin='';l.href='/'+f;document.head.appendChild(l);});}</script>`;
+      return html.replace('</title>', `</title>\n    ${script}`);
     },
   },
 });

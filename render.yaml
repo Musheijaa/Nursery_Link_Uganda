@@ -1,5 +1,8 @@
 # Render Blueprint: Dashboard → New → Blueprint → pick this repo. Creates the database, the API and
-# the two sites in one go. Values marked `sync: false` are asked for when the Blueprint is created.
+# the two sites in one go. Continuous delivery: every merge to main runs CI (.github/workflows/ci.yml);
+# Render deploys each service only when those checks pass (autoDeployTrigger: checksPass), and the
+# "Production" workflow then confirms the API is running that commit and smoke-tests the live sites.
+# Values marked `sync: false` are asked for when the Blueprint is created.
 #
 # One origin per site: each static site forwards /api (and /media) to the API, so the browser sees
 # the API on the site's own address. *.onrender.com is a public suffix, so without this the
@@ -26,7 +29,17 @@ services:
     buildCommand: npx -y pnpm@11.22.0 install --frozen-lockfile && npx -y pnpm@11.22.0 --filter @nurserylink/api build
     startCommand: ./scripts/render/start-api.sh
     healthCheckPath: /api/v1/health
-    autoDeploy: true
+    # Deploys only from main, and only once GitHub's CI checks on that commit have passed
+    branch: main
+    autoDeployTrigger: checksPass
+    buildFilter:
+      ignoredPaths:
+        - docs/**
+        - e2e/**
+        - "**/*.md"
+        - .github/**
+        - apps/web/**
+        - apps/admin/**
     envVars:
       # pnpm 11 needs Node 22 (it uses node:sqlite); the code itself still targets Node 20
       - key: NODE_VERSION
@@ -56,6 +69,19 @@ services:
         value: "off"
       - key: PAYMENT_PROVIDER_MODE
         value: mock
+      # The needs-assessment survey (a Google Form "Send → link" URL), offered on first visit and at
+      # /survey. Leave empty until it is ready. DEMO_NOTICE=off hides the "sample data" notice.
+      - key: SURVEY_URL
+        sync: false
+      - key: DEMO_NOTICE
+        value: "on"
+      # Road distances and directions: set ROUTING_PROVIDER=openrouteservice and ORS_API_KEY (a free
+      # key from https://openrouteservice.org/dev/#/signup). Left empty, the API uses straight-line
+      # estimates (mock). On an existing Blueprint, add both in the service's Environment tab.
+      - key: ROUTING_PROVIDER
+        sync: false
+      - key: ORS_API_KEY
+        sync: false
       # The first administrator (created by the seed on first start; the password is never overwritten)
       - key: ADMIN_FULL_NAME
         sync: false
@@ -71,7 +97,17 @@ services:
     runtime: static
     buildCommand: npx -y pnpm@11.22.0 install --frozen-lockfile && npx -y pnpm@11.22.0 --filter @nurserylink/web build
     staticPublishPath: apps/web/dist
-    autoDeploy: true
+    # Deploys only from main, and only once GitHub's CI checks on that commit have passed
+    branch: main
+    autoDeployTrigger: checksPass
+    buildFilter:
+      ignoredPaths:
+        - docs/**
+        - e2e/**
+        - "**/*.md"
+        - .github/**
+        - apps/api/**
+        - apps/admin/**
     envVars:
       - key: NODE_VERSION
         value: "22"
@@ -105,7 +141,17 @@ services:
     runtime: static
     buildCommand: npx -y pnpm@11.22.0 install --frozen-lockfile && npx -y pnpm@11.22.0 --filter @nurserylink/admin build
     staticPublishPath: apps/admin/dist
-    autoDeploy: true
+    # Deploys only from main, and only once GitHub's CI checks on that commit have passed
+    branch: main
+    autoDeployTrigger: checksPass
+    buildFilter:
+      ignoredPaths:
+        - docs/**
+        - e2e/**
+        - "**/*.md"
+        - .github/**
+        - apps/api/**
+        - apps/web/**
     envVars:
       - key: NODE_VERSION
         value: "22"

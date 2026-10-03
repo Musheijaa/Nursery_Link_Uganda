@@ -75,7 +75,7 @@ export const KpiCard = ({ label, value, previous, format, comparison, accent = f
   return (
     <div className={cn('flex flex-col gap-2 rounded-lg p-4 shadow-card ring-1', accent ? 'on-dark bg-canopy ring-canopy' : 'bg-paper ring-line', className)}>
       <p className={cn('text-sm font-bold', accent ? 'text-mist/85' : 'text-bark-muted')}>{label}</p>
-      <p className={cn('font-display text-2xl leading-none font-semibold tracking-tight tabular-nums sm:text-3xl', accent ? 'text-paper' : 'text-canopy')}>{format(value)}</p>
+      <p className={cn('font-stat text-3xl leading-none font-bold tabular-nums sm:text-4xl', accent ? 'text-paper' : 'text-canopy')}>{format(value)}</p>
       <p className={cn('flex items-center gap-1 text-xs', accent ? 'text-mist/85' : 'text-bark-muted')}>
         {change === null ? (
           <span className={cn('rounded-full px-1.5 py-0.5 font-bold', accent ? 'bg-paper/15 text-paper' : 'bg-seedling-tint text-canopy')}>{en.insights.newValue}</span>

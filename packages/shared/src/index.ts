@@ -8,6 +8,7 @@ export * from './schemas/orders.js';
 export * from './schemas/campaigns.js';
 export * from './schemas/shadow.js';
 export * from './schemas/services.js';
+export * from './schemas/feedback.js';
 export * from './schemas/responses.js';
 export * from './eligibility.js';
 export * from './orderStateMachine.js';
