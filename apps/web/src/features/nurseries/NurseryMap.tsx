@@ -80,7 +80,14 @@ const labelMarker = (marker: L.Marker | null, label: string) => {
 
 const clusterLabel = (count: number, gift: number) => en.nurseries.clusterLabel(count, gift > 0);
 
-const Pins = ({ features, selectedId, onSelect, areaChosen }: { features: NurseryFeature[]; selectedId: string | null; onSelect: (id: string) => void; areaChosen: boolean }) => {
+const Pins = ({ features, selectedId, onSelect, areaChosen, quiet }: {
+  features: NurseryFeature[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  areaChosen: boolean;
+  /** No name labels (while a route is shown, so its start and destination labels stand out) */
+  quiet: boolean;
+}) => {
   const map = useMap();
   const { zoom, bounds } = useView();
   const index = useMemo(() => {
@@ -102,7 +109,7 @@ const Pins = ({ features, selectedId, onSelect, areaChosen }: { features: Nurser
 
   const clusters = index.getClusters([bounds.getWest() - 0.2, bounds.getSouth() - 0.2, bounds.getEast() + 0.2, bounds.getNorth() + 0.2], Math.round(zoom));
   const labelled = (() => {
-    if (zoom < NAMED_PIN_ZOOM && !areaChosen) return new Set<string>();
+    if (quiet || (zoom < NAMED_PIN_ZOOM && !areaChosen)) return new Set<string>();
     const pins = clusters.flatMap(c => {
       const [lng, lat] = c.geometry.coordinates;
       if ('cluster' in c.properties || lat === undefined || lng === undefined || !bounds.contains([lat, lng])) return [];
@@ -223,16 +230,17 @@ const SelectedBoundary = ({ shape, compact }: { shape: GeoFeature | null; compac
  * Fits the view to the nurseries the first time they arrive, and after the filters change. When a
  * district or sub-county is chosen, the map goes to that area instead (SelectedBoundary).
  */
-const FitToData = ({ features, fitKey, areaChosen }: { features: NurseryFeature[]; fitKey: string; areaChosen: boolean }) => {
+const FitToData = ({ features, fitKey, areaChosen, routeShown }: { features: NurseryFeature[]; fitKey: string; areaChosen: boolean; routeShown: boolean }) => {
   const map = useMap();
   const last = useRef<string | null>(null);
   useEffect(() => {
     if (features.length === 0 || last.current === fitKey) return;
     last.current = fitKey;
-    if (areaChosen) return;
+    // Directions frame the route themselves; nursery data arriving later mustn't zoom back out
+    if (areaChosen || routeShown) return;
     const latLngs = features.map(f => L.latLng(toLatLng(f.geometry.coordinates)));
     map.fitBounds(L.latLngBounds(latLngs), { padding: [40, 40], maxZoom: 13 });
-  }, [features, fitKey, map, areaChosen]);
+  }, [features, fitKey, map, areaChosen, routeShown]);
   return null;
 };
 
@@ -266,17 +274,67 @@ const FollowSelected = ({ features, selectedId }: { features: NurseryFeature[]; 
   return null;
 };
 
-const RouteLine = ({ coordinates }: { coordinates: number[][] | null }) => {
+/** Start of the journey: a large green dot with a white ring (the same mark as the first step). */
+const startIcon = L.divIcon({
+  className: 'nl-route-end',
+  html: `<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" style="fill:var(--color-canopy)" stroke="#fff" stroke-width="4"/><circle cx="15" cy="15" r="4.5" fill="#fff"/></svg>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+  tooltipAnchor: [0, -14],
+});
+
+/** Destination: a murram map pin with a flag, which stands out from the green nursery pins. */
+const destinationIcon = L.divIcon({
+  className: 'nl-route-end',
+  html: `<svg width="36" height="46" viewBox="0 0 36 46" aria-hidden="true"><path d="M18 44C18 44 3 27.5 3 17a15 15 0 0 1 30 0c0 10.5-15 27-15 27Z" style="fill:var(--color-murram)" stroke="#fff" stroke-width="3"/><path d="M13.5 26V9.5" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M14 10h10.5l-2.5 3.75L24.5 17.5H14Z" fill="#fff"/></svg>`,
+  iconSize: [36, 46],
+  iconAnchor: [18, 45],
+  tooltipAnchor: [0, -44],
+});
+
+export interface RouteEnds {
+  start: LatLng;
+  end: LatLng;
+  /** The nursery's name, for the destination label */
+  name: string;
+}
+
+/**
+ * The route on the map, with the journey's two ends marked and labelled. Roads rarely pass exactly
+ * through the start or the nursery, so a thin dotted line covers the last bit off the road.
+ */
+const RouteLine = ({ coordinates, straight, ends, bottomPad }: { coordinates: number[][] | null; straight: boolean; ends: RouteEnds | null; bottomPad: number }) => {
   const map = useMap();
   const positions = useMemo(() => coordinates?.map(toLatLng) ?? null, [coordinates]);
+  // Frames the whole journey, clear of anything covering the bottom of the map (the phone route bar)
   useEffect(() => {
-    if (positions && positions.length > 1) map.fitBounds(L.latLngBounds(positions), { padding: [48, 48] });
-  }, [positions, map]);
+    if (!positions || positions.length < 2) return;
+    const bounds = L.latLngBounds(positions);
+    if (ends) bounds.extend([ends.start.lat, ends.start.lng]).extend([ends.end.lat, ends.end.lng]);
+    map.fitBounds(bounds, { paddingTopLeft: [56, 56], paddingBottomRight: [56, 56 + bottomPad] });
+  }, [positions, ends, bottomPad, map]);
   if (!positions) return null;
+  const first = positions[0];
+  const last = positions[positions.length - 1];
+  const offRoad = { color: '#1d7647', weight: 3, dashArray: '1 7', lineCap: 'round' as const, opacity: 0.9 };
   return (
     <>
       <Polyline positions={positions} pathOptions={{ color: '#ffffff', weight: 9, opacity: 0.9 }} interactive={false} />
-      <Polyline positions={positions} pathOptions={{ color: '#1d7647', weight: 5 }} interactive={false} />
+      {/* Dashed when it's only the direction as the crow flies, not a road */}
+      <Polyline positions={positions} pathOptions={{ color: '#1d7647', weight: 5, ...(straight ? { dashArray: '2 10', lineCap: 'round' } : {}) }} interactive={false} />
+      {ends && first && last && (
+        <>
+          <Polyline positions={[[ends.start.lat, ends.start.lng], first]} pathOptions={offRoad} interactive={false} />
+          <Polyline positions={[last, [ends.end.lat, ends.end.lng]]} pathOptions={offRoad} interactive={false} />
+          {/* Above every nursery pin and cluster; the step list is their text alternative */}
+          <Marker position={[ends.start.lat, ends.start.lng]} icon={startIcon} interactive={false} keyboard={false} zIndexOffset={2000}>
+            <Tooltip permanent direction="top" className="nl-pin-label nl-route-label">{en.directions.mapStart}</Tooltip>
+          </Marker>
+          <Marker position={[ends.end.lat, ends.end.lng]} icon={destinationIcon} interactive={false} keyboard={false} zIndexOffset={2100}>
+            <Tooltip permanent direction="top" className="nl-pin-label nl-route-label nl-route-label-end">{en.directions.mapEnd(ends.name)}</Tooltip>
+          </Marker>
+        </>
+      )}
     </>
   );
 };
@@ -302,6 +360,12 @@ export interface NurseryMapProps {
   /** A district or sub-county filter is set (its outline may still be loading) */
   areaChosen: boolean;
   route: number[][] | null;
+  /** The route is a straight line (no road routing configured) */
+  routeStraight?: boolean;
+  /** Where the route starts and ends (shown with labelled markers) */
+  routeEnds?: RouteEnds | null;
+  /** Height (px) covered at the bottom of the map while the route is shown */
+  routeBottomPad?: number;
   position: LatLng | null;
   onLocate: () => void;
   /** Phones: pinch to zoom (no zoom buttons under the floating search), locate button at the top */
@@ -309,7 +373,7 @@ export interface NurseryMapProps {
   className?: string;
 }
 
-const NurseryMap = ({ features, fitKey, selectedId, onSelect, boundary, areaChosen, route, position, onLocate, compact = false, className }: NurseryMapProps) => {
+const NurseryMap = ({ features, fitKey, selectedId, onSelect, boundary, areaChosen, route, routeStraight = false, routeEnds = null, routeBottomPad = 0, position, onLocate, compact = false, className }: NurseryMapProps) => {
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
   return (
     <div ref={setContainer} role="region" aria-label={en.nurseries.mapLabel} className={cn(className, compact && 'nl-map-compact')}>
@@ -318,16 +382,16 @@ const NurseryMap = ({ features, fitKey, selectedId, onSelect, boundary, areaChos
         {compact && <AttributionControl position="topright" prefix={false} />}
         <TileLayer url={TILE_URL} attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' maxZoom={18} crossOrigin />
         <KeepSized container={container} />
-        <FitToData features={features} fitKey={fitKey} areaChosen={areaChosen} />
+        <FitToData features={features} fitKey={fitKey} areaChosen={areaChosen} routeShown={route !== null} />
         <FollowPosition position={position} />
         <FollowSelected features={features} selectedId={selectedId} />
         <DistrictOutlines features={features} />
         <SelectedBoundary shape={boundary} compact={compact} />
-        <RouteLine coordinates={route} />
-        {position && (
+        <RouteLine coordinates={route} straight={routeStraight} ends={route ? routeEnds : null} bottomPad={routeBottomPad} />
+        {position && !(route && routeEnds) && (
           <CircleMarker center={[position.lat, position.lng]} radius={8} pathOptions={{ color: '#ffffff', weight: 3, fillColor: '#1b6e44', fillOpacity: 1 }} interactive={false} />
         )}
-        <Pins features={features} selectedId={selectedId} onSelect={onSelect} areaChosen={areaChosen} />
+        <Pins features={features} selectedId={selectedId} onSelect={onSelect} areaChosen={areaChosen} quiet={route !== null} />
       </MapContainer>
       <button
         type="button"

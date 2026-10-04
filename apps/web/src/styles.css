@@ -37,6 +37,25 @@ body {
   font: 700 0.8125rem/1.1 var(--font-sans);
   padding: 2px 6px;
 }
+.leaflet-tooltip.nl-route-label {
+  font-size: 0.875rem;
+  padding: 3px 8px;
+  border-color: var(--color-canopy);
+  /* Long nursery names wrap rather than run off a phone screen */
+  white-space: normal;
+  width: max-content;
+  max-width: 12rem;
+  text-align: center;
+}
+.leaflet-tooltip.nl-route-label-end {
+  color: var(--color-murram);
+  border-color: var(--color-murram);
+}
+.nl-route-end {
+  background: none;
+  border: 0;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
+}
 .leaflet-container {
   font-family: var(--font-sans);
   background: var(--color-mist);

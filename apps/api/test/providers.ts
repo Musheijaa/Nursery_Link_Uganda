@@ -4,17 +4,19 @@ import { MockGeocoding } from '../src/providers/geocoding/mockGeocoding.js';
 import { paymentProviders } from '../src/providers/index.js';
 import { MockPayment } from '../src/providers/payment/mockPayment.js';
 import { MockRouting } from '../src/providers/routing/mockRouting.js';
-import type { RoutingProvider } from '../src/providers/routing/routing.js';
+import type { DirectionsProvider, RoutingProvider } from '../src/providers/routing/routing.js';
 import { MockSms } from '../src/providers/sms/mockSms.js';
 import { ProviderUnavailableError } from '../src/lib/errors.js';
 
 /** Mock providers whose outboxes and ledgers tests can inspect and control. */
 export const mockProviders = () => {
   const payment = new MockPayment();
+  const routing: RoutingProvider = new MockRouting();
   return {
     sms: new MockSms(),
     email: new MockEmail(),
-    routing: new MockRouting() as RoutingProvider,
+    routing,
+    directions: routing as DirectionsProvider,
     geocoding: new MockGeocoding() as GeocodingProvider,
     payment,
     payments: paymentProviders('mock', payment),

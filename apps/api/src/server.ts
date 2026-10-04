@@ -7,6 +7,13 @@ import { createProviders } from './providers/index.js';
 import { PgBossQueue } from './jobs/queue.js';
 import { startWorkers } from './jobs/worker.js';
 import { buildServices } from './services.js';
+import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
+
+// Node gives each address 250 ms before trying the next ("happy eyeballs"). From Uganda a TLS
+// handshake with a server in Europe often takes longer, so on a network without IPv6 the IPv4
+// attempt was abandoned and outside services (directions, place search) failed. 2.5 s still
+// falls back quickly when one address really is dead.
+setDefaultAutoSelectFamilyAttemptTimeout(2500);
 
 const loadConfigOrExit = (): Config => {
   try {

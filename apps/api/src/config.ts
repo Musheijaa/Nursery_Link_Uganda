@@ -86,6 +86,15 @@ const schema = z
     OSRM_URL: z.url().default('http://localhost:5000'),
     ORS_API_KEY: optional,
     ORS_URL: z.url().default('https://api.openrouteservice.org'),
+    /**
+     * Turn-by-turn directions: `routing` uses ROUTING_PROVIDER (mock draws a straight line);
+     * `osrm-public` asks the free FOSSGIS OSRM server (real roads, no key, 1 request/s), while
+     * distances and service areas stay on ROUTING_PROVIDER.
+     */
+    DIRECTIONS_PROVIDER: z.enum(['routing', 'osrm-public']).default('routing'),
+    OSRM_PUBLIC_URL: z.url().default('https://routing.openstreetmap.de/routed-car'),
+    /** Contact (email or URL) in the directions User-Agent; defaults to PUBLIC_WEB_URL */
+    DIRECTIONS_CONTACT: optional,
 
     /** Place search by name (villages, landmarks): mock, or OpenStreetMap's Nominatim */
     GEOCODER_PROVIDER: z.enum(['mock', 'nominatim']).default('mock'),

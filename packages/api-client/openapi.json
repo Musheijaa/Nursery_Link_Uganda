@@ -10442,6 +10442,9 @@
               "routing": {
                 "type": "string"
               },
+              "directions": {
+                "type": "string"
+              },
               "email": {
                 "type": "string"
               }
@@ -10450,6 +10453,7 @@
               "payment",
               "sms",
               "routing",
+              "directions",
               "email"
             ],
             "additionalProperties": false
@@ -11316,6 +11320,13 @@
           "distance_km": {
             "type": "number"
           },
+          "distance_mode": {
+            "type": "string",
+            "enum": [
+              "road",
+              "straight_line"
+            ]
+          },
           "duration_min": {
             "type": "integer",
             "minimum": -9007199254740991,
@@ -11390,6 +11401,7 @@
         "required": [
           "nursery",
           "distance_km",
+          "distance_mode",
           "duration_min",
           "geometry",
           "steps"

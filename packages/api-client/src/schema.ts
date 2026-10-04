@@ -1565,6 +1565,7 @@ export interface components {
                 payment: "mock" | "live";
                 sms: string;
                 routing: string;
+                directions: string;
                 email: string;
             };
             payment_methods: {
@@ -1776,6 +1777,8 @@ export interface components {
                 };
             };
             distance_km: number;
+            /** @enum {string} */
+            distance_mode: "road" | "straight_line";
             duration_min: number;
             geometry: {
                 /** @constant */

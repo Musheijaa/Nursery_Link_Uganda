@@ -22,7 +22,7 @@ describe('GET /api/v1/health', () => {
     expect(dataOf(res)).toMatchObject({
       status: 'ok',
       db: 'ok',
-      providers: { payment: 'mock', sms: 'mock', routing: 'mock', email: 'mock' },
+      providers: { payment: 'mock', sms: 'mock', routing: 'mock', directions: 'mock', email: 'mock' },
       payment_methods: { mtn_momo: true, airtel_money: true },
     });
     expect(res.headers['x-request-id']).toBeTruthy();
