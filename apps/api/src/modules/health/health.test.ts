@@ -31,7 +31,7 @@ describe('GET /api/v1/health', () => {
   it('reports the deployed commit when the host provides it', async () => {
     const plain = createApp({ config: testConfig(inject('databaseUrl')), pool, logger, providers: mockProviders(), queue: new RecordingQueue() });
     expect(dataOf(await request(plain).get('/api/v1/health').expect(200))).toMatchObject({ commit: null });
-    const deployed = createApp({ config: { ...testConfig(inject('databaseUrl')), RENDER_GIT_COMMIT: 'abc1234' }, pool, logger, providers: mockProviders(), queue: new RecordingQueue() });
+    const deployed = createApp({ config: { ...testConfig(inject('databaseUrl')), RAILWAY_GIT_COMMIT_SHA: 'abc1234' }, pool, logger, providers: mockProviders(), queue: new RecordingQueue() });
     expect(dataOf(await request(deployed).get('/api/v1/health').expect(200))).toMatchObject({ commit: 'abc1234' });
   });
 

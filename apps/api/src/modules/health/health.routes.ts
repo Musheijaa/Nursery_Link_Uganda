@@ -20,10 +20,10 @@ export const healthRoutes = (pool: pg.Pool, config: Config, payments: PaymentPro
     const site = { demo_notice: config.DEMO_NOTICE === 'on', survey_url: config.SURVEY_URL ?? null };
     try {
       await pool.query('SELECT 1');
-      res.json({ data: { status: 'ok', db: 'ok', version: VERSION, commit: config.RENDER_GIT_COMMIT ?? null, providers, payment_methods, features, site } });
+      res.json({ data: { status: 'ok', db: 'ok', version: VERSION, commit: config.RAILWAY_GIT_COMMIT_SHA ?? null, providers, payment_methods, features, site } });
     } catch (err) {
       req.log.error({ err }, 'Health check: database unreachable');
-      res.status(503).json({ data: { status: 'degraded', db: 'down', version: VERSION, commit: config.RENDER_GIT_COMMIT ?? null, providers, payment_methods, features, site } });
+      res.status(503).json({ data: { status: 'degraded', db: 'down', version: VERSION, commit: config.RAILWAY_GIT_COMMIT_SHA ?? null, providers, payment_methods, features, site } });
     }
   });
 

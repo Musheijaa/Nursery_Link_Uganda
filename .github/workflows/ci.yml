@@ -1,7 +1,7 @@
 name: CI
 
-# Runs on every pull request and every push to main. Render deploys main only after these checks
-# pass (render.yaml: autoDeployTrigger: checksPass); .github/workflows/production.yml then verifies it.
+# Runs on every pull request and every push to main. Railway deploys main only after these checks
+# pass ("Wait for CI" on each service); .github/workflows/production.yml then verifies it.
 on:
   push:
     branches: [main]
@@ -95,14 +95,31 @@ jobs:
             docs/lighthouse
           retention-days: 14
 
+  # The images Railway builds (deploy/railway), so a broken Dockerfile or Caddyfile fails here, not in production
+  docker:
+    name: Railway images build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the API, web and admin images
+        run: |
+          for s in api web admin; do docker build -f deploy/railway/$s.Dockerfile -t nl-$s . ; done
+      - name: Check the Caddy configs
+        run: |
+          for s in web admin; do
+            docker run --rm -e API_UPSTREAM=http://api:4000 -e WEB_UPSTREAM=http://web:8080 nl-$s caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+          done
+
   # One stable check name for branch protection: passes only when every job above passed
   ci-passed:
     name: CI passed
     runs-on: ubuntu-24.04
-    needs: [checks, e2e]
+    needs: [checks, e2e, docker]
     if: ${{ always() }}
     steps:
       - name: All jobs succeeded
         run: |
           test "${{ needs.checks.result }}" = success
           test "${{ needs.e2e.result }}" = success
+          test "${{ needs.docker.result }}" = success

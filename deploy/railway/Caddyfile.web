@@ -1,0 +1,40 @@
+# Public site on Railway: serves the Vite build and forwards /api and /media to the API over the
+# private network (API_UPSTREAM, e.g. http://nurserylink-api.railway.internal:4000). One origin for
+# the browser keeps the refresh cookie first-party (*.up.railway.app is a public suffix).
+{
+	admin off
+	servers {
+		# Only Railway's edge can reach this server; it puts the visitor's address in X-Real-IP
+		trusted_proxies static 0.0.0.0/0 ::/0
+		client_ip_headers X-Real-IP X-Forwarded-For
+	}
+}
+
+:{$PORT:8080} {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	@api path /api/* /media/*
+	handle @api {
+		reverse_proxy {$API_UPSTREAM} {
+			# The API trusts one proxy (TRUST_PROXY=1), so the rate limits see the visitor, not Caddy
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+
+	handle {
+		root * /srv
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@sw path /sw.js
+		header @sw Cache-Control "no-cache"
+		# The app's own pages (React Router): any other path is index.html
+		try_files {path} /index.html
+		file_server
+	}
+}
