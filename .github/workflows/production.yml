@@ -1,6 +1,6 @@
 name: Production
 
-# After CI passes on main, Railway deploys the commit (each service has "Wait for CI" switched on).
+# Railway deploys each push to main; after CI passes on main, this confirms production runs it.
 # This waits until the live API reports that commit in /health, then smoke-tests the public site,
 # the admin console and the API. A failure here means production is not running the new code.
 # The API has no public address of its own: it is reached through the sites' /api forwarding.
