@@ -12,6 +12,7 @@ export const healthRoutes = (pool: pg.Pool, config: Config, payments: PaymentPro
       payment: config.PAYMENT_PROVIDER_MODE,
       sms: config.SMS_PROVIDER,
       routing: config.ROUTING_PROVIDER,
+      directions: config.DIRECTIONS_PROVIDER === 'routing' ? config.ROUTING_PROVIDER : config.DIRECTIONS_PROVIDER,
       email: config.EMAIL_PROVIDER,
     };
     const payment_methods = { mtn_momo: payments.isAvailable('mtn_momo'), airtel_money: payments.isAvailable('airtel_money') };

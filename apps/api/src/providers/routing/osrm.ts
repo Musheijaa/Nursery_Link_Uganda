@@ -69,13 +69,15 @@ export class OsrmRouting implements RoutingProvider {
   constructor(
     private readonly baseUrl: string,
     private readonly fetchImpl: Fetch = fetch,
-    private readonly timeoutMs = 5000
+    private readonly timeoutMs = 5000,
+    /** e.g. an identifying User-Agent, which public OSRM servers require */
+    private readonly headers: Record<string, string> = {}
   ) {}
 
   private async get(path: string): Promise<unknown> {
     let res: Response;
     try {
-      res = await this.fetchImpl(`${this.baseUrl.replace(/\/$/, '')}${path}`, { signal: AbortSignal.timeout(this.timeoutMs) });
+      res = await this.fetchImpl(`${this.baseUrl.replace(/\/$/, '')}${path}`, { headers: this.headers, signal: AbortSignal.timeout(this.timeoutMs) });
     } catch (err) {
       throw new ProviderUnavailableError('Routing service unreachable', { cause: String(err) });
     }

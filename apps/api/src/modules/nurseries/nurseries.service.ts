@@ -1,7 +1,7 @@
 import type { Logger } from 'pino';
 import type { InventoryItemDto, NurseryProfileDto, NurserySummaryDto, PaginationMeta } from '@nurserylink/shared';
 import type { Database } from '../../db/client.js';
-import type { RoutingProvider } from '../../providers/routing/routing.js';
+import type { DirectionsProvider, RoutingProvider } from '../../providers/routing/routing.js';
 import { NotFoundError, ProviderUnavailableError } from '../../lib/errors.js';
 import { roundKm, type FeatureCollection, type GeoJsonLineString, type GeoJsonPoint, type LatLng } from '../../lib/geo.js';
 import { paginationMeta, toOffset, type Pagination } from '../../lib/pagination.js';
@@ -61,7 +61,7 @@ export const toInventoryItem = (row: repo.InventoryRow): InventoryItem => ({
 });
 
 export class NurseriesService {
-  constructor(private readonly deps: { db: Database; routing: RoutingProvider; search: SearchService; logger: Logger }) {}
+  constructor(private readonly deps: { db: Database; routing: RoutingProvider; directions: DirectionsProvider; search: SearchService; logger: Logger }) {}
 
   /**
    * The nursery list. When the search text matches nothing as typed, it is retried with the
@@ -165,10 +165,14 @@ export class NurseriesService {
     return profile;
   }
 
-  /** Turn-by-turn route from the buyer to the nursery (FR-11). Routing failures surface as 503. */
+  /**
+   * Turn-by-turn route from the buyer to the nursery (FR-11). Routing failures surface as 503.
+   * The mock provider only draws a straight line, and says so (`distance_mode`).
+   */
   async route(id: string, from: LatLng): Promise<{
     nursery: { id: string; name: string; location: LatLng };
     distance_km: number;
+    distance_mode: 'road' | 'straight_line';
     duration_min: number;
     geometry: GeoJsonLineString;
     steps: RouteStep[];
@@ -176,10 +180,11 @@ export class NurseriesService {
     const row = await repo.findNursery(this.deps.db, id);
     if (!row) throw new NotFoundError('Nursery not found');
     const to = { lat: row.lat, lng: row.lng };
-    const route = await this.deps.routing.route(from, to);
+    const route = await this.deps.directions.route(from, to);
     return {
       nursery: { id: row.id, name: row.name, location: to },
       distance_km: route.distanceKm,
+      distance_mode: this.deps.directions.name === 'mock' ? 'straight_line' : 'road',
       duration_min: route.durationMin,
       geometry: route.geometry,
       steps: route.steps,

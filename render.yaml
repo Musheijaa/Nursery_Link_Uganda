@@ -82,6 +82,10 @@ services:
         sync: false
       - key: ORS_API_KEY
         sync: false
+      # Turn-by-turn directions follow real roads through the free FOSSGIS OSRM server (no key; it
+      # identifies us by PUBLIC_WEB_URL), whatever ROUTING_PROVIDER is.
+      - key: DIRECTIONS_PROVIDER
+        value: osrm-public
       # The first administrator (created by the seed on first start; the password is never overwritten)
       - key: ADMIN_FULL_NAME
         sync: false

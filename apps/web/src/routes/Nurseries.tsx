@@ -10,6 +10,7 @@ import { useBoundaryShape, useNearest, useNurseryMap, useRoute } from '../featur
 import { FilterPanel, SearchBox, nurserySuggest } from '../features/nurseries/Filters';
 import { useAskLocation } from '../features/nurseries/LocationDialog';
 import { NurseryCard } from '../features/nurseries/NurseryCard';
+import { RouteBar } from '../features/nurseries/RouteBar';
 import { NurseryList, type ListNursery } from '../features/nurseries/NurseryList';
 import { useNurseryParams } from '../features/nurseries/params';
 import { SpeciesDrawer } from '../features/nurseries/SpeciesDrawer';
@@ -21,6 +22,9 @@ const NurseryMap = lazy(loadMap);
 // The map is this page's largest element: start downloading its code now, alongside the page's data,
 // rather than after the first render. List view never shows the map, so it skips this (saves data).
 if (new URLSearchParams(window.location.search).get('view') !== 'list') void loadMap();
+
+/** Roughly the phone route bar's height, which the map keeps the route clear of */
+const ROUTE_BAR_HEIGHT = 190;
 
 const MapFallback = () => <Skeleton className="size-full rounded-none" />;
 
@@ -37,6 +41,14 @@ const Nurseries = () => {
   const nearestOn = params.sort === 'nearest' && position !== null;
   const shape = useBoundaryShape(params.subCounty ?? params.district);
   const route = useRoute(params.nursery, position, params.directions);
+  // Phones: the nursery card has stepped aside so the route can be seen on the map
+  const [routeOnMap, setRouteOnMap] = useState(false);
+  const showingRoute = routeOnMap && !desktop && params.directions && route.data !== undefined;
+  // Memoised: a new object would make the map re-frame the route on every render
+  const routeEnds = useMemo(
+    () => (position && route.data ? { start: position, end: route.data.nursery.location, name: route.data.nursery.name } : null),
+    [position, route.data]
+  );
 
   // Deep links such as /nurseries?species=mvule&sort=nearest ask for the location once (FR-20)
   useEffect(() => {
@@ -106,6 +118,9 @@ const Nurseries = () => {
         boundary={(shape.data as unknown as GeoFeature | undefined) ?? null}
         areaChosen={(params.subCounty ?? params.district) !== null}
         route={params.directions && route.data ? route.data.geometry.coordinates : null}
+        routeStraight={route.data?.distance_mode === 'straight_line'}
+        routeEnds={routeEnds}
+        routeBottomPad={showingRoute ? ROUTE_BAR_HEIGHT : 0}
         position={position}
         onLocate={() => { ask(() => undefined); }}
         compact={!desktop}
@@ -146,12 +161,17 @@ const Nurseries = () => {
         id={params.nursery}
         position={position}
         directions={params.directions}
-        onClose={() => { update({ nursery: null }); }}
+        onClose={() => { setRouteOnMap(false); update({ nursery: null }); }}
         onDirections={on => {
           if (on) ask(() => { update({ directions: true }); });
-          else update({ directions: false });
+          else { setRouteOnMap(false); update({ directions: false }); }
         }}
         onSpecies={setSpeciesSlug}
+        onShowRouteOnMap={desktop ? undefined : () => {
+          if (params.view === 'list') update({ view: 'map' });
+          setRouteOnMap(true);
+        }}
+        hidden={showingRoute}
         modal={!desktop}
       />
       <SpeciesDrawer slug={speciesSlug} onClose={() => { setSpeciesSlug(null); }} />
@@ -206,9 +226,20 @@ const Nurseries = () => {
   }
 
   return (
-    <div className="relative h-[calc(100dvh-4rem)] overflow-hidden">
+    // `isolate` keeps the floating search (z-500, above Leaflet's panes) under the nursery card
+    <div className="relative isolate h-[calc(100dvh-4rem)] overflow-hidden">
       <h1 className="sr-only">{en.nurseries.title}</h1>
       {mapElement}
+      {showingRoute ? (
+        <RouteBar
+          route={route.data}
+          position={position}
+          isDemo={map.data?.data.features.find(f => f.id === params.nursery)?.properties.is_demo ?? false}
+          onSteps={() => { setRouteOnMap(false); }}
+          onEnd={() => { setRouteOnMap(false); update({ directions: false }); }}
+        />
+      ) : (
+      <>
       <div className="absolute inset-x-3 top-3 z-[500] flex flex-col gap-2">
         <SearchBox value={params.q} onChange={q => { update({ q }, { replace: true }); }} suggest={nurserySuggest(update)} className="shadow-float" />
         <div className="self-start">{viewToggle}</div>
@@ -220,6 +251,8 @@ const Nurseries = () => {
           {list}
         </div>
       </BottomSheet>
+      </>
+      )}
       {overlays}
     </div>
   );

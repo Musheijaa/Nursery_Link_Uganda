@@ -20,6 +20,13 @@ export interface RouteResult {
   steps: RouteStep[];
 }
 
+/** Turn-by-turn directions only. Every RoutingProvider is one; PublicOsrmDirections is only this. */
+export interface DirectionsProvider {
+  readonly name: RoutingProvider['name'] | 'osrm-public';
+  /** Throws ProviderUnavailableError if no route can be computed. */
+  route(from: LatLng, to: LatLng): Promise<RouteResult>;
+}
+
 /**
  * Road routing. Implementations: Osrm (self-hosted, car profile), OpenRouteService (hosted API on
  * OpenStreetMap roads) and MockRouting (straight line × 1.3).

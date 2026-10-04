@@ -15,7 +15,7 @@ const pool = createPool(inject('databaseUrl'));
 const config = testConfig(inject('databaseUrl'));
 const logger = pino({ level: 'silent' });
 const app = createApp({ config, pool, logger, providers: mockProviders(), queue: new RecordingQueue() });
-const appWithoutRouting = createApp({ config, pool, logger, providers: { ...mockProviders(), routing: new DownRouting() }, queue: new RecordingQueue() });
+const appWithoutRouting = createApp({ config, pool, logger, providers: { ...mockProviders(), routing: new DownRouting(), directions: new DownRouting() }, queue: new RecordingQueue() });
 
 beforeAll(() => prepareTestDatabase(pool));
 afterAll(() => pool.end());
@@ -213,6 +213,8 @@ describe('GET /nurseries/:id/route', () => {
     expect(res.body).toMatchObject({
       data: {
         nursery: { name: 'Katosi Lakeshore Seedlings', location: { lat: 0.205, lng: 32.8 } },
+        // The mock draws a straight line and must say so, so the map doesn't pass it off as a road
+        distance_mode: 'straight_line',
         geometry: { type: 'LineString', coordinates: [[32.757, 0.358], [32.8, 0.205]] },
         steps: [{ instruction: 'Head towards the nursery' }, { instruction: 'Arrive at the nursery' }],
       },

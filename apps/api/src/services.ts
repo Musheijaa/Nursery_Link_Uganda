@@ -48,7 +48,7 @@ export const buildServices = ({ config, pool, logger, providers, queue }: AppDep
   const notifications = new OrderNotifications({ queue, config });
   const payments = new PaymentsService({ db, providers: providers.payments, queue, notifications, logger });
   const search = new SearchService({ db, geocoding: providers.geocoding, logger });
-  const nurseries = new NurseriesService({ db, routing: providers.routing, search, logger });
+  const nurseries = new NurseriesService({ db, routing: providers.routing, directions: providers.directions, search, logger });
   return {
     db,
     sms: providers.sms,

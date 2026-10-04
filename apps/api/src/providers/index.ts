@@ -16,7 +16,8 @@ import { API_VERSION } from '../lib/version.js';
 import { MockRouting } from './routing/mockRouting.js';
 import { OsrmRouting } from './routing/osrm.js';
 import { OpenRouteServiceRouting } from './routing/openRouteService.js';
-import type { RoutingProvider } from './routing/routing.js';
+import { PublicOsrmDirections } from './routing/publicOsrm.js';
+import type { DirectionsProvider, RoutingProvider } from './routing/routing.js';
 import { MockSms } from './sms/mockSms.js';
 import type { SmsProvider } from './sms/sms.js';
 
@@ -24,6 +25,8 @@ export interface Providers {
   sms: SmsProvider;
   email: EmailProvider;
   routing: RoutingProvider;
+  /** Turn-by-turn directions (the routing provider itself unless DIRECTIONS_PROVIDER says otherwise) */
+  directions: DirectionsProvider;
   geocoding: GeocodingProvider;
   payments: PaymentProviders;
 }
@@ -76,8 +79,21 @@ const required = (value: string | undefined, name: string): string => {
   return value;
 };
 
+const routingFromConfig = (config: Config): RoutingProvider =>
+  config.ROUTING_PROVIDER === 'osrm' ? new OsrmRouting(config.OSRM_URL)
+  : config.ROUTING_PROVIDER === 'openrouteservice' ? new OpenRouteServiceRouting({ apiKey: required(config.ORS_API_KEY, 'ORS_API_KEY'), baseUrl: config.ORS_URL })
+  : new MockRouting();
+
+const directionsFromConfig = (config: Config, routing: RoutingProvider): DirectionsProvider =>
+  config.DIRECTIONS_PROVIDER === 'osrm-public'
+    ? new PublicOsrmDirections({
+        baseUrl: config.OSRM_PUBLIC_URL,
+        userAgent: `NurseryLinkUganda/${API_VERSION} (${config.DIRECTIONS_CONTACT ?? config.PUBLIC_WEB_URL})`,
+      })
+    : routing;
+
 /** Chooses each provider implementation from configuration. */
-export const createProviders = (config: Config, logger: Logger): Providers => ({
+export const createProviders = (config: Config, logger: Logger, routing = routingFromConfig(config)): Providers => ({
   sms:
     config.SMS_PROVIDER === 'africastalking'
       ? new AfricasTalkingSms(required(config.AT_USERNAME, 'AT_USERNAME'), required(config.AT_API_KEY, 'AT_API_KEY'), config.AT_SENDER_ID)
@@ -92,10 +108,8 @@ export const createProviders = (config: Config, logger: Logger): Providers => ({
           from: config.EMAIL_FROM,
         })
       : new MockEmail(logger),
-  routing:
-    config.ROUTING_PROVIDER === 'osrm' ? new OsrmRouting(config.OSRM_URL)
-    : config.ROUTING_PROVIDER === 'openrouteservice' ? new OpenRouteServiceRouting({ apiKey: required(config.ORS_API_KEY, 'ORS_API_KEY'), baseUrl: config.ORS_URL })
-    : new MockRouting(),
+  routing,
+  directions: directionsFromConfig(config, routing),
   geocoding:
     config.GEOCODER_PROVIDER === 'nominatim'
       ? new NominatimGeocoding({
