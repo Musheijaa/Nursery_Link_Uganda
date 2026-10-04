@@ -1,7 +1,7 @@
 name: CI
 
-# Runs on every pull request and every push to main. Railway deploys main only after these checks
-# pass ("Wait for CI" on each service); .github/workflows/production.yml then verifies it.
+# Runs on every pull request and every push to main. Railway deploys each push to main; PRs merge
+# only after these checks pass, and .github/workflows/production.yml then verifies the deploy.
 on:
   push:
     branches: [main]
