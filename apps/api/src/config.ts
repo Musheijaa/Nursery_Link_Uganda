@@ -25,8 +25,8 @@ const schema = z
     /** Where uploaded photos are stored, and the URL path they are served at */
     MEDIA_DIR: z.string().default('data/media'),
     MEDIA_PUBLIC_PATH: z.string().regex(/^\/[a-z0-9/_-]*[a-z0-9]$/).default('/media'),
-    /** The deployed Git commit (Render sets it); /health reports it so the pipeline can confirm a deploy */
-    RENDER_GIT_COMMIT: optional,
+    /** The deployed Git commit (Railway sets it); /health reports it so the pipeline can confirm a deploy */
+    RAILWAY_GIT_COMMIT_SHA: optional,
     /** Serve the OpenAPI document and Swagger UI at /api/v1/docs */
     API_DOCS: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
     DATABASE_URL: z.url(),

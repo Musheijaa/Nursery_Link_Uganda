@@ -1,0 +1,42 @@
+# Admin console on Railway: serves the Vite build, forwards /api and /media to the API, and /images
+# (the seeded tree photos, which belong to the public site) to the web service, all over Railway's
+# private network (API_UPSTREAM, WEB_UPSTREAM). One origin keeps the admin's refresh cookie first-party.
+{
+	admin off
+	servers {
+		# Only Railway's edge can reach this server; it puts the visitor's address in X-Real-IP
+		trusted_proxies static 0.0.0.0/0 ::/0
+		client_ip_headers X-Real-IP X-Forwarded-For
+	}
+}
+
+:{$PORT:8080} {
+	encode zstd gzip
+
+	header {
+		X-Frame-Options DENY
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		-Server
+	}
+
+	@api path /api/* /media/*
+	handle @api {
+		reverse_proxy {$API_UPSTREAM} {
+			# The API trusts one proxy (TRUST_PROXY=1), so the rate limits see the visitor, not Caddy
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+
+	handle /images/* {
+		reverse_proxy {$WEB_UPSTREAM}
+	}
+
+	handle {
+		root * /srv
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /index.html
+		file_server
+	}
+}
