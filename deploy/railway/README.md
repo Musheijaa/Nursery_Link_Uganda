@@ -61,8 +61,11 @@ and the GitHub `PROD_*` variables to the new addresses.
 
 - **Continuous delivery**: every push to `main` deploys (pull requests merge only after CI passes).
   `watchPatterns` in each config skip redeploys when only other parts of the repo change.
-- **Photos uploaded in the admin** are stored in the API container (`/app/apps/api/data/media`). Attach a
-  volume to `nurserylink-api` at that path to keep them across deploys.
+- **Photos uploaded in the admin** are stored on the `nurserylink-api-volume` volume, mounted at
+  `/app/apps/api/data/media`, so they survive deploys. A service with a volume restarts rather than
+  overlapping old and new versions, so the API is briefly unavailable during each deploy.
+- **Production check**: when only files outside the API's watch paths change (docs, the other apps),
+  Railway doesn't redeploy the API; the check then accepts the commit it already runs.
 - **Visitor IPs** (for rate limits): Caddy passes Railway's `X-Real-IP` on as `X-Forwarded-For`, and the
   API trusts one proxy (`TRUST_PROXY=1`).
 - **Trial mode** is on (`PHONE_VERIFICATION=off`, `PAYMENTS=off`, mock providers) until SMS and mobile
