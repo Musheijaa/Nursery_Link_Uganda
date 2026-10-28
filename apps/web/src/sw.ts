@@ -4,9 +4,15 @@ import { ExpirationPlugin } from 'workbox-expiration';
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { CacheFirst, NetworkFirst } from 'workbox-strategies';
-import type { WorkboxPlugin } from 'workbox-core';
+import { clientsClaim, type WorkboxPlugin } from 'workbox-core';
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: (string | { url: string; revision: string | null })[] };
+
+// A new version takes over as soon as it's installed (registerSW's autoUpdate then reloads open
+// pages; checkout drafts live in sessionStorage, so nothing is lost). Without this it waited
+// until every tab of the site was closed, so returning visitors kept the old site.
+void self.skipWaiting();
+clientsClaim();
 
 // The app shell: built JS, CSS, fonts and index.html
 precacheAndRoute(self.__WB_MANIFEST);

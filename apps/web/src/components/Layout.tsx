@@ -28,7 +28,7 @@ const NAV: NavItem[] = [
 
 const navLink = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex min-h-11 items-center gap-2 whitespace-nowrap rounded-sm px-3 font-label text-label no-underline',
+    'flex min-h-11 min-w-11 items-center gap-2 whitespace-nowrap rounded-sm px-3 font-label text-label no-underline xl:justify-center xl:px-2.5',
     isActive ? 'bg-paper/10 text-paper underline decoration-murram-light decoration-[3px] underline-offset-8' : 'text-paper/90 hover:bg-paper/10 hover:text-paper'
   );
 
@@ -41,7 +41,7 @@ const AccountLinks = ({ onNavigate, mobile = false }: { onNavigate?: () => void;
       <Link
         to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`}
         onClick={onNavigate}
-        className="flex min-h-11 items-center gap-2 rounded-sm border border-paper/60 px-3 font-label text-label text-paper no-underline hover:bg-paper/10"
+        className="flex min-h-11 items-center gap-2 whitespace-nowrap rounded-sm border border-paper/60 px-3 font-label text-label text-paper no-underline hover:bg-paper/10"
       >
         <LogIn aria-hidden className="size-5" />
         {en.nav.signIn}
@@ -62,7 +62,7 @@ const AccountLinks = ({ onNavigate, mobile = false }: { onNavigate?: () => void;
           onNavigate?.();
           void signOut();
         }}
-        className="flex min-h-11 items-center gap-2 rounded-sm px-3 font-label text-label text-paper/90 hover:bg-paper/10"
+        className="flex min-h-11 items-center gap-2 whitespace-nowrap rounded-sm px-3 font-label text-label text-paper/90 hover:bg-paper/10 xl:px-2.5"
       >
         <LogOut aria-hidden className="size-5" />
         {en.nav.signOut}
@@ -107,11 +107,12 @@ export const Header = () => (
   <header className="on-dark sticky top-0 z-30 bg-canopy">
     <div className={cn(PAGE_FRAME, 'flex h-16 items-center justify-between gap-4')}>
       <Logo />
-      <nav aria-label="Main" className="hidden items-center gap-1 xl:flex">
+      <nav aria-label="Main" className="hidden items-center gap-0.5 xl:flex">
         {NAV.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={navLink}>
             {end && <Icon aria-hidden className="size-5" />}
-            {label}
+            {/* Home is just the house icon until there's room for its name (signed-in links are wider) */}
+            {end ? <span className="sr-only min-[1400px]:not-sr-only">{label}</span> : label}
           </NavLink>
         ))}
       </nav>
@@ -119,6 +120,10 @@ export const Header = () => (
         <div className="hidden xl:block">
           <AccountLinks />
         </div>
+        {/* Below xl the links are in the menu; a house button keeps Home one tap away */}
+        <Link to="/" aria-label={en.app.home} className="flex size-11 items-center justify-center rounded-sm text-paper hover:bg-paper/10 xl:hidden">
+          <House aria-hidden className="size-6" />
+        </Link>
         <MobileMenu />
       </div>
     </div>

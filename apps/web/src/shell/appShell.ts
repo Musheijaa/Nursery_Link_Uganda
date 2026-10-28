@@ -33,12 +33,14 @@ const MARK = `<svg width="34" height="34" viewBox="${BRAND_MARK_VIEWBOX}" aria-h
 /** The header bar (every page). Links work before the app loads; the account area is left empty. */
 const header = () =>
   `<header class="on-dark sticky top-0 z-30 bg-canopy"><div class="${PAGE_FRAME} flex h-16 items-center justify-between gap-4">` +
-  `<a href="/" class="flex min-h-11 items-center gap-2.5 text-paper no-underline" aria-label="${esc(`${en.app.fullName}, ${en.app.home}`)}">${MARK}` +
+  `<a href="/" class="flex min-h-11 shrink-0 items-center gap-2.5 whitespace-nowrap text-paper no-underline" aria-label="${esc(`${en.app.fullName}, ${en.app.home}`)}">${MARK}` +
   `<span class="flex flex-col leading-none"><span class="font-display text-xl font-semibold tracking-tight">${esc(en.app.name)}</span>` +
   `<span class="text-xs font-bold text-murram-light">${esc(en.footer.country)}</span></span></a>` +
-  '<nav aria-label="Main" class="hidden items-center gap-1 xl:flex">' +
-  NAV.map(n => `<a href="${n.to}" class="flex min-h-11 items-center gap-2 whitespace-nowrap rounded-sm px-3 font-label text-label no-underline text-paper/90">${n.to === '/' ? HOUSE : ''}${esc(n.label)}</a>`).join('') +
-  '</nav><span class="size-11"></span></div></header>';
+  '<nav aria-label="Main" class="hidden items-center gap-0.5 xl:flex">' +
+  NAV.map(n => `<a href="${n.to}" class="flex min-h-11 min-w-11 items-center gap-2 whitespace-nowrap rounded-sm px-3 font-label text-label no-underline text-paper/90 xl:justify-center xl:px-2.5">${n.to === '/' ? `${HOUSE}<span class="sr-only min-[1400px]:not-sr-only">${esc(n.label)}</span>` : esc(n.label)}</a>`).join('') +
+  '</nav><div class="flex items-center gap-1">' +
+  `<a href="/" aria-label="${esc(en.app.home)}" class="flex size-11 items-center justify-center rounded-sm text-paper hover:bg-paper/10 xl:hidden">${HOUSE.replace('class="size-5"', 'class="size-6"')}</a>` +
+  '<span class="size-11 xl:hidden"></span></div></div></header>';
 
 /** Home's hero: the photo, eyebrow, headline and lead (the search and links arrive with the app). */
 const homeHero = () => {
