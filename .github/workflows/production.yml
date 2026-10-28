@@ -31,6 +31,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
+      # Full history, to tell whether this commit changed anything the API is built from
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
       - name: Wait for the API to run this commit
         env:
           SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -42,6 +47,15 @@ jobs:
             status=$(printf '%s' "$body" | jq -r '.data.status // empty' 2>/dev/null || true)
             echo "attempt $i: status=${status:-none} commit=${commit:-none}"
             if [ "$commit" = "$SHA" ] && [ "$status" = ok ]; then exit 0; fi
+            # Railway skips redeploying the API when none of its watch paths changed (docs, the other
+            # apps…); then the commit it runs is as good as this one
+            if [ "$status" = ok ] && [ -n "$commit" ] && git cat-file -e "$commit^{commit}" 2>/dev/null; then
+              paths=$(jq -r '.build.watchPatterns[] | ":(glob)" + .' deploy/railway/api.json)
+              if git diff --quiet "$commit" "$SHA" -- $paths; then
+                echo "The API runs $commit; nothing it is built from changed up to $SHA"
+                exit 0
+              fi
+            fi
             sleep 30
           done
           echo "::error::The API did not report commit $SHA within 25 minutes. Check the deploy in the Railway dashboard."
