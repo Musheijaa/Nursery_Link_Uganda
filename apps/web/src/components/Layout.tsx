@@ -1,5 +1,5 @@
 import { Button, OfflineBanner, cn } from '@nurserylink/ui';
-import { BookOpen, Gift, LogIn, LogOut, Map as MapIcon, Menu, Newspaper, Package, Sprout, type LucideIcon } from 'lucide-react';
+import { BookOpen, Gift, House, LogIn, LogOut, Map as MapIcon, Menu, Newspaper, Package, Sprout, type LucideIcon } from 'lucide-react';
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useMatches } from 'react-router';
 import { en } from '../copy/en';
@@ -13,9 +13,12 @@ export interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
+  /** Active only on this exact path (Home, which every path starts with) */
+  end?: boolean;
 }
 
 const NAV: NavItem[] = [
+  { to: '/', label: en.app.home, icon: House, end: true },
   { to: '/nurseries', label: en.nav.nurseries, icon: MapIcon },
   { to: '/free-seedlings', label: en.nav.freeSeedlings, icon: Gift },
   { to: '/library', label: en.nav.library, icon: BookOpen },
@@ -25,7 +28,7 @@ const NAV: NavItem[] = [
 
 const navLink = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex min-h-11 items-center gap-2 rounded-sm px-3 font-label text-label no-underline',
+    'flex min-h-11 items-center gap-2 whitespace-nowrap rounded-sm px-3 font-label text-label no-underline',
     isActive ? 'bg-paper/10 text-paper underline decoration-murram-light decoration-[3px] underline-offset-8' : 'text-paper/90 hover:bg-paper/10 hover:text-paper'
   );
 
@@ -83,7 +86,7 @@ const MobileMenu = () => {
       <Button
         variant="ghost"
         size="icon"
-        className="text-paper hover:bg-paper/10 lg:hidden"
+        className="text-paper hover:bg-paper/10 xl:hidden"
         aria-label={en.app.menu}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -104,15 +107,16 @@ export const Header = () => (
   <header className="on-dark sticky top-0 z-30 bg-canopy">
     <div className={cn(PAGE_FRAME, 'flex h-16 items-center justify-between gap-4')}>
       <Logo />
-      <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
-        {NAV.map(({ to, label }) => (
-          <NavLink key={to} to={to} className={navLink}>
+      <nav aria-label="Main" className="hidden items-center gap-1 xl:flex">
+        {NAV.map(({ to, label, icon: Icon, end }) => (
+          <NavLink key={to} to={to} end={end} className={navLink}>
+            {end && <Icon aria-hidden className="size-5" />}
             {label}
           </NavLink>
         ))}
       </nav>
       <div className="flex items-center gap-1">
-        <div className="hidden lg:block">
+        <div className="hidden xl:block">
           <AccountLinks />
         </div>
         <MobileMenu />

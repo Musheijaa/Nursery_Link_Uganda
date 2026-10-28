@@ -28,8 +28,8 @@ const MobileMenu = ({ open, onOpenChange, nav, account, navLink }: {
         </div>
         <RadixDialog.Description className="sr-only">{en.app.fullName}</RadixDialog.Description>
         <nav aria-label={en.app.menu} className="flex flex-col gap-1">
-          {nav.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} className={navLink} onClick={() => { onOpenChange(false); }}>
+          {nav.map(({ to, label, icon: Icon, end }) => (
+            <NavLink key={to} to={to} end={end} className={navLink} onClick={() => { onOpenChange(false); }}>
               <Icon aria-hidden className="size-5" />
               {label}
             </NavLink>
