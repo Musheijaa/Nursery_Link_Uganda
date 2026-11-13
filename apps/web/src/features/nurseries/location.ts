@@ -27,6 +27,9 @@ const set = (next: LocationState) => {
   for (const l of listeners) l();
 };
 
+/** The position shared this session, read at call time (e.g. when the assistant is asked). */
+export const currentPosition = (): LatLng | null => state.position;
+
 /** The current status, read at call time (e.g. right after a request settles). */
 export const locationStatus = (): LocationStatus => state.status;
 

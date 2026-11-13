@@ -23,6 +23,7 @@ import { campaignsRoutes } from './modules/campaigns/campaigns.routes.js';
 import { ordersRoutes } from './modules/orders/orders.routes.js';
 import { serviceRequestsRoutes } from './modules/serviceRequests/serviceRequests.routes.js';
 import { feedbackRoutes } from './modules/feedback/feedback.routes.js';
+import { assistantRoutes } from './modules/assistant/assistant.routes.js';
 import { devRoutes, webhookRoutes } from './modules/orders/webhooks.routes.js';
 import { MockPayment } from './providers/payment/mockPayment.js';
 import { MockSms } from './providers/sms/mockSms.js';
@@ -33,7 +34,7 @@ export type { AppDeps } from './services.js';
 /** Builds the Express app without listening, so tests can drive it with Supertest. */
 export const createApp = (deps: AppDeps, services: Services = buildServices(deps)): Express => {
   const { config, pool, logger, providers } = deps;
-  const { db, auth, nurseries, species, search, orders, payments, applications, serviceRequests, feedback, shadow, media } = services;
+  const { db, auth, nurseries, species, search, orders, payments, applications, serviceRequests, feedback, shadow, media, assistant } = services;
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', config.TRUST_PROXY);
@@ -101,6 +102,7 @@ export const createApp = (deps: AppDeps, services: Services = buildServices(deps
   v1.use('/orders', ordersRoutes(orders, limit));
   v1.use('/service-requests', serviceRequestsRoutes(serviceRequests, limit));
   v1.use('/feedback', feedbackRoutes(feedback, limit));
+  v1.use('/assistant', assistantRoutes(assistant, limit));
   v1.use('/admin', adminRoutes({ db, species, orders, applications, serviceRequests, feedback, shadow, media, limit }));
 
   // Development and E2E helpers for mock providers; never mounted in production

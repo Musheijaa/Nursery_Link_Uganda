@@ -42,6 +42,9 @@
       "name": "Feedback"
     },
     {
+      "name": "Assistant"
+    },
+    {
       "name": "Orders"
     },
     {
@@ -2926,6 +2929,148 @@
           },
           "429": {
             "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assistant/chat": {
+      "post": {
+        "operationId": "postAssistantChat",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Ask the site assistant (streams the answer)",
+        "description": "Public. Send the recent conversation (the last message is the new question). The answer streams back as server-sent events: one JSON object per `data:` line, `status` while it looks things up, `text` pieces of the Markdown answer, then `done` (or `error`). Signed-in buyers can ask about their own orders. Limited to 12 questions a minute and 300 a day per account or IP, plus a daily total (ASSISTANT_DAILY_LIMIT).",
+        "security": [],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "messages": {
+                    "minItems": 1,
+                    "maxItems": 16,
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "role": {
+                              "type": "string",
+                              "const": "user"
+                            },
+                            "content": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 1000
+                            }
+                          },
+                          "required": [
+                            "role",
+                            "content"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "role": {
+                              "type": "string",
+                              "const": "assistant"
+                            },
+                            "content": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4000
+                            }
+                          },
+                          "required": [
+                            "role",
+                            "content"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "location": {
+                    "type": "object",
+                    "properties": {
+                      "lat": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      "lng": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                      }
+                    },
+                    "required": [
+                      "lat",
+                      "lng"
+                    ]
+                  },
+                  "page": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "pattern": "^\\/[^\\s]*$"
+                  }
+                },
+                "required": [
+                  "messages"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A stream of assistant events",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Server-sent events: each `data:` line is one AssistantEvent as JSON",
+                  "x-event-schema": {
+                    "$ref": "#/components/schemas/AssistantEvent"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The assistant is switched off, or its model provider is unavailable",
             "content": {
               "application/json": {
                 "schema": {
@@ -10447,6 +10592,14 @@
               },
               "email": {
                 "type": "string"
+              },
+              "assistant": {
+                "type": "string",
+                "enum": [
+                  "off",
+                  "mock",
+                  "anthropic"
+                ]
               }
             },
             "required": [
@@ -10454,7 +10607,8 @@
               "sms",
               "routing",
               "directions",
-              "email"
+              "email",
+              "assistant"
             ],
             "additionalProperties": false
           },
@@ -10482,11 +10636,16 @@
               },
               "payments": {
                 "type": "boolean"
+              },
+              "assistant": {
+                "type": "boolean",
+                "description": "The site assistant (chat) is switched on"
               }
             },
             "required": [
               "phone_verification",
-              "payments"
+              "payments",
+              "assistant"
             ],
             "additionalProperties": false
           },
@@ -10528,6 +10687,91 @@
           "site"
         ],
         "additionalProperties": false
+      },
+      "AssistantEvent": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "status"
+              },
+              "tool": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "tool",
+              "label"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "text"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "done"
+              },
+              "stop": {
+                "type": "string",
+                "enum": [
+                  "complete",
+                  "limit",
+                  "declined"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "stop"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "error"
+              },
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "code",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        ]
       },
       "PublicUser": {
         "type": "object",

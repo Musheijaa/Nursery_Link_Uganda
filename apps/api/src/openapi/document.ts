@@ -75,6 +75,9 @@ const successContent = (op: Operation) => {
   switch (op.success.content) {
     case 'csv':
       return { 'text/csv': { schema: { type: 'string' } } };
+    case 'event-stream':
+      // Each `data:` line is one JSON event; the event schema is a named component
+      return { 'text/event-stream': { schema: { type: 'string', description: 'Server-sent events: each `data:` line is one AssistantEvent as JSON', ...(op.raw ? { 'x-event-schema': outputSchema(op.raw) } : {}) } } };
     case 'geojson':
       return { 'application/geo+json': { schema: op.raw ? outputSchema(op.raw) : { type: 'object' } } };
     default:

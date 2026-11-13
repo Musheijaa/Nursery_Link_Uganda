@@ -17,6 +17,7 @@ import { SpeciesService } from './modules/species/species.service.js';
 import { OrderNotifications } from './modules/orders/notifications.js';
 import { OrdersService } from './modules/orders/orders.service.js';
 import { PaymentsService } from './modules/orders/payments.service.js';
+import { AssistantService } from './modules/assistant/assistant.service.js';
 
 export interface AppDeps {
   config: Config;
@@ -40,6 +41,7 @@ export interface Services {
   feedback: FeedbackService;
   shadow: ShadowService;
   media: MediaService;
+  assistant: AssistantService;
 }
 
 /** Wires every service once, for the HTTP app and the background workers alike. */
@@ -49,12 +51,14 @@ export const buildServices = ({ config, pool, logger, providers, queue }: AppDep
   const payments = new PaymentsService({ db, providers: providers.payments, queue, notifications, logger });
   const search = new SearchService({ db, geocoding: providers.geocoding, logger });
   const nurseries = new NurseriesService({ db, routing: providers.routing, directions: providers.directions, search, logger });
+  const species = new SpeciesService({ db, nurseries, search });
+  const orders = new OrdersService({ db, config, routing: providers.routing, providers: providers.payments, payments, notifications, logger });
   return {
     db,
     sms: providers.sms,
     auth: new AuthService({ db, config, providers, logger }),
     nurseries,
-    species: new SpeciesService({ db, nurseries, search }),
+    species,
     search,
     payments,
     applications: new ApplicationsService({ db, queue }),
@@ -62,6 +66,7 @@ export const buildServices = ({ config, pool, logger, providers, queue }: AppDep
     feedback: new FeedbackService({ db }),
     shadow: new ShadowService({ db, routing: providers.routing, queue, logger }),
     media: new MediaService({ db, dir: config.MEDIA_DIR, publicPath: config.MEDIA_PUBLIC_PATH }),
-    orders: new OrdersService({ db, config, routing: providers.routing, providers: providers.payments, payments, notifications, logger }),
+    orders,
+    assistant: new AssistantService({ provider: providers.assistant, tools: { db, nurseries, species, search, orders }, config, logger }),
   };
 };

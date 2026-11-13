@@ -76,8 +76,8 @@ describe('trial mode: no SMS code at sign-up', () => {
   });
 
   it('reports the switches in /health so the apps can hide the code and payment steps', async () => {
-    const health = data<{ features: { phone_verification: boolean; payments: boolean } }>(await request(app).get('/api/v1/health').expect(200));
-    expect(health.features).toEqual({ phone_verification: false, payments: false });
+    const health = data<{ features: { phone_verification: boolean; payments: boolean; assistant: boolean } }>(await request(app).get('/api/v1/health').expect(200));
+    expect(health.features).toEqual({ phone_verification: false, payments: false, assistant: true });
   });
 });
 

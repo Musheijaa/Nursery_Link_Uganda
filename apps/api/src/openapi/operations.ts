@@ -26,6 +26,8 @@ import {
   serviceRequestUpdateSchema,
   feedbackCreateSchema,
   feedbackUpdateSchema,
+  assistantChatSchema,
+  assistantEventSchema,
   shadowRunCreateSchema,
   speciesCreateSchema,
   speciesUpdateSchema,
@@ -64,7 +66,7 @@ export interface Operation {
   /** A non-envelope JSON download (GeoJSON exports) */
   raw?: z.ZodType;
   /** Success status and what comes back */
-  success: { status: 200 | 201 | 202 | 204; description: string; content?: 'json' | 'geojson' | 'csv' };
+  success: { status: 200 | 201 | 202 | 204; description: string; content?: 'json' | 'geojson' | 'csv' | 'event-stream' };
   /** Extra non-standard outcomes worth documenting */
   errors?: Partial<Record<400 | 401 | 403 | 404 | 409 | 503, string>>;
 }
@@ -150,6 +152,12 @@ export const operations: Operation[] = [
     body: serviceRequestCreateSchema, success: { status: 201, description: 'Request recorded; the team phones the buyer back' } },
   { method: 'post', path: '/feedback', tag: 'Feedback', summary: 'Leave feedback (anyone; signed-in people are linked to their account)', response: { data: r.feedbackReceiptSchema }, access: 'public',
     body: feedbackCreateSchema, success: { status: 201, description: 'Feedback recorded' } },
+
+  // ── Assistant ────────────────────────────────────────────
+  { method: 'post', path: '/assistant/chat', tag: 'Assistant', summary: 'Ask the site assistant (streams the answer)', access: 'public',
+    description: 'Send the recent conversation (the last message is the new question). The answer streams back as server-sent events: one JSON object per `data:` line, `status` while it looks things up, `text` pieces of the Markdown answer, then `done` (or `error`). Signed-in buyers can ask about their own orders. Limited to 12 questions a minute and 300 a day per account or IP, plus a daily total (ASSISTANT_DAILY_LIMIT).',
+    body: assistantChatSchema, raw: assistantEventSchema, success: { status: 200, description: 'A stream of assistant events', content: 'event-stream' },
+    errors: { 503: 'The assistant is switched off, or its model provider is unavailable' } },
   { method: 'get', path: '/service-requests/me', tag: 'Services', summary: 'My service requests', response: { data: z.array(r.serviceRequestSchema), meta: r.pageMetaSchema }, access: 'buyer',
     query: paginationQuerySchema, success: { status: 200, description: 'Requests, newest first' } },
 

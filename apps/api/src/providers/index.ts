@@ -2,6 +2,9 @@ import type { Logger } from 'pino';
 import type { Config } from '../config.js';
 import type { MobileMoneyMethod, PaymentProviderName } from '@nurserylink/shared';
 import type { EmailProvider } from './email/email.js';
+import { AnthropicAssistant } from './assistant/anthropic.js';
+import type { AssistantProvider } from './assistant/assistant.js';
+import { MockAssistant } from './assistant/mockAssistant.js';
 import { MockPayment } from './payment/mockPayment.js';
 import { MtnMomo } from './payment/mtnMomo.js';
 import type { PaymentProvider } from './payment/payment.js';
@@ -29,6 +32,8 @@ export interface Providers {
   directions: DirectionsProvider;
   geocoding: GeocodingProvider;
   payments: PaymentProviders;
+  /** The site assistant's model; null when ASSISTANT_PROVIDER=off */
+  assistant: AssistantProvider | null;
 }
 
 /** Payment providers by name, plus which one serves each payment method in the current mode. */
@@ -92,6 +97,16 @@ const directionsFromConfig = (config: Config, routing: RoutingProvider): Directi
       })
     : routing;
 
+const assistantFromConfig = (config: Config, logger: Logger): AssistantProvider | null =>
+  config.ASSISTANT_PROVIDER === 'anthropic'
+    ? new AnthropicAssistant({
+        apiKey: required(config.ANTHROPIC_API_KEY, 'ANTHROPIC_API_KEY'),
+        model: config.ASSISTANT_MODEL,
+        effort: config.ASSISTANT_EFFORT,
+        logger,
+      })
+    : config.ASSISTANT_PROVIDER === 'mock' ? new MockAssistant() : null;
+
 /** Chooses each provider implementation from configuration. */
 export const createProviders = (config: Config, logger: Logger, routing = routingFromConfig(config)): Providers => ({
   sms:
@@ -121,4 +136,5 @@ export const createProviders = (config: Config, logger: Logger, routing = routin
     config.PAYMENT_PROVIDER_MODE === 'live'
       ? paymentProviders('live', new MockPayment(), { mtn_momo: mtnFromConfig(config) })
       : paymentProviders('mock'),
+  assistant: assistantFromConfig(config, logger),
 });
