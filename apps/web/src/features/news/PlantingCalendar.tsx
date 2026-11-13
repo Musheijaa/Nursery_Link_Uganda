@@ -1,12 +1,8 @@
+import { kampalaMonth, PLANTING_SEASONS as SEASONS, type PlantingSeason as Season } from '@nurserylink/shared';
 import { cn } from '@nurserylink/ui';
 import { en } from '../../copy/en';
 
-type Season = 'rains' | 'prep' | 'dry';
-
-// Central Uganda's two rainy seasons: March–May and September–November.
-// The month before each is for ordering seedlings and digging holes.
-const SEASONS: readonly Season[] = ['dry', 'prep', 'rains', 'rains', 'rains', 'dry', 'dry', 'prep', 'rains', 'rains', 'rains', 'dry'];
-
+// Central Uganda's two rainy seasons (shared with the site assistant, so they never disagree)
 const TONE: Record<Season, string> = {
   rains: 'bg-sky-tint text-lake',
   prep: 'bg-murram-tint text-[color-mix(in_srgb,var(--color-murram),black_25%)]',
@@ -17,13 +13,10 @@ const monthShort = new Intl.DateTimeFormat('en-GB', { month: 'narrow', timeZone:
 const monthLong = new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' });
 const monthName = (i: number, fmt: Intl.DateTimeFormat) => fmt.format(new Date(Date.UTC(2026, i, 15)));
 
-/** This month in Kampala, 0–11. */
-const currentMonth = (now: Date) => Number(new Intl.DateTimeFormat('en-GB', { month: 'numeric', timeZone: 'Africa/Kampala' }).format(now)) - 1;
-
 /** The year's planting seasons, with this month marked and what to do now. */
 export const PlantingCalendar = ({ now = new Date() }: { now?: Date }) => {
   const c = en.news.calendar;
-  const month = currentMonth(now);
+  const month = kampalaMonth(now);
   const season = SEASONS[month] ?? 'dry';
   return (
     <section aria-labelledby="planting-calendar" className="flex flex-col gap-3 rounded-lg bg-paper p-5 shadow-card ring-1 ring-line">

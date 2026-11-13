@@ -7,6 +7,7 @@ import { PAGE_FRAME } from '../lib/layout';
 import { useOnline } from '../lib/online';
 import { signOut, useSession } from '../lib/session';
 import { useSiteSettings } from '../features/feedback/api';
+import { AssistantHeaderButton, AssistantLauncher } from '../features/assistant/AssistantLauncher';
 import { Logo } from './Logo';
 
 export interface NavItem {
@@ -117,6 +118,7 @@ export const Header = () => (
         ))}
       </nav>
       <div className="flex items-center gap-1">
+        <AssistantHeaderButton />
         <div className="hidden xl:block">
           <AccountLinks />
         </div>
@@ -180,6 +182,10 @@ export const Layout = ({ children }: { children?: ReactNode }) => {
   const handles = useMatches().map(m => (m.handle ?? {}) as { fullBleed?: boolean; bare?: boolean });
   const fullBleed = handles.some(h => h.fullBleed === true);
   const bare = fullBleed || handles.some(h => h.bare === true);
+  const { pathname } = useLocation();
+  // Pages with their own bottom bars (map sheet, checkout's Next, the nursery's order map) get no
+  // floating button; the header's "Ask" still opens the assistant there
+  const floatingAssistant = !fullBleed && !/^\/nurseries\/[^/]+\/order|^\/o\//.test(pathname);
   return (
     <div className="flex min-h-dvh flex-col overflow-x-clip">
       <a href="#main" className="sr-only z-50 bg-paper p-3 font-bold focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
@@ -194,6 +200,7 @@ export const Layout = ({ children }: { children?: ReactNode }) => {
       {/* Loads after the first render; toasts raised before then wait in their store */}
       <Suspense fallback={null}><AppToaster /></Suspense>
       <Suspense fallback={null}><WelcomeNotice /></Suspense>
+      <AssistantLauncher floating={floatingAssistant} />
       <ScrollRestoration />
     </div>
   );

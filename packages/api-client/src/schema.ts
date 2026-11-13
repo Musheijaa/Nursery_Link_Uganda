@@ -584,6 +584,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assistant/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the site assistant (streams the answer)
+         * @description Public. Send the recent conversation (the last message is the new question). The answer streams back as server-sent events: one JSON object per `data:` line, `status` while it looks things up, `text` pieces of the Markdown answer, then `done` (or `error`). Signed-in buyers can ask about their own orders. Limited to 12 questions a minute and 300 a day per account or IP, plus a daily total (ASSISTANT_DAILY_LIMIT).
+         */
+        post: operations["postAssistantChat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/service-requests/me": {
         parameters: {
             query?: never;
@@ -1567,6 +1587,8 @@ export interface components {
                 routing: string;
                 directions: string;
                 email: string;
+                /** @enum {string} */
+                assistant: "off" | "mock" | "anthropic";
             };
             payment_methods: {
                 mtn_momo: boolean;
@@ -1575,6 +1597,8 @@ export interface components {
             features: {
                 phone_verification: boolean;
                 payments: boolean;
+                /** @description The site assistant (chat) is switched on */
+                assistant: boolean;
             };
             site: {
                 /** @description Show the "sample data, still being built" notice on first visit */
@@ -1582,6 +1606,26 @@ export interface components {
                 /** @description The needs-assessment survey (e.g. a Google Form), or null when there is none */
                 survey_url: string | null;
             };
+        };
+        AssistantEvent: {
+            /** @constant */
+            type: "status";
+            tool: string;
+            label: string;
+        } | {
+            /** @constant */
+            type: "text";
+            text: string;
+        } | {
+            /** @constant */
+            type: "done";
+            /** @enum {string} */
+            stop: "complete" | "limit" | "declined";
+        } | {
+            /** @constant */
+            type: "error";
+            code: string;
+            message: string;
         };
         PublicUser: {
             /** Format: uuid */
@@ -4287,6 +4331,72 @@ export interface operations {
             };
             /** @description Too many requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    postAssistantChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    messages: ({
+                        /** @constant */
+                        role: "user";
+                        content: string;
+                    } | {
+                        /** @constant */
+                        role: "assistant";
+                        content: string;
+                    })[];
+                    location?: {
+                        lat: number;
+                        lng: number;
+                    };
+                    page?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description A stream of assistant events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The assistant is switched off, or its model provider is unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

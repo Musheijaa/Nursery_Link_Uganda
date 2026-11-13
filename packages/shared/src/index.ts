@@ -12,3 +12,5 @@ export * from './schemas/feedback.js';
 export * from './schemas/responses.js';
 export * from './eligibility.js';
 export * from './orderStateMachine.js';
+export * from './schemas/assistant.js';
+export * from './plantingCalendar.js';

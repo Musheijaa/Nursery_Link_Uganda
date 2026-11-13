@@ -9,6 +9,10 @@ const health = { queryKey: ['health'], queryFn: async () => (await unwrap(api.GE
 /** The first-visit notice and the survey link, set on the API (DEMO_NOTICE, SURVEY_URL). */
 export const useSiteSettings = () => useQuery({ ...health, select: d => d.site });
 
+/** The site assistant: 'off' (hidden), 'mock' (a keyword look-up, labelled as a test) or 'anthropic' (AI). */
+export const useAssistantMode = () =>
+  useQuery({ ...health, select: d => (d.features.assistant ? d.providers.assistant : 'off') });
+
 export const useSendFeedback = () =>
   useMutation({ mutationFn: async (body: FeedbackCreate) => (await unwrap(api.POST('/feedback', { body }))).data });
 

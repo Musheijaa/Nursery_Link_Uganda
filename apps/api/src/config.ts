@@ -102,6 +102,19 @@ const schema = z
     /** Contact (email or URL) sent in the User-Agent, as Nominatim's usage policy requires */
     GEOCODER_CONTACT: optional,
 
+    /**
+     * The site assistant (chat): `anthropic` answers with Claude through the Anthropic API, `mock`
+     * is a keyword-matching stand-in for development and tests (no AI, labelled as a test), `off`
+     * hides it.
+     */
+    ASSISTANT_PROVIDER: z.enum(['off', 'mock', 'anthropic']).default('mock'),
+    ANTHROPIC_API_KEY: optional,
+    ASSISTANT_MODEL: z.string().trim().min(1).default('claude-opus-5-5'),
+    /** How hard the model thinks per answer; `low` suits chat (faster, cheaper) */
+    ASSISTANT_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('low'),
+    /** Answers per day (per API instance), across everyone: a ceiling on the AI bill */
+    ASSISTANT_DAILY_LIMIT: z.coerce.number().int().positive().default(2000),
+
     EMAIL_PROVIDER: z.enum(['mock', 'smtp']).default('mock'),
     EMAIL_FROM: z.string().default('Nursery Link Uganda <no-reply@nurserylink.local>'),
     SMTP_HOST: optional,
@@ -140,6 +153,7 @@ const schema = z
     if (env.SMS_PROVIDER === 'africastalking') require(['AT_USERNAME', 'AT_API_KEY', 'SMS_INBOUND_TOKEN'], 'SMS_PROVIDER=africastalking');
     if (env.ROUTING_PROVIDER === 'openrouteservice') require(['ORS_API_KEY'], 'ROUTING_PROVIDER=openrouteservice');
     if (env.GEOCODER_PROVIDER === 'nominatim') require(['GEOCODER_CONTACT'], 'GEOCODER_PROVIDER=nominatim');
+    if (env.ASSISTANT_PROVIDER === 'anthropic') require(['ANTHROPIC_API_KEY'], 'ASSISTANT_PROVIDER=anthropic');
     if (env.EMAIL_PROVIDER === 'smtp') require(['SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD'], 'EMAIL_PROVIDER=smtp');
   });
 

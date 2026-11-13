@@ -1,3 +1,5 @@
+import type { AssistantProvider } from '../src/providers/assistant/assistant.js';
+import { MockAssistant } from '../src/providers/assistant/mockAssistant.js';
 import { MockEmail } from '../src/providers/email/mockEmail.js';
 import type { GeocodingProvider } from '../src/providers/geocoding/geocoding.js';
 import { MockGeocoding } from '../src/providers/geocoding/mockGeocoding.js';
@@ -20,6 +22,7 @@ export const mockProviders = () => {
     geocoding: new MockGeocoding() as GeocodingProvider,
     payment,
     payments: paymentProviders('mock', payment),
+    assistant: new MockAssistant() as AssistantProvider | null,
   };
 };
 

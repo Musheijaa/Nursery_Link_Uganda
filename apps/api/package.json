@@ -20,6 +20,7 @@
     "openapi:export": "tsx --conditions=source src/openapi/export.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@node-rs/argon2": "^2.2.1",
     "@nurserylink/shared": "workspace:*",
     "compression": "^1.8.2",

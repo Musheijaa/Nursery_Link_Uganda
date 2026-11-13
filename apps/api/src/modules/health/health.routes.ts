@@ -14,9 +14,10 @@ export const healthRoutes = (pool: pg.Pool, config: Config, payments: PaymentPro
       routing: config.ROUTING_PROVIDER,
       directions: config.DIRECTIONS_PROVIDER === 'routing' ? config.ROUTING_PROVIDER : config.DIRECTIONS_PROVIDER,
       email: config.EMAIL_PROVIDER,
+      assistant: config.ASSISTANT_PROVIDER,
     };
     const payment_methods = { mtn_momo: payments.isAvailable('mtn_momo'), airtel_money: payments.isAvailable('airtel_money') };
-    const features = { phone_verification: config.PHONE_VERIFICATION === 'required', payments: config.PAYMENTS === 'on' };
+    const features = { phone_verification: config.PHONE_VERIFICATION === 'required', payments: config.PAYMENTS === 'on', assistant: config.ASSISTANT_PROVIDER !== 'off' };
     const site = { demo_notice: config.DEMO_NOTICE === 'on', survey_url: config.SURVEY_URL ?? null };
     try {
       await pool.query('SELECT 1');

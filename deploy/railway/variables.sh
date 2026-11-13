@@ -36,6 +36,8 @@ PAYMENTS=off
 PAYMENT_PROVIDER_MODE=mock
 DEMO_NOTICE=on
 DIRECTIONS_PROVIDER=osrm-public
+ASSISTANT_PROVIDER=mock
+ANTHROPIC_API_KEY=
 ADMIN_FULL_NAME=
 ADMIN_PHONE=
 ADMIN_EMAIL=
@@ -52,3 +54,4 @@ WEB_UPSTREAM=http://\${{nurserylink-web.RAILWAY_PRIVATE_DOMAIN}}:\${{nurserylink
 VARS
 echo
 echo "Fill in the four ADMIN_ lines (phone like 0772123456, password of 12+ characters) before saving." >&2
+echo "Site assistant: to answer with Claude, put a key in ANTHROPIC_API_KEY and set ASSISTANT_PROVIDER=anthropic (mock is a labelled keyword look-up; off hides it)." >&2

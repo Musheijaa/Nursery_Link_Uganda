@@ -11,9 +11,9 @@ const health = (site: { demo_notice: boolean; survey_url: string | null }) => { 
       response(200).json({
         data: {
           status: 'ok', db: 'ok', version: 'test', commit: null,
-          providers: { payment: 'mock', sms: 'mock', routing: 'mock', directions: 'mock', email: 'mock' },
+          providers: { payment: 'mock', sms: 'mock', routing: 'mock', directions: 'mock', email: 'mock', assistant: 'off' },
           payment_methods: { mtn_momo: true, airtel_money: true },
-          features: { phone_verification: true, payments: true },
+          features: { phone_verification: true, payments: true, assistant: false },
           site,
         },
       })

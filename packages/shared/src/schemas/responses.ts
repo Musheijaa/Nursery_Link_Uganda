@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { assistantEventSchema } from './assistant.js';
 import {
   analyticsRangeSchema,
   applicationStatusSchema,
@@ -54,11 +55,11 @@ export const healthSchema = s({
   db: z.enum(['ok', 'down']),
   version: z.string(),
   commit: z.string().nullable().describe('The deployed Git commit, when the host provides it'),
-  providers: s({ payment: z.enum(['mock', 'live']), sms: z.string(), routing: z.string(), directions: z.string(), email: z.string() }),
+  providers: s({ payment: z.enum(['mock', 'live']), sms: z.string(), routing: z.string(), directions: z.string(), email: z.string(), assistant: z.enum(['off', 'mock', 'anthropic']) }),
   /** Which payment methods buyers can use right now (Airtel Money is not integrated in live mode yet) */
   payment_methods: s({ mtn_momo: z.boolean(), airtel_money: z.boolean() }),
   /** Trial switches: while off, there is no SMS code at sign-up and no payment step at checkout */
-  features: s({ phone_verification: z.boolean(), payments: z.boolean() }),
+  features: s({ phone_verification: z.boolean(), payments: z.boolean(), assistant: z.boolean().describe('The site assistant (chat) is switched on') }),
   site: s({
     demo_notice: z.boolean().describe('Show the "sample data, still being built" notice on first visit'),
     survey_url: z.url().nullable().describe('The needs-assessment survey (e.g. a Google Form), or null when there is none'),
@@ -632,6 +633,8 @@ export type ShadowRunDto = z.infer<typeof shadowRunSchema>;
 /** Response schemas published as named OpenAPI components (and so as named client types). */
 export const namedResponseSchemas = {
   Health: healthSchema,
+  /** One event of the assistant's answer stream (POST /assistant/chat) */
+  AssistantEvent: assistantEventSchema,
   PublicUser: publicUserSchema,
   AuthTokens: authTokensSchema,
   NurserySummary: nurserySummarySchema,
