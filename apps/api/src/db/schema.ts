@@ -26,7 +26,6 @@ import {
   deliveryTypes,
   funderTypes,
   growthPaces,
-  newsCategories,
   nurseryTypes,
   orderStatuses,
   otpPurposes,
@@ -38,9 +37,11 @@ import {
   serviceRequestStatuses,
   feedbackKinds,
   feedbackStatuses,
+  enquiryStatuses,
+  enquiryTypes,
+  giveawayOfferTypes,
   serviceTypes,
   shadowRunStatuses,
-  speciesCategories,
   vehicles,
   type EligibilityRule,
   type ShadowRunParams,
@@ -72,7 +73,6 @@ export const roleEnum = pgEnum('role', roles);
 export const boundaryLevelEnum = pgEnum('boundary_level', boundaryLevels);
 export const nurseryTypeEnum = pgEnum('nursery_type', nurseryTypes);
 export const certificationStatusEnum = pgEnum('certification_status', certificationStatuses);
-export const speciesCategoryEnum = pgEnum('species_category', speciesCategories);
 export const growthPaceEnum = pgEnum('growth_pace', growthPaces);
 export const deliveryTypeEnum = pgEnum('delivery_type', deliveryTypes);
 export const orderStatusEnum = pgEnum('order_status', orderStatuses);
@@ -82,7 +82,6 @@ export const paymentKindEnum = pgEnum('payment_kind', paymentKinds);
 export const paymentStatusEnum = pgEnum('payment_status', paymentStatuses);
 export const funderTypeEnum = pgEnum('funder_type', funderTypes);
 export const applicationStatusEnum = pgEnum('application_status', applicationStatuses);
-export const newsCategoryEnum = pgEnum('news_category', newsCategories);
 export const vehicleEnum = pgEnum('vehicle', vehicles);
 export const otpPurposeEnum = pgEnum('otp_purpose', otpPurposes);
 export const shadowRunStatusEnum = pgEnum('shadow_run_status', shadowRunStatuses);
@@ -90,6 +89,9 @@ export const serviceTypeEnum = pgEnum('service_type', serviceTypes);
 export const serviceRequestStatusEnum = pgEnum('service_request_status', serviceRequestStatuses);
 export const feedbackKindEnum = pgEnum('feedback_kind', feedbackKinds);
 export const feedbackStatusEnum = pgEnum('feedback_status', feedbackStatuses);
+export const giveawayOfferTypeEnum = pgEnum('giveaway_offer_type', giveawayOfferTypes);
+export const enquiryTypeEnum = pgEnum('enquiry_type', enquiryTypes);
+export const enquiryStatusEnum = pgEnum('enquiry_status', enquiryStatuses);
 
 // ── Accounts ───────────────────────────────────────────────
 
@@ -181,6 +183,14 @@ export const nurseries = pgTable(
     annualCapacity: integer('annual_capacity').notNull(),
     seedSource: text('seed_source'),
     certificationStatus: certificationStatusEnum('certification_status').notNull().default('unverified'),
+    /**
+     * The certification record an admin checked. A nursery is "Certified" only with one (verified_at set),
+     * and then its certification_status is 'certified' (check below): never assigned automatically.
+     */
+    certificationVerifiedBy: uuid('certification_verified_by').references((): AnyPgColumn => users.id, { onDelete: 'set null' }),
+    certificationVerifiedAt: timestamp('certification_verified_at', { withTimezone: true }),
+    certificationBody: text('certification_body'),
+    certificationRef: text('certification_ref'),
     isActive: boolean('is_active').notNull().default(true),
     /** Invented sample data (db:demo-nurseries): shown with a "sample" label, never texted, no live orders */
     isDemo: boolean('is_demo').notNull().default(false),
@@ -195,6 +205,10 @@ export const nurseries = pgTable(
     check('nurseries_contact_phone_e164', sql`${t.contactPhone} ~ ${sql.raw(E164_UG)}`),
     check('nurseries_payout_phone_e164', sql`${t.payoutPhone} ~ ${sql.raw(E164_UG)}`),
     check('nurseries_annual_capacity_nonneg', sql`${t.annualCapacity} >= 0`),
+    check(
+      'nurseries_certified_is_verified',
+      sql`(${t.certificationStatus} = 'certified') = (${t.certificationVerifiedAt} IS NOT NULL AND ${t.certificationBody} IS NOT NULL)`
+    ),
     index('nurseries_location_gix').using('gist', t.location),
     index('nurseries_district_idx').on(t.districtId),
     index('nurseries_sub_county_idx').on(t.subCountyId),
@@ -208,7 +222,6 @@ export const species = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     scientificName: text('scientific_name').notNull(),
     commonName: text('common_name').notNull(),
-    category: speciesCategoryEnum('category').notNull(),
     growthPace: growthPaceEnum('growth_pace').notNull(),
     /** Milestones such as [{ "years": 1, "height_m": 1.5 }, …] */
     heightTimeline: jsonb('height_timeline').$type<{ years: number; height_m: number }[]>().notNull().default([]),
@@ -219,10 +232,30 @@ export const species = pgTable(
     referencePriceUgx: integer('reference_price_ugx'),
     referencePotInches: integer('reference_pot_inches'),
     slug: text('slug').notNull().unique(),
+    // Tree Library profile, five sections (every field optional; empty ones are hidden)
+    // 1. Tree identity
+    botanicalFamily: text('botanical_family'),
+    // 2. About the tree
+    appearanceAndIdentification: text('appearance_and_identification'),
+    growthCharacteristics: text('growth_characteristics'),
+    distributionAndOrigin: text('distribution_and_origin'),
+    // 3. Where does it grow best?
+    soilConditions: text('soil_conditions'),
+    rainfallRequirements: text('rainfall_requirements'),
+    climateAndEcology: text('climate_and_ecology'),
+    // 4. How to grow it
+    propagationMethods: text('propagation_methods'),
+    plantingRequirements: text('planting_requirements'),
+    recommendedSpacing: text('recommended_spacing'),
+    managementPractices: text('management_practices'),
+    // 5. Uses and benefits
+    economicUses: text('economic_uses'),
+    environmentalBenefits: text('environmental_benefits'),
+    agroforestryApplications: text('agroforestry_applications'),
+    otherUses: text('other_uses'),
   },
   t => [
     check('species_slug_format', sql`${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`),
-    index('species_category_idx').on(t.category),
     index('species_common_name_trgm_idx').using('gin', t.commonName.op('gin_trgm_ops')),
     index('species_scientific_name_trgm_idx').using('gin', t.scientificName.op('gin_trgm_ops')),
   ]
@@ -251,6 +284,29 @@ export const speciesMedia = pgTable(
     sortOrder: integer('sort_order').notNull().default(0),
   },
   t => [index('species_media_species_idx').on(t.speciesId, t.sortOrder)]
+);
+
+/** Kinds of tree (Fruit Trees, Timber Trees…). Admins edit labels and order; slugs are fixed once made (URLs use them). */
+export const treeCategories = pgTable(
+  'tree_categories',
+  {
+    slug: text('slug').primaryKey(),
+    label: text('label').notNull(),
+    description: text('description'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    isActive: boolean('is_active').notNull().default(true),
+  },
+  t => [check('tree_categories_slug_format', sql`${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`)]
+);
+
+/** A species can be in several categories (e.g. Mango: Fruit + Shade + Agroforestry). */
+export const speciesTreeCategories = pgTable(
+  'species_categories',
+  {
+    speciesId: uuid('species_id').notNull().references(() => species.id, { onDelete: 'cascade' }),
+    categorySlug: text('category_slug').notNull().references(() => treeCategories.slug, { onDelete: 'restrict', onUpdate: 'cascade' }),
+  },
+  t => [primaryKey({ columns: [t.speciesId, t.categorySlug] }), index('species_categories_category_idx').on(t.categorySlug)]
 );
 
 export const inventory = pgTable(
@@ -382,28 +438,58 @@ export const payments = pgTable(
 
 // ── Free seedling campaigns ────────────────────────────────
 
+/**
+ * Giveaways (shown as "Giveaways" everywhere; the table keeps its old name). Free or subsidised seedlings.
+ * A giveaway that takes applications on the platform has a pickup nursery, a sub-county and stock;
+ * one run elsewhere shows its organizer's instructions and contacts instead.
+ */
 export const campaigns = pgTable(
   'campaigns',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    /** Pickup point for the free seedlings */
-    nurseryId: uuid('nursery_id').notNull().references(() => nurseries.id, { onDelete: 'restrict' }),
+    /** Pickup point for the seedlings (platform applications only) */
+    nurseryId: uuid('nursery_id').references(() => nurseries.id, { onDelete: 'restrict' }),
     title: text('title').notNull(),
+    /** The organizer or programme */
     funderName: text('funder_name').notNull(),
+    /** The organizer type */
     funderType: funderTypeEnum('funder_type').notNull(),
     purpose: text('purpose').notNull(),
-    subCountyId: uuid('sub_county_id').notNull().references(() => adminBoundaries.id, { onDelete: 'restrict' }),
+    subCountyId: uuid('sub_county_id').references(() => adminBoundaries.id, { onDelete: 'restrict' }),
     allocatedStock: integer('allocated_stock').notNull(),
     remainingStock: integer('remaining_stock').notNull(),
     eligibilityRules: jsonb('eligibility_rules').$type<EligibilityRule[]>().notNull().default([]),
     startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
     endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
     isActive: boolean('is_active').notNull().default(true),
+    offerType: giveawayOfferTypeEnum('offer_type').notNull().default('free'),
+    /** UGX per seedling, for subsidised giveaways */
+    subsidisedPrice: integer('subsidised_price'),
+    /** Who can apply, in words (the checklist in eligibility_rules is for platform applications) */
+    eligibilityRequirements: text('eligibility_requirements'),
+    applicationProcedure: text('application_procedure'),
+    /** Applications close then (or at ends_at when not set) */
+    applicationDeadline: timestamp('application_deadline', { withTimezone: true }),
+    contactPhone: text('contact_phone'),
+    contactEmail: text('contact_email'),
+    websiteUrl: text('website_url'),
+    distributionLocations: text('distribution_locations'),
+    acceptsPlatformApplications: boolean('accepts_platform_applications').notNull().default(true),
   },
   t => [
-    check('campaigns_allocated_positive', sql`${t.allocatedStock} > 0`),
+    check('campaigns_allocated_nonneg', sql`${t.allocatedStock} >= 0`),
     check('campaigns_remaining_range', sql`${t.remainingStock} >= 0 AND ${t.remainingStock} <= ${t.allocatedStock}`),
     check('campaigns_dates_ordered', sql`${t.endsAt} > ${t.startsAt}`),
+    check(
+      'campaigns_platform_fields',
+      sql`NOT ${t.acceptsPlatformApplications} OR (${t.nurseryId} IS NOT NULL AND ${t.subCountyId} IS NOT NULL AND ${t.allocatedStock} > 0)`
+    ),
+    check(
+      'campaigns_subsidised_price',
+      sql`(${t.offerType} = 'subsidised') = (${t.subsidisedPrice} IS NOT NULL) AND (${t.subsidisedPrice} IS NULL OR ${t.subsidisedPrice} > 0)`
+    ),
+    check('campaigns_contact_phone_e164', sql`${t.contactPhone} IS NULL OR ${t.contactPhone} ~ ${sql.raw(E164_UG)}`),
+    check('campaigns_contact_email_lower', sql`${t.contactEmail} IS NULL OR ${t.contactEmail} = lower(${t.contactEmail})`),
     index('campaigns_sub_county_idx').on(t.subCountyId),
     index('campaigns_nursery_idx').on(t.nurseryId),
   ]
@@ -469,13 +555,28 @@ export const serviceRequests = pgTable(
 
 // ── News ───────────────────────────────────────────────────
 
+/** News & Updates categories (admin-editable; slugs are fixed once made). */
+export const newsCategoryTable = pgTable(
+  'news_categories',
+  {
+    slug: text('slug').primaryKey(),
+    label: text('label').notNull(),
+    description: text('description'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    isActive: boolean('is_active').notNull().default(true),
+  },
+  t => [check('news_categories_slug_format', sql`${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`)]
+);
+
 export const newsPosts = pgTable(
   'news_posts',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     title: text('title').notNull(),
     slug: text('slug').notNull().unique(),
-    category: newsCategoryEnum('category').notNull(),
+    categorySlug: text('category_slug').notNull().references(() => newsCategoryTable.slug, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    /** Set when a migration guessed the category (old "market" posts): an admin should check it */
+    needsReview: boolean('needs_review').notNull().default(false),
     body: text('body').notNull(),
     coverUrl: text('cover_url'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
@@ -484,7 +585,10 @@ export const newsPosts = pgTable(
   t => [
     check('news_posts_slug_format', sql`${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`),
     check('news_posts_published_has_date', sql`NOT ${t.isPublished} OR ${t.publishedAt} IS NOT NULL`),
-    index('news_posts_feed_idx').on(t.category, t.publishedAt.desc()).where(sql`${t.isPublished}`),
+    index('news_posts_feed_idx').on(t.categorySlug, t.publishedAt.desc()).where(sql`${t.isPublished}`),
+    // Global search: typo-tolerant titles, full-text bodies
+    index('news_posts_title_trgm_idx').using('gin', t.title.op('gin_trgm_ops')),
+    index('news_posts_fts_idx').using('gin', sql`to_tsvector('english', ${t.title} || ' ' || ${t.body})`),
   ]
 );
 
@@ -598,3 +702,110 @@ export const feedback = pgTable(
     index('feedback_status_created_idx').on(t.status, t.createdAt),
   ]
 );
+
+// ── Expert services ────────────────────────────────────────
+
+export const serviceCategories = pgTable(
+  'service_categories',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    slug: text('slug').notNull().unique(),
+    title: text('title').notNull(),
+    intro: text('intro').notNull(),
+    /** A name from the icon set in @nurserylink/ui (expert service icons) */
+    icon: text('icon').notNull().default('leaf'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  t => [check('service_categories_slug_format', sql`${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`)]
+);
+
+export const services = pgTable(
+  'services',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    categoryId: uuid('category_id').notNull().references(() => serviceCategories.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    sortOrder: integer('sort_order').notNull().default(0),
+    isActive: boolean('is_active').notNull().default(true),
+  },
+  t => [
+    index('services_category_idx').on(t.categoryId, t.sortOrder),
+    unique('services_category_title_key').on(t.categoryId, t.title),
+    index('services_title_trgm_idx').using('gin', t.title.op('gin_trgm_ops')),
+  ]
+);
+
+// ── Enquiries (the admin inbox) ────────────────────────────
+
+/**
+ * Everything people send the team: expert service requests, donation and partnership offers, contact
+ * messages and site feedback. Visitors need no account.
+ */
+export const enquiries = pgTable(
+  'enquiries',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    type: enquiryTypeEnum('type').notNull(),
+    status: enquiryStatusEnum('status').notNull().default('new'),
+    name: text('name'),
+    phone: text('phone'),
+    email: text('email'),
+    organization: text('organization'),
+    district: text('district'),
+    message: text('message').notNull(),
+    /** Agreed to be contacted about it */
+    consent: boolean('consent').notNull().default(false),
+    /** Expert service enquiries: the category and the services asked about (titles as they were then) */
+    serviceCategoryId: uuid('service_category_id').references(() => serviceCategories.id, { onDelete: 'set null' }),
+    services: text('services').array().notNull().default(sql`'{}'::text[]`),
+    /** Extra details by type, e.g. feedback kind and page, land size of an older service request */
+    details: jsonb('details').$type<Record<string, string | number | boolean | null>>().notNull().default({}),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    adminNote: text('admin_note'),
+    handledBy: uuid('handled_by').references(() => users.id, { onDelete: 'set null' }),
+    /** Where a copied row came from (e.g. "feedback:<id>"), so copies are made once */
+    sourceRef: text('source_ref').unique(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  t => [
+    check('enquiries_phone_e164', sql`${t.phone} IS NULL OR ${t.phone} ~ ${sql.raw(E164_UG)}`),
+    check('enquiries_email_lower', sql`${t.email} IS NULL OR ${t.email} = lower(${t.email})`),
+    check('enquiries_message_length', sql`char_length(${t.message}) BETWEEN 1 AND 5000`),
+    index('enquiries_status_created_idx').on(t.status, t.createdAt),
+    index('enquiries_type_created_idx').on(t.type, t.createdAt),
+  ]
+);
+
+// ── Site content ───────────────────────────────────────────
+
+/** Partner and supporter logos on Home */
+export const partners = pgTable('partners', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  logoUrl: text('logo_url'),
+  websiteUrl: text('website_url'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+/**
+ * Editable site copy: page intros, the hero, the Donate text, contacts and payment instructions.
+ * Keys and the shape of `data` are listed in @nurserylink/shared (pageContentKeys). Seeded once from the
+ * client's brief; the web app falls back to its own copy when a key is missing.
+ */
+export const pageContent = pgTable('page_content', {
+  key: text('key').primaryKey(),
+  title: text('title'),
+  subtitle: text('subtitle'),
+  /** Markdown */
+  body: text('body'),
+  data: jsonb('data').$type<Record<string, unknown>>().notNull().default({}),
+  updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: updatedAt(),
+});

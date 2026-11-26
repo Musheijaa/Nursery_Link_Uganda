@@ -6,7 +6,7 @@ import { paymentPoll, paymentTimeout } from './paymentTimeout.js';
 import { payoutCheck } from './payoutRetry.js';
 import { JOB_NAMES, type JobName, type JobPayloads } from './queue.js';
 import { shadowRun } from './shadowRun.js';
-import { smsSend } from './smsRetry.js';
+import { emailSend, smsSend } from './smsRetry.js';
 
 type Handlers = { [N in JobName]: (data: JobPayloads[N]) => Promise<void> };
 
@@ -14,6 +14,7 @@ export const jobHandlers = (services: Services, logger: Logger): Handlers => ({
   'payment-timeout': paymentTimeout(services.payments),
   'payment-poll': paymentPoll(services.payments),
   'sms-send': smsSend(services.sms),
+  'email-send': emailSend(services.email),
   'payout-check': payoutCheck(services.payments),
   'auto-release': autoRelease(services.orders, logger),
   'shadow-run': shadowRun(services.shadow),

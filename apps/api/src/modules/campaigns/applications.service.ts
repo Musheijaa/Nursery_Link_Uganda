@@ -46,7 +46,7 @@ export class ApplicationsService {
     const { db } = this.deps;
     const campaign = await repo.campaignForApply(db, campaignId);
     if (!campaign) throw new NotFoundError('Campaign not found');
-    if (!campaign.is_open) throw new ConflictError('This campaign is not accepting applications');
+    if (!campaign.is_open) throw new ConflictError('This giveaway is not taking applications on this site');
     if (input.quantity_requested > campaign.remaining_stock) {
       throw new ConflictError(`Only ${String(campaign.remaining_stock)} seedlings are left in this campaign`, { remaining_stock: campaign.remaining_stock });
     }
@@ -127,7 +127,7 @@ export class ApplicationsService {
   private async notify(a: repo.ApplicationRow, status: ReviewInput['status']) {
     const message =
       status === 'approved'
-        ? `NurseryLink: your application to "${a.campaign_title}" is approved for ${String(a.quantity_requested)} free seedlings. Collect them from ${a.pickup_nursery}. Bring this SMS.`
+        ? `NurseryLink: your application to "${a.campaign_title}" is approved for ${String(a.quantity_requested)} seedlings.${a.pickup_nursery ? ` Collect them from ${a.pickup_nursery}.` : ''} Bring this SMS.`
         : status === 'rejected'
           ? `NurseryLink: sorry, your application to "${a.campaign_title}" was not approved this time.`
           : undefined;

@@ -28,6 +28,10 @@ export class SpeciesService {
     return { items: rows.map(({ total: _total, ...rest }) => rest), meta: paginationMeta(page, total) };
   }
 
+  async categories(): Promise<repo.TreeCategoryRow[]> {
+    return repo.listTreeCategories(this.deps.db, true);
+  }
+
   async profile(slug: string): Promise<repo.SpeciesDetailRow> {
     const row = await repo.findSpeciesBySlug(this.deps.db, slug);
     if (!row) throw new NotFoundError('Species not found');

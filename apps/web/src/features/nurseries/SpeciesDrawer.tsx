@@ -16,34 +16,23 @@ export const SpeciesDrawer = ({ slug, onClose }: { slug: string | null; onClose:
       {s && (
         <div className="flex flex-col gap-4">
           <p className="font-serif text-lg text-bark-muted italic">{s.scientific_name}</p>
-          <p className="flex flex-wrap items-center gap-2 text-sm">
-            <SpeciesPill category={s.category} />
-            <span aria-hidden>·</span>
-            <span>{en.speciesDrawer.pace[s.growth_pace]}</span>
-          </p>
+          <ul aria-label={en.species.categoriesLabel} className="flex flex-wrap items-center gap-2 text-sm">
+            {s.categories.map(c => <li key={c.slug}><SpeciesPill category={c} /></li>)}
+          </ul>
           {s.local_names.length > 0 && (
             <p className="text-sm">
               <span className="font-bold">{en.speciesDrawer.localNames}: </span>
               {s.local_names.map(l => `${l.name} (${l.language})`).join(', ')}
             </p>
           )}
-          {s.canopy_notes && (
-            <div>
-              <h3 className="text-base">{en.speciesDrawer.canopy}</h3>
-              <p>{s.canopy_notes}</p>
-            </div>
-          )}
-          {s.root_notes && (
-            <div>
-              <h3 className="text-base">{en.speciesDrawer.roots}</h3>
-              <p>{s.root_notes}</p>
-            </div>
-          )}
-          {s.ecological_zones.length > 0 && (
-            <div>
-              <h3 className="text-base">{en.speciesDrawer.zones}</h3>
-              <p>{s.ecological_zones.join(' · ')}</p>
-            </div>
+          {/* A short look: what it looks like, how it grows and what it is good for; the rest is on its page */}
+          {(['appearance_and_identification', 'growth_characteristics', 'economic_uses', 'environmental_benefits'] as const).map(f =>
+            s[f] ? (
+              <div key={f}>
+                <h3 className="text-base">{en.species.fields[f]}</h3>
+                <p>{s[f]}</p>
+              </div>
+            ) : null
           )}
           <Link to={`/library/${s.slug}`} className="flex min-h-11 items-center gap-2 font-bold">
             <BookOpen aria-hidden className="size-5" />

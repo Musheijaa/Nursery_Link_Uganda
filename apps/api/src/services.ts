@@ -8,8 +8,9 @@ import type { SmsProvider } from './providers/sms/sms.js';
 import { ApplicationsService } from './modules/campaigns/applications.service.js';
 import { MediaService } from './modules/media/media.service.js';
 import { ShadowService } from './modules/shadow/shadow.service.js';
-import { ServiceRequestsService } from './modules/serviceRequests/serviceRequests.service.js';
-import { FeedbackService } from './modules/feedback/feedback.service.js';
+import { EnquiriesService } from './modules/enquiries/enquiries.service.js';
+import { ContentService } from './modules/content/content.service.js';
+import type { EmailProvider } from './providers/email/email.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { NurseriesService } from './modules/nurseries/nurseries.service.js';
 import { SearchService } from './modules/search/search.service.js';
@@ -30,6 +31,7 @@ export interface AppDeps {
 export interface Services {
   db: Database;
   sms: SmsProvider;
+  email: EmailProvider;
   auth: AuthService;
   nurseries: NurseriesService;
   species: SpeciesService;
@@ -37,8 +39,8 @@ export interface Services {
   payments: PaymentsService;
   orders: OrdersService;
   applications: ApplicationsService;
-  serviceRequests: ServiceRequestsService;
-  feedback: FeedbackService;
+  enquiries: EnquiriesService;
+  content: ContentService;
   shadow: ShadowService;
   media: MediaService;
   assistant: AssistantService;
@@ -56,14 +58,15 @@ export const buildServices = ({ config, pool, logger, providers, queue }: AppDep
   return {
     db,
     sms: providers.sms,
+    email: providers.email,
     auth: new AuthService({ db, config, providers, logger }),
     nurseries,
     species,
     search,
     payments,
     applications: new ApplicationsService({ db, queue }),
-    serviceRequests: new ServiceRequestsService({ db }),
-    feedback: new FeedbackService({ db }),
+    enquiries: new EnquiriesService({ db, queue, config, logger }),
+    content: new ContentService({ db }),
     shadow: new ShadowService({ db, routing: providers.routing, queue, logger }),
     media: new MediaService({ db, dir: config.MEDIA_DIR, publicPath: config.MEDIA_PUBLIC_PATH }),
     orders,

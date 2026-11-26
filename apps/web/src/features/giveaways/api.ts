@@ -1,28 +1,30 @@
 import { unwrap, type Schemas } from '@nurserylink/api-client';
-import type { EligibilityAnswers } from '@nurserylink/shared';
+import type { EligibilityAnswers, GiveawayStatus } from '@nurserylink/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 
-export type Campaign = Schemas['Campaign'];
+export type Giveaway = Schemas['Campaign'];
 export type Application = Schemas['Application'];
 
-export interface CampaignFilters {
+export interface GiveawayFilters {
+  status: GiveawayStatus;
   subCounty: string | null;
   purpose: string;
 }
 
-/** Running free-seedling campaigns (FR-16), soonest-closing first. */
-export const useCampaigns = (limit = 20, filters: CampaignFilters = { subCounty: null, purpose: '' }) =>
+/** Giveaways (FR-16): open ones soonest-closing first, or closing soon, or closed. Filters live in the URL. */
+export const useGiveaways = (limit = 20, filters: GiveawayFilters = { status: 'open', subCounty: null, purpose: '' }) =>
   useQuery({
-    queryKey: ['campaigns', 'list', limit, filters],
+    queryKey: ['giveaways', 'list', limit, filters],
     queryFn: async () =>
       unwrap(
-        api.GET('/campaigns', {
+        api.GET('/giveaways', {
           params: {
             query: {
               limit,
+              status: filters.status,
               ...(filters.subCounty ? { sub_county_id: filters.subCounty } : {}),
-              ...(filters.purpose.trim().length >= 2 ? { purpose: filters.purpose.trim() } : {}),
+              ...(filters.purpose.trim().length >= 1 ? { purpose: filters.purpose.trim() } : {}),
             },
           },
         })
@@ -30,13 +32,13 @@ export const useCampaigns = (limit = 20, filters: CampaignFilters = { subCounty:
     placeholderData: keepPreviousData,
   });
 
-export const useCampaign = (id: string) =>
+export const useGiveaway = (id: string) =>
   useQuery({
-    queryKey: ['campaigns', 'one', id],
-    queryFn: async () => unwrap(api.GET('/campaigns/{id}', { params: { path: { id } } })),
+    queryKey: ['giveaways', 'one', id],
+    queryFn: async () => unwrap(api.GET('/giveaways/{id}', { params: { path: { id } } })),
   });
 
-/** Every sub-county (for the campaign filter), with its district for grouping. */
+/** Every sub-county (for the filter), with its district for grouping. */
 export const useAllSubCounties = () =>
   useQuery({
     queryKey: ['boundaries', 'sub_county', 'all'],
@@ -49,14 +51,14 @@ export const useMyApplications = (enabled: boolean) =>
   useQuery({
     queryKey: ['me', 'applications'],
     enabled,
-    queryFn: async () => (await unwrap(api.GET('/campaigns/applications/me', { params: { query: { limit: 100 } } }))).data,
+    queryFn: async () => (await unwrap(api.GET('/giveaways/applications/me', { params: { query: { limit: 100 } } }))).data,
   });
 
-export const useApply = (campaignId: string) => {
+export const useApply = (giveawayId: string) => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (body: { answers: EligibilityAnswers; quantity_requested: number }) =>
-      (await unwrap(api.POST('/campaigns/{id}/apply', { params: { path: { id: campaignId } }, body }))).data,
+      (await unwrap(api.POST('/giveaways/{id}/apply', { params: { path: { id: giveawayId } }, body }))).data,
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ['me', 'applications'] });
     },

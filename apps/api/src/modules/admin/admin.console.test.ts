@@ -48,7 +48,7 @@ describe('GET /admin/dashboard', () => {
     const before = data<{ pending_applications: { count: number }; unparsed_sms: { count: number } }>(await request(app).get('/api/v1/admin/dashboard').set(admin));
     const buyer = bearer((await newBuyer(app, providers.sms)).token);
     const { rows } = await pool.query<{ id: string }>(`SELECT id FROM campaigns WHERE title LIKE 'Coffee shade%'`);
-    await request(app).post(`/api/v1/campaigns/${rows[0]?.id ?? ''}/apply`).set(buyer)
+    await request(app).post(`/api/v1/giveaways/${rows[0]?.id ?? ''}/apply`).set(buyer)
       .send({ answers: { coffee_farmer: true, coffee_trees: 200 }, quantity_requested: 10 }).expect(201);
     const text = `Hello? ${String(Date.now())}`;
     await request(app).post('/api/v1/webhooks/sms/inbound').type('form').send({ from: '+256772000111', text }).expect(200);

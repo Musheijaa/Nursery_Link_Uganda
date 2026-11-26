@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { campaignApplySchema } from '@nurserylink/shared';
+import { campaignApplySchema, giveawaysQuerySchema } from '@nurserylink/shared';
 import type { Database } from '../../db/client.js';
 import { NotFoundError, UnauthorizedError } from '../../lib/errors.js';
 import { requireRole } from '../../middleware/requireRole.js';
@@ -12,14 +12,11 @@ import type { ApplicationsService } from './applications.service.js';
 import { toCampaign } from './campaigns.dto.js';
 import * as repo from './campaigns.repo.js';
 
-export const listQuery = paginationQuerySchema.extend({
-  sub_county_id: z.uuid().optional(),
-  purpose: z.string().trim().min(2).max(100).optional(),
-});
+export const listQuery = paginationQuerySchema.extend(giveawaysQuerySchema.shape);
 const idParams = z.object({ id: z.uuid() });
 
 
-/** Public campaign directory (FR-16), plus buyer applications (FR-17). */
+/** Public Giveaways directory (FR-16; stored as campaigns), plus buyer applications (FR-17). */
 export const campaignsRoutes = (db: Database, applications: ApplicationsService, limit: Limit): Router => {
   const router = Router();
   const applyLimit = limit({ windowMinutes: 60, limit: 10, key: userOrIpKey });
@@ -40,14 +37,14 @@ export const campaignsRoutes = (db: Database, applications: ApplicationsService,
 
   router.get('/', validate({ query: listQuery }), async (_req, res) => {
     const { query: q } = res.locals.validated as { query: z.output<typeof listQuery> };
-    const rows = await repo.listRunningCampaigns(db, { subCountyId: q.sub_county_id, purpose: q.purpose }, q.limit, toOffset(q));
+    const rows = await repo.listGiveaways(db, { status: q.status ?? 'open', subCountyId: q.sub_county_id, purpose: q.purpose }, q.limit, toOffset(q));
     res.json({ data: rows.map(toCampaign), meta: paginationMeta(q, rows[0]?.total ?? 0) });
   });
 
   router.get('/:id', validate({ params: idParams }), async (_req, res) => {
     const { params } = res.locals.validated as { params: z.output<typeof idParams> };
     const row = await repo.findCampaign(db, params.id);
-    if (!row) throw new NotFoundError('Campaign not found');
+    if (!row) throw new NotFoundError('Giveaway not found');
     res.json({ data: toCampaign(row) });
   });
 

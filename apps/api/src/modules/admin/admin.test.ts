@@ -99,8 +99,10 @@ describe('admin nurseries', () => {
 
       // Moving it re-derives the boundaries; the audit keeps before and after
       const moved = await request(app).patch(`/api/v1/admin/nurseries/${created.id}`).set(admin)
-        .send({ location: { lat: 0.205, lng: 32.8 }, certification_status: 'certified' }).expect(200);
-      expect(data<{ sub_county: { name: string }; certification_status: string }>(moved)).toMatchObject({ sub_county: { name: 'Ntenjeru' }, certification_status: 'certified' });
+        .send({ location: { lat: 0.205, lng: 32.8 }, certification_status: 'pending' }).expect(200);
+      expect(data<{ sub_county: { name: string }; certification_status: string }>(moved)).toMatchObject({ sub_county: { name: 'Ntenjeru' }, certification_status: 'pending' });
+      // "certified" can't be set directly: only by recording a verification
+      await request(app).patch(`/api/v1/admin/nurseries/${created.id}`).set(admin).send({ certification_status: 'certified' }).expect(400);
       expect(await lastAudit('nursery', created.id)).toMatchObject({
         action: 'nursery.update',
         before: { sub_county: { name: 'Central Division' } },
@@ -130,10 +132,32 @@ describe('admin nurseries', () => {
     expect(errorOf(res).message).toMatch(/Deactivate it instead/);
   });
 
+  it('records and removes a verified certification, which alone makes a nursery Certified', async () => {
+    const created = data<{ id: string }>(await request(app).post('/api/v1/admin/nurseries').set(admin).send({ ...newNursery, name: 'Test Certified Nursery' }).expect(201));
+    try {
+      const certified = await request(app).put(`/api/v1/admin/nurseries/${created.id}/certification`).set(admin)
+        .send({ body: 'National Forestry Authority', ref: 'NFA/2026/001' }).expect(200);
+      expect(data(certified)).toMatchObject({ certification_status: 'certified', certification: { body: 'National Forestry Authority', ref: 'NFA/2026/001' } });
+      expect(await lastAudit('nursery', created.id)).toMatchObject({ action: 'nursery.certify', before: { certification: null } });
+
+      const pub = await request(app).get(`/api/v1/nurseries/${created.id}`).expect(200);
+      expect(data(pub)).toMatchObject({ certified: true, certification: { body: 'National Forestry Authority', ref: 'NFA/2026/001' } });
+      // The status can't drift away from the record
+      await request(app).patch(`/api/v1/admin/nurseries/${created.id}`).set(admin).send({ certification_status: 'pending' }).expect(409);
+
+      const removed = await request(app).delete(`/api/v1/admin/nurseries/${created.id}/certification`).set(admin).expect(200);
+      expect(data(removed)).toMatchObject({ certification_status: 'unverified', certification: null });
+      expect(data(await request(app).get(`/api/v1/nurseries/${created.id}`).expect(200))).toMatchObject({ certified: false, certification: null });
+    } finally {
+      await request(app).delete(`/api/v1/admin/nurseries/${created.id}`).set(admin).expect(204);
+    }
+  });
+
   it('lists all nurseries with filters, including inactive ones', async () => {
-    const res = await request(app).get('/api/v1/admin/nurseries?certification_status=certified&limit=100').set(admin).expect(200);
+    const res = await request(app).get('/api/v1/admin/nurseries?certification_status=pending&limit=100').set(admin).expect(200);
     const body = res.body as { data: { certification_status: string; payout_phone: string }[]; meta: { total: number } };
-    expect(body.data.every(n => n.certification_status === 'certified')).toBe(true);
+    expect(body.data.every(n => n.certification_status === 'pending')).toBe(true);
+    expect(body.data.length).toBeGreaterThan(0);
     expect(body.meta.total).toBe(body.data.length);
     expect(body.data[0]?.payout_phone).toMatch(/^\+2567/);
   });
@@ -248,18 +272,33 @@ describe('admin species', () => {
     const res = await request(app).post('/api/v1/admin/species').set(admin).send({
       common_name: 'Test Musambya',
       scientific_name: 'Testus exampleus',
-      category: 'indigenous',
+      categories: ['indigenous', 'timber'],
       growth_pace: 'moderate',
+      botanical_family: 'Bignoniaceae',
+      soil_conditions: 'Deep, well-drained soil.',
       local_names: [{ language: 'Luganda', name: 'Testname' }],
       media: [{ url: '/images/sp-nsambya.jpg', caption: 'Test photo' }],
     }).expect(201);
     const created = data<{ id: string; slug: string; local_names: unknown[]; media: unknown[] }>(res);
-    expect(created).toMatchObject({ slug: 'test-musambya', local_names: [{ language: 'Luganda', name: 'Testname' }], media: [{ url: '/images/sp-nsambya.jpg' }] });
+    expect(created).toMatchObject({
+      slug: 'test-musambya',
+      local_names: [{ language: 'Luganda', name: 'Testname' }],
+      media: [{ url: '/images/sp-nsambya.jpg' }],
+      categories: [{ slug: 'timber', label: 'Timber Trees' }, { slug: 'indigenous', label: 'Indigenous and Native Trees' }],
+      botanical_family: 'Bignoniaceae',
+      soil_conditions: 'Deep, well-drained soil.',
+      rainfall_requirements: null,
+    });
+    // Unknown categories are refused
+    await request(app).patch(`/api/v1/admin/species/${created.id}`).set(admin).send({ categories: ['no-such-category'] }).expect(400);
+    // Clearing a profile field (blank) stores null, so the site hides it
+    const cleared = await request(app).patch(`/api/v1/admin/species/${created.id}`).set(admin).send({ soil_conditions: '' }).expect(200);
+    expect(data<{ soil_conditions: string | null }>(cleared).soil_conditions).toBeNull();
 
     // Visible in the public library straight away
     await request(app).get('/api/v1/species/test-musambya').expect(200);
     await request(app).post('/api/v1/admin/species').set(admin).send({
-      common_name: 'Another', scientific_name: 'X y', category: 'exotic', growth_pace: 'fast', slug: 'test-musambya',
+      common_name: 'Another', scientific_name: 'X y', categories: ['other'], growth_pace: 'fast', slug: 'test-musambya',
     }).expect(409);
 
     const updated = await request(app).patch(`/api/v1/admin/species/${created.id}`).set(admin)
@@ -285,7 +324,7 @@ describe('admin species', () => {
 describe('admin news', () => {
   it('keeps drafts private until published', async () => {
     const created = data<{ id: string; slug: string; published_at: string | null }>(
-      await request(app).post('/api/v1/admin/news').set(admin).send({ title: 'Test Draft Post', category: 'policy', body: 'Draft body' }).expect(201)
+      await request(app).post('/api/v1/admin/news').set(admin).send({ title: 'Test Draft Post', category: 'policy-sector', body: 'Draft body' }).expect(201)
     );
     try {
       expect(created).toMatchObject({ slug: 'test-draft-post', published_at: null });

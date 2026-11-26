@@ -1,10 +1,9 @@
-import type { GrowthPace, SpeciesCategory } from '@nurserylink/shared';
+import type { GrowthPace } from '@nurserylink/shared';
 
 export interface SeedSpecies {
   slug: string;
   scientificName: string;
   commonName: string;
-  category: SpeciesCategory;
   growthPace: GrowthPace;
   heightTimeline: { years: number; height_m: number }[];
   canopyNotes: string;
@@ -57,7 +56,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'mvule',
     scientificName: 'Milicia excelsa',
     commonName: 'Mvule',
-    category: 'indigenous',
     growthPace: 'slow',
     heightTimeline: [{ years: 1, height_m: 1 }, { years: 5, height_m: 6 }, { years: 15, height_m: 18 }, { years: 40, height_m: 35 }],
     canopyNotes: 'Broad, spreading crown casting deep shade when mature.',
@@ -70,7 +68,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'musizi',
     scientificName: 'Maesopsis eminii',
     commonName: 'Musizi',
-    category: 'indigenous',
     growthPace: 'fast',
     heightTimeline: [{ years: 1, height_m: 2 }, { years: 5, height_m: 12 }, { years: 15, height_m: 25 }],
     canopyNotes: 'Light, open crown; widely used as shade for coffee and bananas.',
@@ -83,7 +80,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'nsambya',
     scientificName: 'Markhamia lutea',
     commonName: 'Nsambya',
-    category: 'indigenous',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 1.5 }, { years: 5, height_m: 7 }, { years: 15, height_m: 15 }],
     canopyNotes: 'Narrow, upright crown with light shade; crops grow well beneath it.',
@@ -96,7 +92,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'mukebu',
     scientificName: 'Cordia africana',
     commonName: 'Mukebu',
-    category: 'indigenous',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 1.5 }, { years: 5, height_m: 6 }, { years: 15, height_m: 12 }],
     canopyNotes: 'Rounded crown; white flowers much visited by bees.',
@@ -109,7 +104,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'african-mahogany',
     scientificName: 'Khaya anthotheca',
     commonName: 'African mahogany',
-    category: 'indigenous',
     growthPace: 'slow',
     heightTimeline: [{ years: 1, height_m: 0.8 }, { years: 5, height_m: 5 }, { years: 20, height_m: 20 }, { years: 40, height_m: 35 }],
     canopyNotes: 'Large, dense crown; best planted among other trees or on forest edges.',
@@ -122,7 +116,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'mutuba',
     scientificName: 'Ficus natalensis',
     commonName: 'Mutuba (barkcloth fig)',
-    category: 'indigenous',
     growthPace: 'fast',
     heightTimeline: [{ years: 1, height_m: 2 }, { years: 5, height_m: 6 }, { years: 15, height_m: 12 }],
     canopyNotes: 'Dense evergreen crown; traditional boundary and shade tree.',
@@ -137,7 +130,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'grevillea',
     scientificName: 'Grevillea robusta',
     commonName: 'Grevillea',
-    category: 'agroforestry',
     growthPace: 'fast',
     heightTimeline: [{ years: 1, height_m: 1.5 }, { years: 5, height_m: 8 }, { years: 15, height_m: 20 }],
     canopyNotes: 'Narrow crown that can be pruned for firewood; light shade for coffee and tea.',
@@ -150,7 +142,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'calliandra',
     scientificName: 'Calliandra calothyrsus',
     commonName: 'Calliandra',
-    category: 'agroforestry',
     growthPace: 'fast',
     heightTimeline: [{ years: 1, height_m: 2 }, { years: 3, height_m: 4 }, { years: 6, height_m: 6 }],
     canopyNotes: 'Shrubby, multi-stemmed; cut regularly for fodder hedges.',
@@ -163,7 +154,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'mugavu',
     scientificName: 'Albizia coriaria',
     commonName: 'Mugavu',
-    category: 'agroforestry',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 1.2 }, { years: 5, height_m: 7 }, { years: 15, height_m: 15 }],
     canopyNotes: 'Flat, spreading crown giving dappled shade; common coffee shade tree.',
@@ -176,7 +166,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'jackfruit',
     scientificName: 'Artocarpus heterophyllus',
     commonName: 'Jackfruit',
-    category: 'agroforestry',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 1 }, { years: 4, height_m: 4 }, { years: 10, height_m: 10 }],
     canopyNotes: 'Dense evergreen crown; fruits within 3–5 years.',
@@ -189,7 +178,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'hass-avocado',
     scientificName: 'Persea americana',
     commonName: 'Hass avocado (grafted)',
-    category: 'agroforestry',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 1 }, { years: 3, height_m: 3 }, { years: 8, height_m: 7 }],
     canopyNotes: 'Rounded crown; grafted trees fruit in 2–3 years.',
@@ -202,7 +190,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'mango',
     scientificName: 'Mangifera indica',
     commonName: 'Mango (grafted)',
-    category: 'agroforestry',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 1 }, { years: 4, height_m: 4 }, { years: 10, height_m: 9 }],
     canopyNotes: 'Wide, dense crown; plant 8–10 m apart.',
@@ -217,7 +204,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'eucalyptus-grandis',
     scientificName: 'Eucalyptus grandis',
     commonName: 'Eucalyptus',
-    category: 'exotic',
     growthPace: 'fast',
     heightTimeline: [{ years: 1, height_m: 3 }, { years: 5, height_m: 18 }, { years: 10, height_m: 30 }],
     canopyNotes: 'Tall, narrow crown; grown in woodlots for poles and firewood.',
@@ -230,7 +216,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'caribbean-pine',
     scientificName: 'Pinus caribaea',
     commonName: 'Caribbean pine',
-    category: 'exotic',
     growthPace: 'fast',
     heightTimeline: [{ years: 1, height_m: 1 }, { years: 5, height_m: 8 }, { years: 20, height_m: 25 }],
     canopyNotes: 'Conical crown; plantation softwood for sawn timber.',
@@ -243,7 +228,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'teak',
     scientificName: 'Tectona grandis',
     commonName: 'Teak',
-    category: 'exotic',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 1.5 }, { years: 5, height_m: 9 }, { years: 20, height_m: 25 }],
     canopyNotes: 'Large leaves, deciduous in the dry season.',
@@ -258,7 +242,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'jacaranda',
     scientificName: 'Jacaranda mimosifolia',
     commonName: 'Jacaranda',
-    category: 'ornamental',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 1.5 }, { years: 5, height_m: 6 }, { years: 15, height_m: 12 }],
     canopyNotes: 'Spreading crown with purple flowers; popular for avenues and compounds.',
@@ -271,7 +254,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'nandi-flame',
     scientificName: 'Spathodea campanulata',
     commonName: 'Nandi flame',
-    category: 'ornamental',
     growthPace: 'fast',
     heightTimeline: [{ years: 1, height_m: 2 }, { years: 5, height_m: 8 }, { years: 15, height_m: 15 }],
     canopyNotes: 'Dense crown with bright orange-red flowers.',
@@ -284,7 +266,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'bottlebrush',
     scientificName: 'Callistemon citrinus',
     commonName: 'Bottlebrush',
-    category: 'ornamental',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 1 }, { years: 3, height_m: 2.5 }, { years: 8, height_m: 5 }],
     canopyNotes: 'Small tree or large shrub with red brush-like flowers; attracts sunbirds.',
@@ -299,7 +280,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'prunus-africana',
     scientificName: 'Prunus africana',
     commonName: 'African cherry',
-    category: 'medicinal',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 1 }, { years: 5, height_m: 6 }, { years: 20, height_m: 20 }],
     canopyNotes: 'Dense evergreen crown; bark used in medicine and over-harvested in the wild.',
@@ -312,7 +292,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'neem',
     scientificName: 'Azadirachta indica',
     commonName: 'Neem',
-    category: 'medicinal',
     growthPace: 'fast',
     heightTimeline: [{ years: 1, height_m: 1.5 }, { years: 5, height_m: 7 }, { years: 15, height_m: 15 }],
     canopyNotes: 'Dense crown; leaves and seeds used as natural pest repellent.',
@@ -325,7 +304,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'moringa',
     scientificName: 'Moringa oleifera',
     commonName: 'Moringa',
-    category: 'medicinal',
     growthPace: 'fast',
     heightTimeline: [{ years: 1, height_m: 3 }, { years: 3, height_m: 6 }, { years: 6, height_m: 9 }],
     canopyNotes: 'Open, feathery crown; leaves eaten as a nutritious vegetable.',
@@ -340,7 +318,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'robusta-coffee',
     scientificName: 'Coffea canephora',
     commonName: 'Robusta coffee',
-    category: 'coffee',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 0.6 }, { years: 3, height_m: 2 }, { years: 6, height_m: 3.5 }],
     canopyNotes: 'Bushy shrub, usually pruned to 2–3 m; first crop after about 2–3 years. Plant 3 m apart, with light shade.',
@@ -353,7 +330,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'arabica-coffee',
     scientificName: 'Coffea arabica',
     commonName: 'Arabica coffee',
-    category: 'coffee',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 0.5 }, { years: 3, height_m: 1.8 }, { years: 6, height_m: 3 }],
     canopyNotes: 'Compact shrub for the highlands (Mt Elgon, Rwenzori, West Nile hills); first crop after about 3 years.',
@@ -368,7 +344,6 @@ export const SPECIES: SeedSpecies[] = [
     slug: 'cocoa',
     scientificName: 'Theobroma cacao',
     commonName: 'Cocoa',
-    category: 'cocoa',
     growthPace: 'moderate',
     heightTimeline: [{ years: 1, height_m: 0.8 }, { years: 3, height_m: 2.5 }, { years: 8, height_m: 5 }],
     canopyNotes: 'Small understorey tree; pods grow on the trunk from about year 3. Plant 3 m apart under banana or shade trees.',
@@ -378,3 +353,78 @@ export const SPECIES: SeedSpecies[] = [
     media: [],
   },
 ];
+
+/** Tree categories (tree_categories), in order. Labels and order are the client's; slugs are used in links. */
+export const TREE_CATEGORIES: { slug: string; label: string }[] = [
+  { slug: 'agroforestry', label: 'Agroforestry Species' },
+  { slug: 'fruit', label: 'Fruit Trees' },
+  { slug: 'timber', label: 'Timber Trees' },
+  { slug: 'medicinal', label: 'Medicinal Trees' },
+  { slug: 'ornamental', label: 'Ornamental Trees' },
+  { slug: 'indigenous', label: 'Indigenous and Native Trees' },
+  { slug: 'shade', label: 'Shade Trees' },
+  { slug: 'multipurpose', label: 'Multipurpose Trees' },
+  { slug: 'other', label: 'Other Species' },
+];
+
+/**
+ * Which categories each seeded tree belongs to. Applied once per database (LIBRARY_BATCH), adding to
+ * whatever the categories migration set, so later admin edits stick.
+ */
+export const SPECIES_CATEGORIES: Record<string, string[]> = {
+  mvule: ['indigenous', 'timber', 'shade'],
+  musizi: ['indigenous', 'timber', 'shade', 'agroforestry'],
+  nsambya: ['indigenous', 'timber', 'agroforestry', 'multipurpose'],
+  mukebu: ['indigenous', 'timber', 'shade', 'agroforestry'],
+  'african-mahogany': ['indigenous', 'timber', 'shade'],
+  mutuba: ['indigenous', 'shade', 'agroforestry', 'multipurpose'],
+  grevillea: ['agroforestry', 'timber', 'shade'],
+  calliandra: ['agroforestry', 'multipurpose'],
+  mugavu: ['indigenous', 'agroforestry', 'shade', 'medicinal'],
+  jackfruit: ['fruit', 'shade', 'agroforestry'],
+  'hass-avocado': ['fruit'],
+  mango: ['fruit', 'shade'],
+  'eucalyptus-grandis': ['timber', 'other'],
+  'caribbean-pine': ['timber', 'other'],
+  teak: ['timber', 'other'],
+  jacaranda: ['ornamental', 'shade'],
+  'nandi-flame': ['ornamental', 'indigenous', 'shade'],
+  bottlebrush: ['ornamental'],
+  'prunus-africana': ['medicinal', 'indigenous'],
+  neem: ['medicinal', 'shade', 'multipurpose'],
+  moringa: ['medicinal', 'multipurpose'],
+  'robusta-coffee': ['agroforestry'],
+  'arabica-coffee': ['agroforestry'],
+  cocoa: ['agroforestry'],
+};
+
+/** Botanical families of the seeded trees (filled only where empty) */
+export const BOTANICAL_FAMILIES: Record<string, string> = {
+  mvule: 'Moraceae (fig family)',
+  musizi: 'Rhamnaceae (buckthorn family)',
+  nsambya: 'Bignoniaceae (trumpet-vine family)',
+  mukebu: 'Boraginaceae (borage family)',
+  'african-mahogany': 'Meliaceae (mahogany family)',
+  mutuba: 'Moraceae (fig family)',
+  grevillea: 'Proteaceae (protea family)',
+  calliandra: 'Fabaceae (legume family)',
+  mugavu: 'Fabaceae (legume family)',
+  jackfruit: 'Moraceae (fig family)',
+  'hass-avocado': 'Lauraceae (laurel family)',
+  mango: 'Anacardiaceae (cashew family)',
+  'eucalyptus-grandis': 'Myrtaceae (myrtle family)',
+  'caribbean-pine': 'Pinaceae (pine family)',
+  teak: 'Lamiaceae (mint family)',
+  jacaranda: 'Bignoniaceae (trumpet-vine family)',
+  'nandi-flame': 'Bignoniaceae (trumpet-vine family)',
+  bottlebrush: 'Myrtaceae (myrtle family)',
+  'prunus-africana': 'Rosaceae (rose family)',
+  neem: 'Meliaceae (mahogany family)',
+  moringa: 'Moringaceae (moringa family)',
+  'robusta-coffee': 'Rubiaceae (coffee family)',
+  'arabica-coffee': 'Rubiaceae (coffee family)',
+  cocoa: 'Malvaceae (mallow family)',
+};
+
+/** Batch key for SPECIES_CATEGORIES and BOTANICAL_FAMILIES (a seed.library_content audit entry records it) */
+export const LIBRARY_BATCH = 'library-2026-11';

@@ -97,11 +97,19 @@ export interface OrdersDeps {
 export class OrdersService {
   constructor(private readonly deps: OrdersDeps) {}
 
+  /** With FEATURE_ORDERS=off buyers phone the nursery operator; no new orders start here. */
+  private refuseWhenOrderingOff() {
+    if (this.deps.config.FEATURE_ORDERS === 'off') {
+      throw new ForbiddenError('Online ordering is switched off. Call or WhatsApp the nursery operator to order.');
+    }
+  }
+
   // ── Quote ────────────────────────────────────────────────
 
   /** Prices an order from live stock, road distance and the delivery rate table (FR-13). */
   async quote(userId: string, input: QuoteInput): Promise<QuoteResult> {
     const { db } = this.deps;
+    this.refuseWhenOrderingOff();
     const nursery = await repo.findActiveNursery(db, input.nursery_id);
     if (!nursery) throw new NotFoundError('Nursery not found');
     this.refuseSampleNurseryWithLivePayments(nursery);
@@ -202,6 +210,7 @@ export class OrdersService {
 
   async create(userId: string, input: CreateOrderInput): Promise<{ order: OrderDto; next_step: string }> {
     const { db, config } = this.deps;
+    this.refuseWhenOrderingOff();
     const { id: quoteId, quote } = await verifyQuote(config.QUOTE_TOKEN_SECRET, input.quote_token);
     if (quote.user_id !== userId) throw new ForbiddenError('This quote belongs to another account');
     const nursery = await repo.findActiveNursery(db, quote.nursery_id);

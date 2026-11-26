@@ -35,7 +35,11 @@ export const toSummary = (row: repo.NurseryRow): NurserySummary => ({
   id: row.id,
   name: row.name,
   type: row.type,
-  certification_status: row.certification_status,
+  certified: row.certification_verified_at !== null,
+  certification:
+    row.certification_verified_at && row.certification_body
+      ? { body: row.certification_body, ref: row.certification_ref, verified_at: new Date(row.certification_verified_at).toISOString() }
+      : null,
   operator_name: row.operator_name,
   // Sample nurseries carry a placeholder number that must never be shown or dialled
   contact_phone: row.is_demo ? null : row.contact_phone,
@@ -54,7 +58,7 @@ export const toSummary = (row: repo.NurseryRow): NurserySummary => ({
 
 export const toInventoryItem = (row: repo.InventoryRow): InventoryItem => ({
   inventory_id: row.inventory_id,
-  species: { id: row.species_id, slug: row.slug, common_name: row.common_name, scientific_name: row.scientific_name, category: row.category },
+  species: { id: row.species_id, slug: row.slug, common_name: row.common_name, scientific_name: row.scientific_name, categories: row.categories },
   quantity_available: row.quantity_available,
   unit_price: row.unit_price,
   updated_at: new Date(row.updated_at).toISOString(),
@@ -143,12 +147,16 @@ export class NurseriesService {
     const row = await repo.findNursery(db, id, point);
     if (!row) throw new NotFoundError('Nursery not found');
 
-    const [inventory, campaigns] = await Promise.all([repo.listInventory(db, [id]), repo.listActiveCampaigns(db, id)]);
+    const [inventory, campaigns, categories] = await Promise.all([
+      repo.listInventory(db, [id]),
+      repo.listActiveCampaigns(db, id),
+      repo.listStockCategories(db, id),
+    ]);
     const summary = toSummary(row);
     const profile: NurseryProfile = {
       ...summary,
       inventory: inventory.map(toInventoryItem),
-      stock_categories: [...new Set(inventory.filter(i => i.quantity_available > 0).map(i => i.category))].sort(),
+      stock_categories: categories,
       active_campaigns: campaigns.map(c => ({ ...c, ends_at: new Date(c.ends_at).toISOString() })),
     };
 

@@ -1,16 +1,29 @@
 import { eq, sql } from 'drizzle-orm';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import type { z } from 'zod';
-import type { speciesCreateSchema, speciesUpdateSchema } from '@nurserylink/shared';
+import { speciesProfileFields, type SpeciesProfileField, type speciesCreateSchema, type speciesUpdateSchema } from '@nurserylink/shared';
 import type { Database, DbOrTx } from '../../db/client.js';
-import { species, speciesLocalNames, speciesMedia } from '../../db/schema.js';
+import { species, speciesLocalNames, speciesMedia, speciesTreeCategories } from '../../db/schema.js';
 import { writeAudit } from '../../lib/audit.js';
-import { ConflictError, NotFoundError } from '../../lib/errors.js';
+import { ConflictError, NotFoundError, ValidationError } from '../../lib/errors.js';
 import { slugify } from '../../lib/slug.js';
 import * as repo from './species.repo.js';
 
 type CreateInput = z.output<typeof speciesCreateSchema>;
 type UpdateInput = z.output<typeof speciesUpdateSchema>;
+
+const profileKeys = Object.keys(speciesProfileFields) as SpeciesProfileField[];
+const toCamel = (k: string) => k.replace(/_([a-z])/g, (_m, c: string) => c.toUpperCase());
+
+/** The profile fields present in the input, as Drizzle column values (blank text becomes null) */
+const profileValues = (input: Partial<Record<SpeciesProfileField, string | null | undefined>>): Record<string, string | null> => {
+  const out: Record<string, string | null> = {};
+  for (const key of profileKeys) {
+    const value = input[key];
+    if (value !== undefined) out[toCamel(key)] = value === null || value === '' ? null : value;
+  }
+  return out;
+};
 
 export class SpeciesAdminService {
   constructor(private readonly deps: { db: Database }) {}
@@ -27,16 +40,15 @@ export class SpeciesAdminService {
           slug: input.slug ?? slugify(input.common_name),
           commonName: input.common_name,
           scientificName: input.scientific_name,
-          category: input.category,
           growthPace: input.growth_pace,
           heightTimeline: input.height_timeline,
-          canopyNotes: input.canopy_notes ?? null,
-          rootNotes: input.root_notes ?? null,
           ecologicalZones: input.ecological_zones,
+          ...profileValues(input),
         })
         .returning({ id: species.id });
       if (!created) throw new Error('Species insert returned no row');
       await this.replaceChildren(tx, created.id, input.local_names, input.media);
+      await this.replaceCategories(tx, created.id, input.categories);
       const after = await this.mustFind(tx, created.id);
       await writeAudit(tx, { actorId, action: 'species.create', entity: 'species', entityId: created.id, after });
       return after;
@@ -51,14 +63,13 @@ export class SpeciesAdminService {
       if (input.common_name !== undefined) set.commonName = input.common_name;
       if (input.scientific_name !== undefined) set.scientificName = input.scientific_name;
       if (input.slug !== undefined) set.slug = input.slug;
-      if (input.category !== undefined) set.category = input.category;
       if (input.growth_pace !== undefined) set.growthPace = input.growth_pace;
       if (input.height_timeline !== undefined) set.heightTimeline = input.height_timeline;
-      if (input.canopy_notes !== undefined) set.canopyNotes = input.canopy_notes;
-      if (input.root_notes !== undefined) set.rootNotes = input.root_notes;
       if (input.ecological_zones !== undefined) set.ecologicalZones = input.ecological_zones;
+      Object.assign(set, profileValues(input));
       if (Object.keys(set).length) await tx.update(species).set(set).where(eq(species.id, id));
       await this.replaceChildren(tx, id, input.local_names, input.media);
+      if (input.categories !== undefined) await this.replaceCategories(tx, id, input.categories);
       const after = await this.mustFind(tx, id);
       await writeAudit(tx, { actorId, action: 'species.update', entity: 'species', entityId: id, before, after });
       return after;
@@ -76,6 +87,14 @@ export class SpeciesAdminService {
       await tx.delete(species).where(eq(species.id, id));
       await writeAudit(tx, { actorId, action: 'species.delete', entity: 'species', entityId: id, before });
     });
+  }
+
+  /** Categories are edited as a whole list, like local names */
+  private async replaceCategories(tx: DbOrTx, speciesId: string, categories: string[]) {
+    const unknown = await repo.unknownTreeCategories(tx, categories);
+    if (unknown.length) throw new ValidationError('Unknown category', [{ path: 'categories', message: `No category ${unknown.join(', ')}` }]);
+    await tx.delete(speciesTreeCategories).where(eq(speciesTreeCategories.speciesId, speciesId));
+    await tx.insert(speciesTreeCategories).values(categories.map(categorySlug => ({ speciesId, categorySlug })));
   }
 
   /** Local names and media are edited as whole lists: sending a list replaces the current one. */

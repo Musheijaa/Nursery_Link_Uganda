@@ -63,7 +63,7 @@ export const NURSERIES: SeedNursery[] = [
     payoutPhone: '+256700100101',
     annualCapacity: 250000,
     seedSource: 'NFA Tree Seed Centre and own seed orchard',
-    certificationStatus: 'certified',
+    certificationStatus: 'pending',
     inventory: [['eucalyptus-grandis', 85000, 400], ['caribbean-pine', 40000, 500], ['musizi', 12000, 900], ['grevillea', 9500, 700]],
   },
   {
@@ -75,7 +75,7 @@ export const NURSERIES: SeedNursery[] = [
     payoutPhone: '+256772100102',
     annualCapacity: 40000,
     seedSource: 'Grafted from registered mother trees',
-    certificationStatus: 'certified',
+    certificationStatus: 'pending',
     inventory: [['hass-avocado', 2400, 6000], ['mango', 1800, 5000], ['jackfruit', 900, 2500], ['mutuba', 600, 1500]],
   },
   {
@@ -111,7 +111,7 @@ export const NURSERIES: SeedNursery[] = [
     payoutPhone: '+256700100105',
     annualCapacity: 35000,
     seedSource: 'Farmer-group seed stands',
-    certificationStatus: 'certified',
+    certificationStatus: 'pending',
     inventory: [['calliandra', 8000, 350], ['grevillea', 7000, 600], ['mugavu', 2500, 900], ['moringa', 1500, 1000]],
   },
   {
@@ -123,7 +123,7 @@ export const NURSERIES: SeedNursery[] = [
     payoutPhone: '+256700100106',
     annualCapacity: 50000,
     seedSource: 'NFA Tree Seed Centre',
-    certificationStatus: 'certified',
+    certificationStatus: 'pending',
     inventory: [['mvule', 3500, 1800], ['african-mahogany', 1500, 1800], ['musizi', 6000, 850], ['teak', 4000, 700], ['jacaranda', 800, 2500]],
   },
   {
@@ -159,7 +159,7 @@ export const NURSERIES: SeedNursery[] = [
     payoutPhone: '+256700100109',
     annualCapacity: 120000,
     seedSource: 'Certified seed from NFA and imported pine seed',
-    certificationStatus: 'certified',
+    certificationStatus: 'pending',
     inventory: [['caribbean-pine', 30000, 450], ['eucalyptus-grandis', 45000, 380], ['teak', 6000, 700], ['neem', 1500, 1200]],
   },
   {
@@ -195,7 +195,7 @@ export const NURSERIES: SeedNursery[] = [
     payoutPhone: '+256700100112',
     annualCapacity: 90000,
     seedSource: 'NFA Tree Seed Centre and registered orchards',
-    certificationStatus: 'certified',
+    certificationStatus: 'pending',
     inventory: [['eucalyptus-grandis', 40000, 400], ['grevillea', 10000, 650], ['hass-avocado', 1500, 6000], ['mango', 1000, 5000], ['moringa', 2000, 900], ['neem', 1200, 1100]],
   },
   {
@@ -207,7 +207,7 @@ export const NURSERIES: SeedNursery[] = [
     payoutPhone: '+256700100113',
     annualCapacity: 22000,
     seedSource: 'Community seed collection',
-    certificationStatus: 'certified',
+    certificationStatus: 'pending',
     inventory: [['mukebu', 2000, 1000], ['mugavu', 2200, 900], ['nsambya', 2500, 750], ['nandi-flame', 600, 2000]],
   },
   {
@@ -219,7 +219,7 @@ export const NURSERIES: SeedNursery[] = [
     payoutPhone: '+256772100114',
     annualCapacity: 60000,
     seedSource: 'Registered orchards and NFA seed',
-    certificationStatus: 'certified',
+    certificationStatus: 'pending',
     inventory: [['jacaranda', 1500, 2500], ['bottlebrush', 1200, 3000], ['nandi-flame', 800, 2000], ['hass-avocado', 900, 6500], ['musizi', 3000, 900]],
   },
   {

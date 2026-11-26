@@ -46,11 +46,19 @@ export const dashboard = async (db: DbOrTx) => {
   const toVerify = sql`
     SELECT n.id, n.name, d.name AS district_name, n.created_at FROM nurseries n JOIN admin_boundaries d ON d.id = n.district_id
     WHERE NOT n.is_active AND n.listing_note IS NOT NULL`;
+  // Unread messages in the inbox
+  const enquiries = sql`SELECT e.id, e.type, e.name, left(e.message, 200) AS message, e.created_at FROM enquiries e WHERE e.status = 'new'`;
+  // News posts whose category was guessed when the categories changed
+  const newsReview = sql`
+    SELECT p.id, p.title, json_build_object('slug', c.slug, 'label', c.label) AS category, p.published_at
+    FROM news_posts p JOIN news_categories c ON c.slug = p.category_slug WHERE p.needs_review`;
   const sms = sql`
     SELECT id::text, after->>'from' AS sender, after->>'text' AS text, after->>'reason' AS reason, created_at
     FROM audit_log WHERE action = 'sms.unrecognised' AND created_at > now() - make_interval(days => ${SMS_WINDOW_DAYS})`;
 
-  const [disputedN, stuckN, failedN, staleN, pendingN, smsN, verifyN, toDispatchN] = await Promise.all([disputed, stuck, failed, stale, pending, sms, toVerify, toDispatch].map(q => count(db, q)));
+  const [disputedN, stuckN, failedN, staleN, pendingN, smsN, verifyN, toDispatchN, enquiriesN, newsReviewN] = await Promise.all(
+    [disputed, stuck, failed, stale, pending, sms, toVerify, toDispatch, enquiries, newsReview].map(q => count(db, q))
+  );
   const top = async <T extends Record<string, unknown>>(q: ReturnType<typeof sql>, order: ReturnType<typeof sql>) =>
     (await db.execute<T>(sql`SELECT * FROM (${q}) q ORDER BY ${order} LIMIT ${TOP}`)).rows;
 
@@ -68,6 +76,16 @@ export const dashboard = async (db: DbOrTx) => {
       items: await top<{ id: string; campaign_id: string; campaign_title: string; applicant_name: string; quantity_requested: number; created_at: Date }>(pending, sql`q.created_at`),
     },
     nurseries_to_verify: { count: verifyN, items: await top<{ id: string; name: string; district_name: string; created_at: Date }>(toVerify, sql`q.name`) },
+    new_enquiries: {
+      count: enquiriesN,
+      items: await top<{ id: string; type: string; name: string | null; message: string; created_at: Date }>(enquiries, sql`q.created_at DESC`),
+    },
+    news_to_review: {
+      count: newsReviewN,
+      items: (await top<{ id: string; title: string; category: { slug: string; label: string }; published_at: Date | null }>(newsReview, sql`q.published_at DESC NULLS LAST`)).map(
+        ({ published_at: _p, ...rest }) => rest
+      ),
+    },
     unparsed_sms: { count: smsN, items: await top<{ id: string; sender: string | null; text: string | null; reason: string | null; created_at: Date }>(sms, sql`q.created_at DESC`) },
   };
 };

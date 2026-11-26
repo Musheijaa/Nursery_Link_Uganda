@@ -73,10 +73,14 @@ describe('POST /assistant/chat', () => {
     expect(answerText(list)).toMatch(/It is \w+, (the rainy season|the last month of the rains|a dry month)|rains usually start/);
   });
 
-  it('looks up free-seedling campaigns and the tree library', async () => {
+  it('looks up giveaways, expert services and the tree library', async () => {
     const free = events((await ask('Are there free seedlings?')).body as string);
-    expect(free[0]).toMatchObject({ type: 'status', tool: 'list_free_seedling_campaigns' });
-    expect(answerText(free)).toMatch(/\/free-seedlings\/[0-9a-f-]{36}/);
+    expect(free[0]).toMatchObject({ type: 'status', tool: 'list_giveaways' });
+    expect(answerText(free)).toMatch(/\/giveaways\/[0-9a-f-]{36}/);
+
+    const services = events((await ask('Can someone map my farm with a drone?')).body as string);
+    expect(services[0]).toMatchObject({ type: 'status', tool: 'list_expert_services' });
+    expect(answerText(services)).toContain('/expert-services#gis-remote-sensing-mapping-uav');
 
     const tree = events((await ask('Tell me about mvule')).body as string);
     expect(tree[0]).toMatchObject({ type: 'status', tool: 'search_trees' });

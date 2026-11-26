@@ -48,7 +48,7 @@ const newCampaign = async (stock: number, overrides: { is_active?: boolean; ende
 const remaining = async (id: string) => (await pool.query<{ r: number }>('SELECT remaining_stock AS r FROM campaigns WHERE id = $1', [id])).rows[0]?.r;
 
 const apply = (campaignId: string, headers: Record<string, string>, body: object = { answers: GOOD, quantity_requested: 10 }) =>
-  request(app).post(`/api/v1/campaigns/${campaignId}/apply`).set(headers).send(body);
+  request(app).post(`/api/v1/giveaways/${campaignId}/apply`).set(headers).send(body);
 
 const review = (id: string, status: string, note?: string) =>
   request(app).put(`/api/v1/admin/applications/${id}`).set(admin).send({ status, ...(note ? { note } : {}) });
@@ -88,7 +88,7 @@ describe('POST /campaigns/:id/apply', () => {
     // Applying reserves nothing: stock only moves on approval
     expect(await remaining(id)).toBe(100);
 
-    const mine = data<ApplicationDto[]>(await request(app).get('/api/v1/campaigns/applications/me').set(b.headers).expect(200));
+    const mine = data<ApplicationDto[]>(await request(app).get('/api/v1/giveaways/applications/me').set(b.headers).expect(200));
     expect(mine.map(a => a.campaign.id)).toEqual([id]);
   });
 
@@ -144,7 +144,7 @@ describe('admin review', () => {
     expect(rows[0]?.actor_id).toBeTruthy();
 
     const sms = queue.take('sms-send');
-    expect(sms).toEqual([expect.objectContaining({ to: b.phone, message: expect.stringContaining('approved for 30 free seedlings') as string })]);
+    expect(sms).toEqual([expect.objectContaining({ to: b.phone, message: expect.stringContaining('approved for 30 seedlings') as string })]);
 
     await review(application.id, 'collected').expect(200);
     await review(application.id, 'rejected').expect(409);
@@ -183,8 +183,8 @@ describe('RBAC', () => {
   const id = '00000000-0000-4000-8000-000000000000';
 
   it('visitors must sign in to apply or see applications', async () => {
-    await request(app).post(`/api/v1/campaigns/${id}/apply`).send({}).expect(401);
-    await request(app).get('/api/v1/campaigns/applications/me').expect(401);
+    await request(app).post(`/api/v1/giveaways/${id}/apply`).send({}).expect(401);
+    await request(app).get('/api/v1/giveaways/applications/me').expect(401);
     await request(app).get(`/api/v1/admin/campaigns/${id}/applications`).expect(401);
     await request(app).put(`/api/v1/admin/applications/${id}`).send({}).expect(401);
   });
@@ -193,6 +193,6 @@ describe('RBAC', () => {
     const b = await buyer();
     await request(app).get(`/api/v1/admin/campaigns/${id}/applications`).set(b.headers).expect(403);
     await request(app).put(`/api/v1/admin/applications/${id}`).set(b.headers).send({ status: 'approved' }).expect(403);
-    await request(app).post(`/api/v1/campaigns/${id}/apply`).set(admin).send({ answers: GOOD, quantity_requested: 1 }).expect(403);
+    await request(app).post(`/api/v1/giveaways/${id}/apply`).set(admin).send({ answers: GOOD, quantity_requested: 1 }).expect(403);
   });
 });

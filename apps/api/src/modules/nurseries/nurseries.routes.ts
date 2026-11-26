@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { speciesCategorySchema } from '@nurserylink/shared';
 import { validate } from '../../middleware/validate.js';
 import { paginationQuerySchema } from '../../lib/pagination.js';
 import { optionalLatLngQuery, requiredLatLngQuery } from '../../lib/geo.js';
 import type { NurseriesService } from './nurseries.service.js';
+import { categoryListParam } from '../species/species.routes.js';
 import type { Limit } from '../../middleware/rateLimit.js';
 import { userOrIpKey } from '../../middleware/security.js';
 
@@ -18,8 +18,10 @@ export const listNurseriesQuery = z
     district_id: z.uuid().optional(),
     sub_county_id: z.uuid().optional(),
     species: z.string().trim().min(2).max(100).optional(),
-    /** Nurseries with at least one tree of this category in stock (e.g. coffee, cocoa) */
-    category: speciesCategorySchema.optional(),
+    /** Nurseries with at least one tree in any of these categories in stock: "fruit,timber" */
+    categories: categoryListParam.optional(),
+    /** true: certified (verified by an admin); false: uncertified */
+    certified: booleanParam.optional(),
     q: z.string().trim().min(1).max(100).optional(),
     has_campaign: booleanParam.optional(),
     format: z.enum(['json', 'geojson']).default('json'),
@@ -43,7 +45,7 @@ export const nurseriesRoutes = (service: NurseriesService, limit: Limit): Router
   router.get('/', validate({ query: listNurseriesQuery }), async (_req, res) => {
     const q = (res.locals.validated as { query: z.output<typeof listNurseriesQuery> }).query;
     const point = q.lat !== undefined && q.lng !== undefined ? { lat: q.lat, lng: q.lng } : undefined;
-    const filters = { districtId: q.district_id, subCountyId: q.sub_county_id, species: q.species, category: q.category, q: q.q, hasCampaign: q.has_campaign };
+    const filters = { districtId: q.district_id, subCountyId: q.sub_county_id, species: q.species, categories: q.categories, certified: q.certified, q: q.q, hasCampaign: q.has_campaign };
     const geojson = q.format === 'geojson';
 
     const result = await service.list({

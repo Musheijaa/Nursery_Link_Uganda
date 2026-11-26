@@ -1,5 +1,5 @@
 import { Button, OfflineBanner, cn } from '@nurserylink/ui';
-import { BookOpen, Gift, House, LogIn, LogOut, Map as MapIcon, Menu, Newspaper, Package, Sprout, type LucideIcon } from 'lucide-react';
+import { BookOpen, Ellipsis, Gift, HandHeart, House, LogIn, LogOut, Map as MapIcon, Menu, Newspaper, Package, Sprout, type LucideIcon } from 'lucide-react';
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useMatches } from 'react-router';
 import { en } from '../copy/en';
@@ -16,16 +16,30 @@ export interface NavItem {
   icon: LucideIcon;
   /** Active only on this exact path (Home, which every path starts with) */
   end?: boolean;
+  /** Shown as the bright Donate button */
+  highlight?: boolean;
 }
 
-const NAV: NavItem[] = [
+/** The main menu, in the client's order (brief §1) */
+export const NAV: NavItem[] = [
   { to: '/', label: en.app.home, icon: House, end: true },
   { to: '/nurseries', label: en.nav.nurseries, icon: MapIcon },
-  { to: '/free-seedlings', label: en.nav.freeSeedlings, icon: Gift },
   { to: '/library', label: en.nav.library, icon: BookOpen },
+  { to: '/expert-services', label: en.nav.expertServices, icon: Sprout },
   { to: '/news', label: en.nav.news, icon: Newspaper },
-  { to: '/services', label: en.nav.services, icon: Sprout },
+  { to: '/giveaways', label: en.nav.giveaways, icon: Gift },
+  { to: '/donate', label: en.nav.donate, icon: HandHeart, highlight: true },
 ];
+
+/** Phones: these four sit in the bottom bar; "More" opens the menu with the rest (Donate highlighted) */
+const BOTTOM_NAV = ['/', '/nurseries', '/library', '/giveaways'];
+
+/** Donate stands out: bright leaf green with deep green text (AA), on the dark header and in menus */
+export const donateLink = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    'flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full bg-sprout px-4 font-label text-label font-bold text-sprout-ink no-underline hover:bg-paper',
+    isActive && 'ring-2 ring-paper ring-offset-2 ring-offset-canopy'
+  );
 
 const navLink = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -79,41 +93,80 @@ const WelcomeNotice = lazy(() => import('../features/feedback/WelcomeNotice'));
 // The menu's dialog code loads on the first tap, not with the page (one less thing on a slow first load)
 const MobileMenuDialog = lazy(() => import('./MobileMenu'));
 
-const MobileMenu = () => {
+/** The menu's open state is shared by the header button and the bottom bar's "More" */
+const useMenu = () => {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  return (
-    <>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="text-paper hover:bg-paper/10 xl:hidden"
-        aria-label={en.app.menu}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => { setLoaded(true); setOpen(true); }}
-      >
-        <Menu aria-hidden />
-      </Button>
-      {loaded && (
-        <Suspense fallback={null}>
-          <MobileMenuDialog open={open} onOpenChange={setOpen} nav={NAV} account={<AccountLinks onNavigate={() => { setOpen(false); }} mobile />} navLink={navLink} />
-        </Suspense>
-      )}
-    </>
+  const dialog = loaded && (
+    <Suspense fallback={null}>
+      <MobileMenuDialog open={open} onOpenChange={setOpen} nav={NAV} account={<AccountLinks onNavigate={() => { setOpen(false); }} mobile />} navLink={navLink} donateLink={donateLink} />
+    </Suspense>
   );
+  return { open, show: () => { setLoaded(true); setOpen(true); }, dialog };
 };
 
-export const Header = () => (
+const MobileMenu = ({ menu }: { menu: ReturnType<typeof useMenu> }) => (
+  <Button
+    variant="ghost"
+    size="icon"
+    className="text-paper hover:bg-paper/10 xl:hidden"
+    aria-label={en.app.menu}
+    aria-haspopup="dialog"
+    aria-expanded={menu.open}
+    onClick={menu.show}
+  >
+    <Menu aria-hidden />
+  </Button>
+);
+
+/** Phones (under 768 px): the four main places and More, always at hand at the bottom */
+export const BottomNav = ({ menu }: { menu: ReturnType<typeof useMenu> }) => (
+  <nav aria-label={en.nav.bottom} className="on-dark fixed inset-x-0 bottom-0 z-30 border-t border-paper/15 bg-canopy pb-[env(safe-area-inset-bottom)] md:hidden">
+    <ul className="grid grid-cols-5">
+      {NAV.filter(n => BOTTOM_NAV.includes(n.to)).map(({ to, label, icon: Icon, end }) => (
+        <li key={to}>
+          <NavLink
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              cn('flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center text-[0.7rem] leading-tight font-bold no-underline', isActive ? 'text-paper' : 'text-paper/80')
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Icon aria-hidden className={cn('size-5', isActive && 'text-murram-light')} />
+                {label}
+              </>
+            )}
+          </NavLink>
+        </li>
+      ))}
+      <li>
+        <button
+          type="button"
+          onClick={menu.show}
+          aria-haspopup="dialog"
+          aria-expanded={menu.open}
+          className="flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-[0.7rem] leading-tight font-bold text-paper/80"
+        >
+          <Ellipsis aria-hidden className="size-5" />
+          {en.nav.more}
+        </button>
+      </li>
+    </ul>
+  </nav>
+);
+
+export const Header = ({ menu }: { menu: ReturnType<typeof useMenu> }) => (
   <header className="on-dark sticky top-0 z-30 bg-canopy">
     <div className={cn(PAGE_FRAME, 'flex h-16 items-center justify-between gap-4')}>
       <Logo />
       <nav aria-label="Main" className="hidden items-center gap-0.5 xl:flex">
-        {NAV.map(({ to, label, icon: Icon, end }) => (
-          <NavLink key={to} to={to} end={end} className={navLink}>
-            {end && <Icon aria-hidden className="size-5" />}
+        {NAV.map(({ to, label, icon: Icon, end, highlight }) => (
+          <NavLink key={to} to={to} end={end} className={highlight ? (s => cn(donateLink(s), 'ml-1.5')) : navLink}>
+            {(end || highlight) && <Icon aria-hidden className="size-5" />}
             {/* Home is just the house icon until there's room for its name (signed-in links are wider) */}
-            {end ? <span className="sr-only min-[1400px]:not-sr-only">{label}</span> : label}
+            {end ? <span className="sr-only min-[1500px]:not-sr-only">{label}</span> : label}
           </NavLink>
         ))}
       </nav>
@@ -126,9 +179,10 @@ export const Header = () => (
         <Link to="/" aria-label={en.app.home} className="flex size-11 items-center justify-center rounded-sm text-paper hover:bg-paper/10 xl:hidden">
           <House aria-hidden className="size-6" />
         </Link>
-        <MobileMenu />
+        <MobileMenu menu={menu} />
       </div>
     </div>
+    {menu.dialog}
   </header>
 );
 
@@ -157,7 +211,7 @@ export const Footer = () => {
       <nav aria-label={en.footer.explore} className="flex flex-col gap-1 text-sm">
         <p className="mb-1 font-bold text-paper">{en.footer.explore}</p>
         {NAV.map(({ to, label }) => (
-          <Link key={to} to={to} className="min-h-11 py-2.5 text-mist/90 underline decoration-mist/30 underline-offset-4 hover:text-paper hover:decoration-paper md:min-h-0 md:py-1">{label}</Link>
+          <Link key={to} to={to} className={footerLink}>{label}</Link>
         ))}
       </nav>
       <div className="flex flex-col gap-1 text-sm">
@@ -185,13 +239,17 @@ export const Layout = ({ children }: { children?: ReactNode }) => {
   const { pathname } = useLocation();
   // Pages with their own bottom bars (map sheet, checkout's Next, the nursery's order map) get no
   // floating button; the header's "Ask" still opens the assistant there
-  const floatingAssistant = !fullBleed && !/^\/nurseries\/[^/]+\/order|^\/o\//.test(pathname);
+  const ownBottomBar = /^\/nurseries\/[^/]+\/order|^\/o\//.test(pathname);
+  const floatingAssistant = !fullBleed && !ownBottomBar;
+  // The phone bottom bar, except where the page has its own bottom bar (map sheet, checkout, order map)
+  const bottomNav = !fullBleed && !ownBottomBar;
+  const menu = useMenu();
   return (
-    <div className="flex min-h-dvh flex-col overflow-x-clip">
+    <div className={cn('flex min-h-dvh flex-col overflow-x-clip', bottomNav && 'pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0')}>
       <a href="#main" className="sr-only z-50 bg-paper p-3 font-bold focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         {en.app.skipToContent}
       </a>
-      <Header />
+      <Header menu={menu} />
       {!online && <OfflineBanner>{en.offline.banner}</OfflineBanner>}
       <main id="main" tabIndex={-1} className={cn('flex-1 outline-none', !bare && cn(PAGE_FRAME, 'py-6 md:py-8'))}>
         {children ?? <Outlet />}
@@ -201,6 +259,7 @@ export const Layout = ({ children }: { children?: ReactNode }) => {
       <Suspense fallback={null}><AppToaster /></Suspense>
       <Suspense fallback={null}><WelcomeNotice /></Suspense>
       <AssistantLauncher floating={floatingAssistant} />
+      {bottomNav && <BottomNav menu={menu} />}
       <ScrollRestoration />
     </div>
   );

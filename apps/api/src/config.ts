@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ugandaPhoneSchema } from '@nurserylink/shared';
 
 const optional = z.string().trim().min(1).optional();
 const secret = (name: string) => z.string().min(32, `${name} must be at least 32 characters (generate with: openssl rand -hex 32)`);
@@ -52,6 +53,14 @@ const schema = z
     PHONE_VERIFICATION: z.enum(['required', 'off']).default('required'),
     PAYMENTS: z.enum(['on', 'off']).default('on'),
     PAYMENT_PROVIDER_MODE: z.enum(['mock', 'live']).default('mock'),
+    /**
+     * In-app ordering (checkout, mobile money escrow, delivery). Off by default: buyers phone or WhatsApp the
+     * nursery operator (client brief). Existing orders stay readable and manageable either way.
+     */
+    FEATURE_ORDERS: z.enum(['on', 'off']).default('off'),
+    /** Who hears about new enquiries (Expert Services, Donate, contact, feedback): an email and/or SMS to the team */
+    ENQUIRY_NOTIFY_EMAIL: z.email().optional(),
+    ENQUIRY_NOTIFY_PHONE: ugandaPhoneSchema.optional(),
     /** The first-visit notice that nursery data is sample data and the site is still being built */
     DEMO_NOTICE: z.enum(['on', 'off']).default('on'),
     /** The needs-assessment survey (e.g. a Google Form link); offered in the first-visit notice and on /survey */

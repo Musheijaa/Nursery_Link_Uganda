@@ -104,8 +104,8 @@ const Nurseries = () => {
     if (nearestOn) update({ sort: 'name' });
     else ask(() => { update({ sort: 'nearest' }); });
   };
-  const clearFilters = () => { update({ q: '', district: null, species: null, category: null, sort: 'name' }); };
-  const fitKey = JSON.stringify([params.q, params.district, params.subCounty, params.species, params.category]);
+  const clearFilters = () => { update({ q: '', district: null, species: null, categories: [], certified: null, sort: 'name' }); };
+  const fitKey = JSON.stringify([params.q, params.district, params.subCounty, params.species, params.categories, params.certified]);
 
   const mapElement = (
     <Suspense fallback={<MapFallback />}>

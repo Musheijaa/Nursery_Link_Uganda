@@ -71,6 +71,27 @@
       "when": 1791021137959,
       "tag": "0009_careless_kulan_gath",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795687704470,
+      "tag": "0010_content_brief_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795687725879,
+      "tag": "0011_content_brief_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795687772152,
+      "tag": "0012_content_brief_cleanup",
+      "breakpoints": true
     }
   ]
 }

@@ -15,7 +15,7 @@ const app = createApp({ config: testConfig(inject('databaseUrl')), pool, logger:
 beforeAll(() => prepareTestDatabase(pool));
 afterAll(() => pool.end());
 
-type SpeciesItem = { slug: string; common_name: string; category: string; local_names: { language: string; name: string }[]; thumbnail_url: string | null; nursery_count: number };
+type SpeciesItem = { slug: string; common_name: string; categories: { slug: string; label: string }[]; local_names: { language: string; name: string }[]; thumbnail_url: string | null; nursery_count: number };
 const listSpecies = async (query: string) =>
   (await request(app).get(`/api/v1/species${query}`).expect(200)).body as { data: SpeciesItem[]; meta: { total: number } };
 
@@ -33,12 +33,15 @@ describe('GET /species (FR-18)', () => {
   });
 
   it('filters by category, first letter and search text (including local names)', async () => {
-    expect((await listSpecies('?category=medicinal')).data.map(s => s.slug)).toEqual(['prunus-africana', 'moringa', 'neem']);
+    expect((await listSpecies('?category=medicinal')).data.map(s => s.slug)).toEqual(['prunus-africana', 'moringa', 'mugavu', 'neem']);
+    // Several categories: in any of them
+    const fruitOrMedicinal = (await listSpecies('?category=fruit,medicinal')).data.map(s => s.slug);
+    expect(fruitOrMedicinal).toEqual(expect.arrayContaining(['mango', 'jackfruit', 'hass-avocado', 'neem']));
     expect((await listSpecies('?letter=j')).data.map(s => s.slug)).toEqual(['jacaranda', 'jackfruit']);
     expect((await listSpecies('?q=kalitunsi')).data.map(s => s.slug)).toEqual(['eucalyptus-grandis']);
     expect((await listSpecies('?q=Pinus')).data.map(s => s.slug)).toEqual(['caribbean-pine']);
     await request(app).get('/api/v1/species?letter=ab').expect(400);
-    await request(app).get('/api/v1/species?category=trees').expect(400);
+    await request(app).get('/api/v1/species?category=Not_Valid').expect(400);
   });
 });
 
@@ -48,7 +51,10 @@ describe('GET /species/:slug (FR-19)', () => {
     expect(res.body).toMatchObject({
       data: {
         scientific_name: 'Milicia excelsa',
-        category: 'indigenous',
+        categories: [{ slug: 'timber', label: 'Timber Trees' }, { slug: 'indigenous', label: 'Indigenous and Native Trees' }, { slug: 'shade', label: 'Shade Trees' }],
+        botanical_family: 'Moraceae (fig family)',
+        appearance_and_identification: 'Broad, spreading crown casting deep shade when mature.',
+        growth_characteristics: 'Grows slowly.',
         growth_pace: 'slow',
         height_timeline: [{ years: 1, height_m: 1 }, { years: 5, height_m: 6 }, { years: 15, height_m: 18 }, { years: 40, height_m: 35 }],
         ecological_zones: expect.arrayContaining(['Lake Victoria Crescent']) as string[],

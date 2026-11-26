@@ -33,13 +33,10 @@
       "name": "News"
     },
     {
-      "name": "Campaigns"
+      "name": "Giveaways"
     },
     {
-      "name": "Services"
-    },
-    {
-      "name": "Feedback"
+      "name": "Content"
     },
     {
       "name": "Assistant"
@@ -60,13 +57,13 @@
       "name": "Admin: news"
     },
     {
-      "name": "Admin: campaigns"
+      "name": "Admin: giveaways"
     },
     {
-      "name": "Admin: feedback"
+      "name": "Admin: inbox"
     },
     {
-      "name": "Admin: service requests"
+      "name": "Admin: content"
     },
     {
       "name": "Admin: delivery rates"
@@ -88,7 +85,7 @@
         "tags": [
           "Health"
         ],
-        "summary": "The marketplace at a glance: nurseries, trees and seedlings in stock, open campaigns",
+        "summary": "The marketplace at a glance: nurseries, trees and seedlings in stock, open giveaways",
         "description": "Public.",
         "security": [],
         "parameters": [],
@@ -968,19 +965,23 @@
             }
           },
           {
-            "name": "category",
+            "name": "categories",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 400
+            }
+          },
+          {
+            "name": "certified",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string",
               "enum": [
-                "indigenous",
-                "agroforestry",
-                "exotic",
-                "ornamental",
-                "medicinal",
-                "coffee",
-                "cocoa"
+                "true",
+                "false"
               ]
             }
           },
@@ -1428,17 +1429,11 @@
             "in": "query",
             "required": false,
             "schema": {
+              "description": "One category slug, or several separated by commas (any of them)",
               "type": "string",
-              "enum": [
-                "indigenous",
-                "agroforestry",
-                "exotic",
-                "ornamental",
-                "medicinal",
-                "coffee",
-                "cocoa"
-              ]
-            }
+              "maxLength": 400
+            },
+            "description": "One category slug, or several separated by commas (any of them)"
           },
           {
             "name": "letter",
@@ -2159,12 +2154,8 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "weather",
-                "market",
-                "policy",
-                "grant"
-              ]
+              "maxLength": 60,
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
             }
           }
         ],
@@ -2291,14 +2282,14 @@
         }
       }
     },
-    "/campaigns": {
+    "/giveaways": {
       "get": {
-        "operationId": "getCampaigns",
+        "operationId": "getGiveaways",
         "tags": [
-          "Campaigns"
+          "Giveaways"
         ],
-        "summary": "Running free-seedling campaigns",
-        "description": "Public.",
+        "summary": "Free and subsidised seedling giveaways",
+        "description": "Public. Giveaways are stored as `campaigns` (the admin API keeps that name). `status=open` (the default) lists giveaways that have not closed, soonest-closing first, including those closing within 14 days; `closing_soon` only those; `closed` the rest, latest first.",
         "security": [],
         "parameters": [
           {
@@ -2324,6 +2315,19 @@
             }
           },
           {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "closing_soon",
+                "closed"
+              ]
+            }
+          },
+          {
             "name": "sub_county_id",
             "in": "query",
             "required": false,
@@ -2339,14 +2343,14 @@
             "required": false,
             "schema": {
               "type": "string",
-              "minLength": 2,
+              "minLength": 1,
               "maxLength": 100
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Campaigns with the stock meter",
+            "description": "Giveaways",
             "content": {
               "application/json": {
                 "schema": {
@@ -2394,13 +2398,13 @@
         }
       }
     },
-    "/campaigns/{id}": {
+    "/giveaways/{id}": {
       "get": {
-        "operationId": "getCampaignsId",
+        "operationId": "getGiveawaysId",
         "tags": [
-          "Campaigns"
+          "Giveaways"
         ],
-        "summary": "One campaign (including ended ones)",
+        "summary": "One giveaway (including closed ones)",
         "description": "Public.",
         "security": [],
         "parameters": [
@@ -2417,7 +2421,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The campaign, with is_open",
+            "description": "The giveaway, with is_open (taking applications on this site)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2468,13 +2472,13 @@
         }
       }
     },
-    "/campaigns/{id}/apply": {
+    "/giveaways/{id}/apply": {
       "post": {
-        "operationId": "postCampaignsIdApply",
+        "operationId": "postGiveawaysIdApply",
         "tags": [
-          "Campaigns"
+          "Giveaways"
         ],
-        "summary": "Apply for free seedlings",
+        "summary": "Apply through this site",
         "description": "Buyers only.",
         "security": [
           {
@@ -2597,7 +2601,7 @@
             }
           },
           "409": {
-            "description": "Already applied, campaign closed, or too few seedlings left",
+            "description": "Already applied, not taking applications here, or too few seedlings left",
             "content": {
               "application/json": {
                 "schema": {
@@ -2619,11 +2623,11 @@
         }
       }
     },
-    "/campaigns/applications/me": {
+    "/giveaways/applications/me": {
       "get": {
-        "operationId": "getCampaignsApplicationsMe",
+        "operationId": "getGiveawaysApplicationsMe",
         "tags": [
-          "Campaigns"
+          "Giveaways"
         ],
         "summary": "My applications",
         "description": "Buyers only.",
@@ -2726,65 +2730,19 @@
         }
       }
     },
-    "/service-requests": {
-      "post": {
-        "operationId": "postServiceRequests",
+    "/tree-categories": {
+      "get": {
+        "operationId": "getTreeCategories",
         "tags": [
-          "Services"
+          "Species"
         ],
-        "summary": "Ask for a tree-planting service",
-        "description": "Buyers only.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "summary": "Tree categories (Fruit Trees, Timber Trees…)",
+        "description": "Public.",
+        "security": [],
         "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "service": {
-                    "type": "string",
-                    "enum": [
-                      "farm_plan",
-                      "site_visit",
-                      "planting",
-                      "watering",
-                      "orchard_care",
-                      "survival_check",
-                      "training"
-                    ]
-                  },
-                  "location": {
-                    "type": "string",
-                    "minLength": 3,
-                    "maxLength": 200
-                  },
-                  "land_acres": {
-                    "type": "number",
-                    "minimum": 0.1,
-                    "maximum": 10000
-                  },
-                  "notes": {
-                    "type": "string",
-                    "maxLength": 1000
-                  }
-                },
-                "required": [
-                  "service",
-                  "location"
-                ]
-              }
-            }
-          }
-        },
         "responses": {
-          "201": {
-            "description": "Request recorded; the team phones the buyer back",
+          "200": {
+            "description": "Active categories, in order, with how many trees each has",
             "content": {
               "application/json": {
                 "schema": {
@@ -2794,7 +2752,366 @@
                   ],
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/ServiceRequest"
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TreeCategory"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/categories": {
+      "get": {
+        "operationId": "getNewsCategories",
+        "tags": [
+          "News"
+        ],
+        "summary": "News & Updates categories",
+        "description": "Public.",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Active categories, in order, with their published posts counted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/NewsCategory"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/expert-services": {
+      "get": {
+        "operationId": "getExpertServices",
+        "tags": [
+          "Content"
+        ],
+        "summary": "Expert service categories and their services",
+        "description": "Public.",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Active categories and services, in order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceCategory"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/partners": {
+      "get": {
+        "operationId": "getPartners",
+        "tags": [
+          "Content"
+        ],
+        "summary": "Partner and supporter logos",
+        "description": "Public.",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Active partners, in order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Partner"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/page-content": {
+      "get": {
+        "operationId": "getPageContent",
+        "tags": [
+          "Content"
+        ],
+        "summary": "Editable site copy (page intros, hero, Donate, contacts)",
+        "description": "Public. Every block of site copy admins can edit, by key (see pageContentKeys). Clients fall back to their own copy for missing keys.",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Content blocks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PageContent"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/enquiries": {
+      "post": {
+        "operationId": "postEnquiries",
+        "tags": [
+          "Content"
+        ],
+        "summary": "Request an expert service, or send a donation, partnership or contact enquiry",
+        "description": "Public. No account needed. Lands in the admin Inbox; the team is told by email and/or SMS. The `website` field is a spam trap and must be left empty.",
+        "security": [],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "service"
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 100
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "organization": {
+                        "type": "string",
+                        "maxLength": 160
+                      },
+                      "district": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 100
+                      },
+                      "message": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 2000
+                      },
+                      "consent": {
+                        "type": "boolean",
+                        "const": true
+                      },
+                      "website": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "service_category_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "service_ids": {
+                        "minItems": 1,
+                        "maxItems": 40,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        }
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "name",
+                      "phone",
+                      "district",
+                      "message",
+                      "consent",
+                      "service_category_id",
+                      "service_ids"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "donation",
+                          "partnership",
+                          "contact"
+                        ]
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 100
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "organization": {
+                        "type": "string",
+                        "maxLength": 160
+                      },
+                      "district": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "message": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 2000
+                      },
+                      "consent": {
+                        "type": "boolean",
+                        "const": true
+                      },
+                      "website": {
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "name",
+                      "message",
+                      "consent"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Received",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/EnquiryReceipt"
                     }
                   },
                   "additionalProperties": false
@@ -2804,26 +3121,6 @@
           },
           "400": {
             "description": "The request is not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not signed in, or the access token has expired",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The account does not have this role",
             "content": {
               "application/json": {
                 "schema": {
@@ -2849,7 +3146,7 @@
       "post": {
         "operationId": "postFeedback",
         "tags": [
-          "Feedback"
+          "Content"
         ],
         "summary": "Leave feedback (anyone; signed-in people are linked to their account)",
         "description": "Public.",
@@ -2899,7 +3196,7 @@
         },
         "responses": {
           "201": {
-            "description": "Feedback recorded",
+            "description": "Feedback recorded in the admin Inbox",
             "content": {
               "application/json": {
                 "schema": {
@@ -2909,7 +3206,82 @@
                   ],
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/FeedbackReceipt"
+                      "$ref": "#/components/schemas/EnquiryReceipt"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "operationId": "getSearch",
+        "tags": [
+          "Search"
+        ],
+        "summary": "Search the whole site",
+        "description": "Public. The best few nurseries (by name, a tree in stock, or district and sub-county), trees, expert services, news posts and open giveaways, each with the site link that opens it. Typo-tolerant.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Results grouped by kind",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SearchResults"
                     }
                   },
                   "additionalProperties": false
@@ -3071,113 +3443,6 @@
           },
           "503": {
             "description": "The assistant is switched off, or its model provider is unavailable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/service-requests/me": {
-      "get": {
-        "operationId": "getServiceRequestsMe",
-        "tags": [
-          "Services"
-        ],
-        "summary": "My service requests",
-        "description": "Buyers only.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 9007199254740991
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "default": 20,
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Requests, newest first",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ServiceRequest"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/PageMeta"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request is not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not signed in, or the access token has expired",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The account does not have this role",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many requests",
             "content": {
               "application/json": {
                 "schema": {
@@ -4355,7 +4620,6 @@
                     "default": "unverified",
                     "type": "string",
                     "enum": [
-                      "certified",
                       "pending",
                       "unverified"
                     ]
@@ -4631,7 +4895,6 @@
                   "certification_status": {
                     "type": "string",
                     "enum": [
-                      "certified",
                       "pending",
                       "unverified"
                     ]
@@ -4786,6 +5049,236 @@
           },
           "409": {
             "description": "Still referenced; deactivate instead",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/nurseries/{id}/certification": {
+      "put": {
+        "operationId": "putAdminNurseriesIdCertification",
+        "tags": [
+          "Admin: nurseries and stock"
+        ],
+        "summary": "Record a checked certification (the nursery shows as Certified)",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "ref": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "verified_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "body"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Certified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminNursery"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAdminNurseriesIdCertification",
+        "tags": [
+          "Admin: nurseries and stock"
+        ],
+        "summary": "Remove the certification record (the nursery shows as uncertified)",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Uncertified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminNursery"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -5376,15 +5869,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "indigenous",
-                "agroforestry",
-                "exotic",
-                "ornamental",
-                "medicinal",
-                "coffee",
-                "cocoa"
-              ]
+              "maxLength": 400
             }
           },
           {
@@ -5502,17 +5987,15 @@
                     "maxLength": 80,
                     "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
                   },
-                  "category": {
-                    "type": "string",
-                    "enum": [
-                      "indigenous",
-                      "agroforestry",
-                      "exotic",
-                      "ornamental",
-                      "medicinal",
-                      "coffee",
-                      "cocoa"
-                    ]
+                  "categories": {
+                    "minItems": 1,
+                    "maxItems": 9,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                    }
                   },
                   "growth_pace": {
                     "type": "string",
@@ -5545,28 +6028,6 @@
                         "height_m"
                       ]
                     }
-                  },
-                  "canopy_notes": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "maxLength": 2000
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "root_notes": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "maxLength": 2000
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
                   },
                   "ecological_zones": {
                     "default": [],
@@ -5629,12 +6090,177 @@
                         "url"
                       ]
                     }
+                  },
+                  "botanical_family": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "appearance_and_identification": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "growth_characteristics": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "distribution_and_origin": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "soil_conditions": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "rainfall_requirements": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "climate_and_ecology": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "propagation_methods": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "planting_requirements": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "recommended_spacing": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "management_practices": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "economic_uses": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "environmental_benefits": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "agroforestry_applications": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "other_uses": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
                 "required": [
                   "common_name",
                   "scientific_name",
-                  "category",
+                  "categories",
                   "growth_pace"
                 ]
               }
@@ -5847,17 +6473,15 @@
                     "maxLength": 80,
                     "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
                   },
-                  "category": {
-                    "type": "string",
-                    "enum": [
-                      "indigenous",
-                      "agroforestry",
-                      "exotic",
-                      "ornamental",
-                      "medicinal",
-                      "coffee",
-                      "cocoa"
-                    ]
+                  "categories": {
+                    "minItems": 1,
+                    "maxItems": 9,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                    }
                   },
                   "growth_pace": {
                     "type": "string",
@@ -5889,28 +6513,6 @@
                         "height_m"
                       ]
                     }
-                  },
-                  "canopy_notes": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "maxLength": 2000
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "root_notes": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "maxLength": 2000
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
                   },
                   "ecological_zones": {
                     "maxItems": 20,
@@ -5970,6 +6572,171 @@
                         "url"
                       ]
                     }
+                  },
+                  "botanical_family": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "appearance_and_identification": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "growth_characteristics": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "distribution_and_origin": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "soil_conditions": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "rainfall_requirements": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "climate_and_ecology": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "propagation_methods": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "planting_requirements": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "recommended_spacing": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "management_practices": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "economic_uses": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "environmental_benefits": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "agroforestry_applications": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "other_uses": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 }
               }
@@ -6181,16 +6948,24 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "weather",
-                "market",
-                "policy",
-                "grant"
-              ]
+              "maxLength": 60,
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
             }
           },
           {
             "name": "is_published",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "needs_review",
             "in": "query",
             "required": false,
             "schema": {
@@ -6303,12 +7078,8 @@
                   },
                   "category": {
                     "type": "string",
-                    "enum": [
-                      "weather",
-                      "market",
-                      "policy",
-                      "grant"
-                    ]
+                    "maxLength": 60,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
                   },
                   "body": {
                     "type": "string",
@@ -6548,12 +7319,8 @@
                   },
                   "category": {
                     "type": "string",
-                    "enum": [
-                      "weather",
-                      "market",
-                      "policy",
-                      "grant"
-                    ]
+                    "maxLength": 60,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
                   },
                   "body": {
                     "type": "string",
@@ -6570,6 +7337,9 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "needs_review": {
+                    "type": "boolean"
                   },
                   "is_published": {
                     "type": "boolean"
@@ -6748,9 +7518,9 @@
       "get": {
         "operationId": "getAdminCampaigns",
         "tags": [
-          "Admin: campaigns"
+          "Admin: giveaways"
         ],
-        "summary": "All campaigns",
+        "summary": "All giveaways",
         "description": "Admins only.",
         "security": [
           {
@@ -6853,7 +7623,7 @@
       "post": {
         "operationId": "postAdminCampaigns",
         "tags": [
-          "Admin: campaigns"
+          "Admin: giveaways"
         ],
         "summary": "Create a campaign",
         "description": "Admins only.",
@@ -6870,11 +7640,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "nursery_id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                  },
                   "title": {
                     "type": "string",
                     "minLength": 1,
@@ -6891,7 +7656,9 @@
                       "government",
                       "ngo",
                       "foundation",
-                      "corporate"
+                      "corporate",
+                      "community",
+                      "other"
                     ]
                   },
                   "purpose": {
@@ -6899,10 +7666,126 @@
                     "minLength": 1,
                     "maxLength": 200
                   },
-                  "sub_county_id": {
+                  "offer_type": {
+                    "default": "free",
                     "type": "string",
-                    "format": "uuid",
-                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    "enum": [
+                      "free",
+                      "subsidised"
+                    ]
+                  },
+                  "subsidised_price": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "eligibility_requirements": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "application_procedure": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "application_deadline": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "contact_phone": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "contact_email": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "website_url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500,
+                        "pattern": "^https?:\\/\\/"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "distribution_locations": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "accepts_platform_applications": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "nursery_id": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sub_county_id": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "eligibility_rules": {
                     "default": [],
@@ -6954,7 +7837,7 @@
                     "type": "boolean"
                   },
                   "items": {
-                    "minItems": 1,
+                    "default": [],
                     "maxItems": 50,
                     "type": "array",
                     "items": {
@@ -6979,15 +7862,12 @@
                   }
                 },
                 "required": [
-                  "nursery_id",
                   "title",
                   "funder_name",
                   "funder_type",
                   "purpose",
-                  "sub_county_id",
                   "starts_at",
-                  "ends_at",
-                  "items"
+                  "ends_at"
                 ]
               }
             }
@@ -7060,7 +7940,7 @@
       "get": {
         "operationId": "getAdminCampaignsId",
         "tags": [
-          "Admin: campaigns"
+          "Admin: giveaways"
         ],
         "summary": "One campaign",
         "description": "Admins only.",
@@ -7156,7 +8036,7 @@
       "patch": {
         "operationId": "patchAdminCampaignsId",
         "tags": [
-          "Admin: campaigns"
+          "Admin: giveaways"
         ],
         "summary": "Update a campaign",
         "description": "Admins only.",
@@ -7184,11 +8064,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "nursery_id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                  },
                   "title": {
                     "type": "string",
                     "minLength": 1,
@@ -7205,7 +8080,9 @@
                       "government",
                       "ngo",
                       "foundation",
-                      "corporate"
+                      "corporate",
+                      "community",
+                      "other"
                     ]
                   },
                   "purpose": {
@@ -7213,10 +8090,120 @@
                     "minLength": 1,
                     "maxLength": 200
                   },
-                  "sub_county_id": {
+                  "offer_type": {
                     "type": "string",
-                    "format": "uuid",
-                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    "enum": [
+                      "free",
+                      "subsidised"
+                    ]
+                  },
+                  "subsidised_price": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "eligibility_requirements": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "application_procedure": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "application_deadline": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "contact_phone": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "contact_email": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "website_url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500,
+                        "pattern": "^https?:\\/\\/"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "distribution_locations": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "accepts_platform_applications": {
+                    "type": "boolean"
+                  },
+                  "nursery_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sub_county_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "eligibility_rules": {
                     "maxItems": 20,
@@ -7266,7 +8253,6 @@
                     "type": "boolean"
                   },
                   "items": {
-                    "minItems": 1,
                     "maxItems": 50,
                     "type": "array",
                     "items": {
@@ -7379,7 +8365,7 @@
       "delete": {
         "operationId": "deleteAdminCampaignsId",
         "tags": [
-          "Admin: campaigns"
+          "Admin: giveaways"
         ],
         "summary": "Delete a campaign with no applications",
         "description": "Admins only.",
@@ -7471,7 +8457,7 @@
       "get": {
         "operationId": "getAdminCampaignsIdApplications",
         "tags": [
-          "Admin: campaigns"
+          "Admin: giveaways"
         ],
         "summary": "A campaign's applications",
         "description": "Admins only.",
@@ -7612,7 +8598,7 @@
       "put": {
         "operationId": "putAdminApplicationsId",
         "tags": [
-          "Admin: campaigns"
+          "Admin: giveaways"
         ],
         "summary": "Approve, reject, or mark collected",
         "description": "Admins only. Approval takes the seedlings from the campaign's remaining stock in the same transaction.",
@@ -7743,13 +8729,13 @@
         }
       }
     },
-    "/admin/feedback": {
+    "/admin/enquiries": {
       "get": {
-        "operationId": "getAdminFeedback",
+        "operationId": "getAdminEnquiries",
         "tags": [
-          "Admin: feedback"
+          "Admin: inbox"
         ],
-        "summary": "Feedback from people using the site",
+        "summary": "Inbox: service requests, donations, partnerships, contact messages and feedback",
         "description": "Admins only.",
         "security": [
           {
@@ -7758,6 +8744,21 @@
         ],
         "parameters": [
           {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "service",
+                "donation",
+                "partnership",
+                "contact",
+                "feedback"
+              ]
+            }
+          },
+          {
             "name": "status",
             "in": "query",
             "required": false,
@@ -7765,22 +8766,19 @@
               "type": "string",
               "enum": [
                 "new",
-                "read",
-                "done"
+                "in_progress",
+                "closed"
               ]
             }
           },
           {
-            "name": "kind",
+            "name": "q",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "experience",
-                "suggestion",
-                "problem"
-              ]
+              "minLength": 1,
+              "maxLength": 100
             }
           },
           {
@@ -7808,7 +8806,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Feedback, newest first",
+            "description": "Enquiries, newest first",
             "content": {
               "application/json": {
                 "schema": {
@@ -7821,7 +8819,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/AdminFeedback"
+                        "$ref": "#/components/schemas/AdminEnquiry"
                       }
                     },
                     "meta": {
@@ -7876,13 +8874,176 @@
         }
       }
     },
-    "/admin/feedback/{id}": {
-      "put": {
-        "operationId": "putAdminFeedbackId",
+    "/admin/enquiries/counts": {
+      "get": {
+        "operationId": "getAdminEnquiriesCounts",
         "tags": [
-          "Admin: feedback"
+          "Admin: inbox"
         ],
-        "summary": "Mark feedback new, read or done",
+        "summary": "Unread enquiries by type",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Counts of new enquiries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/EnquiryCounts"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/enquiries/{id}": {
+      "get": {
+        "operationId": "getAdminEnquiriesId",
+        "tags": [
+          "Admin: inbox"
+        ],
+        "summary": "One enquiry",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The enquiry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminEnquiry"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putAdminEnquiriesId",
+        "tags": [
+          "Admin: inbox"
+        ],
+        "summary": "Mark an enquiry new, in progress or closed, with a note",
         "description": "Admins only.",
         "security": [
           {
@@ -7912,13 +9073,13 @@
                     "type": "string",
                     "enum": [
                       "new",
-                      "read",
-                      "done"
+                      "in_progress",
+                      "closed"
                     ]
                   },
                   "note": {
                     "type": "string",
-                    "maxLength": 500
+                    "maxLength": 1000
                   }
                 },
                 "required": [
@@ -7940,7 +9101,7 @@
                   ],
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/AdminFeedback"
+                      "$ref": "#/components/schemas/AdminEnquiry"
                     }
                   },
                   "additionalProperties": false
@@ -8001,13 +9162,13 @@
         }
       }
     },
-    "/admin/service-requests": {
+    "/admin/export/enquiries.csv": {
       "get": {
-        "operationId": "getAdminServiceRequests",
+        "operationId": "getAdminExportEnquiriesCsv",
         "tags": [
-          "Admin: service requests"
+          "Admin: inbox"
         ],
-        "summary": "Service requests to phone back",
+        "summary": "Inbox as CSV (same filters as the list)",
         "description": "Admins only.",
         "security": [
           {
@@ -8016,6 +9177,21 @@
         ],
         "parameters": [
           {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "service",
+                "donation",
+                "partnership",
+                "contact",
+                "feedback"
+              ]
+            }
+          },
+          {
             "name": "status",
             "in": "query",
             "required": false,
@@ -8023,73 +9199,217 @@
               "type": "string",
               "enum": [
                 "new",
-                "contacted",
-                "scheduled",
-                "done",
-                "cancelled"
+                "in_progress",
+                "closed"
               ]
             }
           },
           {
-            "name": "service",
+            "name": "q",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "farm_plan",
-                "site_visit",
-                "planting",
-                "watering",
-                "orchard_care",
-                "survival_check",
-                "training"
-              ]
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 9007199254740991
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "default": 20,
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100
+              "minLength": 1,
+              "maxLength": 100
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Requests with the requester's name and phone, newest first",
+            "description": "CSV file",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/tree-categories": {
+      "get": {
+        "operationId": "getAdminTreeCategories",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "All tree categories",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Categories with how often each is used",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "required": [
-                    "data",
-                    "meta"
+                    "data"
                   ],
                   "properties": {
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/AdminServiceRequest"
+                        "$ref": "#/components/schemas/AdminCategory"
                       }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/PageMeta"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminTreeCategories",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Add a tree category",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slug": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sort_order": {
+                    "default": 0,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "is_active": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "label"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminCategory"
                     }
                   },
                   "additionalProperties": false
@@ -8140,13 +9460,13 @@
         }
       }
     },
-    "/admin/service-requests/{id}": {
-      "put": {
-        "operationId": "putAdminServiceRequestsId",
+    "/admin/tree-categories/{slug}": {
+      "patch": {
+        "operationId": "patchAdminTreeCategoriesSlug",
         "tags": [
-          "Admin: service requests"
+          "Admin: content"
         ],
-        "summary": "Mark a request contacted, scheduled, done or cancelled",
+        "summary": "Rename, reorder or switch off a tree category",
         "description": "Admins only.",
         "security": [
           {
@@ -8155,13 +9475,13 @@
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "slug",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              "maxLength": 60,
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
             }
           }
         ],
@@ -8172,23 +9492,31 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "status": {
+                  "label": {
                     "type": "string",
-                    "enum": [
-                      "contacted",
-                      "scheduled",
-                      "done",
-                      "cancelled"
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      {
+                        "type": "null"
+                      }
                     ]
                   },
-                  "note": {
-                    "type": "string",
-                    "maxLength": 500
+                  "sort_order": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "is_active": {
+                    "type": "boolean"
                   }
-                },
-                "required": [
-                  "status"
-                ]
+                }
               }
             }
           }
@@ -8205,13 +9533,93 @@
                   ],
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/AdminServiceRequest"
+                      "$ref": "#/components/schemas/AdminCategory"
                     }
                   },
                   "additionalProperties": false
                 }
               }
             }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAdminTreeCategoriesSlug",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Delete an unused tree category",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 60,
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
           },
           "400": {
             "description": "The request is not valid",
@@ -8254,7 +9662,1525 @@
             }
           },
           "409": {
-            "description": "Not a valid next step from its current status",
+            "description": "In use; switch it off instead",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/news-categories": {
+      "get": {
+        "operationId": "getAdminNewsCategories",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "All news categories",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Categories with how often each is used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminCategory"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminNewsCategories",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Add a news category",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slug": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sort_order": {
+                    "default": 0,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "is_active": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "label"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminCategory"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/news-categories/{slug}": {
+      "patch": {
+        "operationId": "patchAdminNewsCategoriesSlug",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Rename, reorder or switch off a news category",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 60,
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sort_order": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "is_active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminCategory"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAdminNewsCategoriesSlug",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Delete an unused news category",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 60,
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "In use; switch it off instead",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/expert-services": {
+      "get": {
+        "operationId": "getAdminExpertServices",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "All expert service categories (including switched-off ones)",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Categories with their services",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceCategory"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminExpertServices",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Add an expert service category",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slug": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "intro": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "icon": {
+                    "default": "leaf",
+                    "type": "string",
+                    "maxLength": 40,
+                    "pattern": "^[a-z][a-z0-9-]*$"
+                  },
+                  "sort_order": {
+                    "default": 0,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "is_active": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "services": {
+                    "default": [],
+                    "maxItems": 40,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "is_active": {
+                          "default": true,
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "title"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "title",
+                  "intro"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ServiceCategory"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/expert-services/{id}": {
+      "patch": {
+        "operationId": "patchAdminExpertServicesId",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Edit a category and its list of services",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "intro": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "icon": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "pattern": "^[a-z][a-z0-9-]*$"
+                  },
+                  "sort_order": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "is_active": {
+                    "type": "boolean"
+                  },
+                  "services": {
+                    "maxItems": 40,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "is_active": {
+                          "default": true,
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "title"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ServiceCategory"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAdminExpertServicesId",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Delete a category (enquiries keep the service names)",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/partners": {
+      "get": {
+        "operationId": "getAdminPartners",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "All partners",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Partners",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Partner"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminPartners",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Add a partner logo",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "logo_url": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "website_url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500,
+                        "pattern": "^https?:\\/\\/"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sort_order": {
+                    "default": 0,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "is_active": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Partner"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/partners/{id}": {
+      "patch": {
+        "operationId": "patchAdminPartnersId",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Edit a partner",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "logo_url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "website_url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500,
+                        "pattern": "^https?:\\/\\/"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sort_order": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "is_active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Partner"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAdminPartnersId",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Remove a partner",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/page-content": {
+      "get": {
+        "operationId": "getAdminPageContent",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "All editable site copy",
+        "description": "Admins only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Content blocks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PageContent"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/page-content/{key}": {
+      "put": {
+        "operationId": "putAdminPageContentKey",
+        "tags": [
+          "Admin: content"
+        ],
+        "summary": "Edit one block of site copy",
+        "description": "Admins only. Title, subtitle and body (Markdown) are free text; `data` must match the key's shape (e.g. the four steps of How it works, or the contact numbers).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "home.hero",
+                "home.how_it_works",
+                "home.partners",
+                "library.intro",
+                "expert_services.intro",
+                "news.intro",
+                "giveaways.intro",
+                "donate.page",
+                "donate.payment_instructions",
+                "site.contact"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "subtitle": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "body": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 20000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "data": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PageContent"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or the access token has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The account does not have this role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -10637,6 +13563,10 @@
               "payments": {
                 "type": "boolean"
               },
+              "orders": {
+                "type": "boolean",
+                "description": "Online ordering (checkout); when off, buyers call or WhatsApp the nursery operator"
+              },
               "assistant": {
                 "type": "boolean",
                 "description": "The site assistant (chat) is switched on"
@@ -10645,6 +13575,7 @@
             "required": [
               "phone_verification",
               "payments",
+              "orders",
               "assistant"
             ],
             "additionalProperties": false
@@ -10866,13 +13797,41 @@
               "community"
             ]
           },
-          "certification_status": {
-            "type": "string",
-            "enum": [
-              "certified",
-              "pending",
-              "unverified"
-            ]
+          "certified": {
+            "type": "boolean",
+            "description": "Only when an admin recorded a verified certification"
+          },
+          "certification": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string"
+                  },
+                  "ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "verified_at": {
+                    "type": "string",
+                    "description": "ISO 8601 date-time"
+                  }
+                },
+                "required": [
+                  "body",
+                  "ref",
+                  "verified_at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The recorded certification (for the badge tooltip), or null"
           },
           "operator_name": {
             "type": "string"
@@ -10992,7 +13951,8 @@
           "id",
           "name",
           "type",
-          "certification_status",
+          "certified",
+          "certification",
           "operator_name",
           "contact_phone",
           "annual_capacity",
@@ -11076,13 +14036,41 @@
                         "community"
                       ]
                     },
-                    "certification_status": {
-                      "type": "string",
-                      "enum": [
-                        "certified",
-                        "pending",
-                        "unverified"
-                      ]
+                    "certified": {
+                      "type": "boolean",
+                      "description": "Only when an admin recorded a verified certification"
+                    },
+                    "certification": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "body": {
+                              "type": "string"
+                            },
+                            "ref": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "verified_at": {
+                              "type": "string",
+                              "description": "ISO 8601 date-time"
+                            }
+                          },
+                          "required": [
+                            "body",
+                            "ref",
+                            "verified_at"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The recorded certification (for the badge tooltip), or null"
                     },
                     "operator_name": {
                       "type": "string"
@@ -11186,7 +14174,8 @@
                     "id",
                     "name",
                     "type",
-                    "certification_status",
+                    "certified",
+                    "certification",
                     "operator_name",
                     "contact_phone",
                     "annual_capacity",
@@ -11243,17 +14232,24 @@
               "scientific_name": {
                 "type": "string"
               },
-              "category": {
-                "type": "string",
-                "enum": [
-                  "indigenous",
-                  "agroforestry",
-                  "exotic",
-                  "ornamental",
-                  "medicinal",
-                  "coffee",
-                  "cocoa"
-                ]
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "slug": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "slug",
+                    "label"
+                  ],
+                  "additionalProperties": false
+                }
               }
             },
             "required": [
@@ -11261,7 +14257,7 @@
               "slug",
               "common_name",
               "scientific_name",
-              "category"
+              "categories"
             ],
             "additionalProperties": false
           },
@@ -11309,13 +14305,41 @@
               "community"
             ]
           },
-          "certification_status": {
-            "type": "string",
-            "enum": [
-              "certified",
-              "pending",
-              "unverified"
-            ]
+          "certified": {
+            "type": "boolean",
+            "description": "Only when an admin recorded a verified certification"
+          },
+          "certification": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string"
+                  },
+                  "ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "verified_at": {
+                    "type": "string",
+                    "description": "ISO 8601 date-time"
+                  }
+                },
+                "required": [
+                  "body",
+                  "ref",
+                  "verified_at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The recorded certification (for the badge tooltip), or null"
           },
           "operator_name": {
             "type": "string"
@@ -11439,17 +14463,22 @@
           "stock_categories": {
             "type": "array",
             "items": {
-              "type": "string",
-              "enum": [
-                "indigenous",
-                "agroforestry",
-                "exotic",
-                "ornamental",
-                "medicinal",
-                "coffee",
-                "cocoa"
-              ]
-            }
+              "type": "object",
+              "properties": {
+                "slug": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "slug",
+                "label"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Categories of the trees it has in stock"
           },
           "active_campaigns": {
             "type": "array",
@@ -11504,7 +14533,8 @@
           "id",
           "name",
           "type",
-          "certification_status",
+          "certified",
+          "certification",
           "operator_name",
           "contact_phone",
           "annual_capacity",
@@ -11669,17 +14699,24 @@
           "scientific_name": {
             "type": "string"
           },
-          "category": {
-            "type": "string",
-            "enum": [
-              "indigenous",
-              "agroforestry",
-              "exotic",
-              "ornamental",
-              "medicinal",
-              "coffee",
-              "cocoa"
-            ]
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "slug": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "slug",
+                "label"
+              ],
+              "additionalProperties": false
+            }
           },
           "growth_pace": {
             "type": "string",
@@ -11725,7 +14762,7 @@
           "slug",
           "common_name",
           "scientific_name",
-          "category",
+          "categories",
           "growth_pace",
           "local_names",
           "thumbnail_url",
@@ -11750,17 +14787,24 @@
           "scientific_name": {
             "type": "string"
           },
-          "category": {
-            "type": "string",
-            "enum": [
-              "indigenous",
-              "agroforestry",
-              "exotic",
-              "ornamental",
-              "medicinal",
-              "coffee",
-              "cocoa"
-            ]
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "slug": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "slug",
+                "label"
+              ],
+              "additionalProperties": false
+            }
           },
           "growth_pace": {
             "type": "string",
@@ -11789,13 +14833,91 @@
               "additionalProperties": false
             }
           },
-          "canopy_notes": {
+          "botanical_family": {
             "type": [
               "string",
               "null"
             ]
           },
-          "root_notes": {
+          "appearance_and_identification": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "growth_characteristics": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "distribution_and_origin": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "soil_conditions": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rainfall_requirements": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "climate_and_ecology": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "propagation_methods": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "planting_requirements": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recommended_spacing": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "management_practices": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "economic_uses": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "environmental_benefits": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "agroforestry_applications": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "other_uses": {
             "type": [
               "string",
               "null"
@@ -11911,11 +15033,24 @@
           "slug",
           "common_name",
           "scientific_name",
-          "category",
+          "categories",
           "growth_pace",
           "height_timeline",
-          "canopy_notes",
-          "root_notes",
+          "botanical_family",
+          "appearance_and_identification",
+          "growth_characteristics",
+          "distribution_and_origin",
+          "soil_conditions",
+          "rainfall_requirements",
+          "climate_and_ecology",
+          "propagation_methods",
+          "planting_requirements",
+          "recommended_spacing",
+          "management_practices",
+          "economic_uses",
+          "environmental_benefits",
+          "agroforestry_applications",
+          "other_uses",
           "ecological_zones",
           "local_names",
           "media",
@@ -11945,13 +15080,41 @@
               "community"
             ]
           },
-          "certification_status": {
-            "type": "string",
-            "enum": [
-              "certified",
-              "pending",
-              "unverified"
-            ]
+          "certified": {
+            "type": "boolean",
+            "description": "Only when an admin recorded a verified certification"
+          },
+          "certification": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string"
+                  },
+                  "ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "verified_at": {
+                    "type": "string",
+                    "description": "ISO 8601 date-time"
+                  }
+                },
+                "required": [
+                  "body",
+                  "ref",
+                  "verified_at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The recorded certification (for the badge tooltip), or null"
           },
           "operator_name": {
             "type": "string"
@@ -12074,7 +15237,8 @@
           "id",
           "name",
           "type",
-          "certification_status",
+          "certified",
+          "certification",
           "operator_name",
           "contact_phone",
           "annual_capacity",
@@ -12427,13 +15591,20 @@
             "type": "string"
           },
           "category": {
-            "type": "string",
-            "enum": [
-              "weather",
-              "market",
-              "policy",
-              "grant"
-            ]
+            "type": "object",
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "slug",
+              "label"
+            ],
+            "additionalProperties": false
           },
           "cover_url": {
             "type": [
@@ -12475,13 +15646,20 @@
             "type": "string"
           },
           "category": {
-            "type": "string",
-            "enum": [
-              "weather",
-              "market",
-              "policy",
-              "grant"
-            ]
+            "type": "object",
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "slug",
+              "label"
+            ],
+            "additionalProperties": false
           },
           "body": {
             "type": "string",
@@ -12521,7 +15699,8 @@
             "type": "string"
           },
           "funder_name": {
-            "type": "string"
+            "type": "string",
+            "description": "Organizer or programme"
           },
           "funder_type": {
             "type": "string",
@@ -12529,11 +15708,100 @@
               "government",
               "ngo",
               "foundation",
-              "corporate"
-            ]
+              "corporate",
+              "community",
+              "other"
+            ],
+            "description": "Organizer type"
           },
           "purpose": {
             "type": "string"
+          },
+          "offer_type": {
+            "type": "string",
+            "enum": [
+              "free",
+              "subsidised"
+            ]
+          },
+          "subsidised_price": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UGX per seedling, for subsidised giveaways"
+          },
+          "eligibility_requirements": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "application_procedure": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "application_deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "ISO 8601 date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "closes_at": {
+            "type": "string",
+            "description": "When applications close: the deadline, or the end date"
+          },
+          "contact": {
+            "type": "object",
+            "properties": {
+              "phone": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "website": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "phone",
+              "email",
+              "website"
+            ],
+            "additionalProperties": false
+          },
+          "distribution_locations": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "accepts_platform_applications": {
+            "type": "boolean",
+            "description": "Apply on this site; otherwise follow the organizer's instructions"
           },
           "allocated_stock": {
             "type": "integer",
@@ -12595,9 +15863,18 @@
           "is_active": {
             "type": "boolean"
           },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closing_soon",
+              "closed"
+            ],
+            "description": "open, closing_soon (within 14 days) or closed"
+          },
           "is_open": {
             "type": "boolean",
-            "description": "Accepting applications: switched on, within its dates, stock left"
+            "description": "Accepting applications on this site: switched on, within its dates, stock left"
           },
           "species": {
             "type": "array",
@@ -12631,57 +15908,71 @@
             }
           },
           "sub_county": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              },
-              "name": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "name"
-            ],
-            "additionalProperties": false
-          },
-          "pickup_nursery": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              },
-              "name": {
-                "type": "string"
-              },
-              "location": {
+            "anyOf": [
+              {
                 "type": "object",
                 "properties": {
-                  "lat": {
-                    "type": "number"
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                   },
-                  "lng": {
-                    "type": "number"
+                  "name": {
+                    "type": "string"
                   }
                 },
                 "required": [
-                  "lat",
-                  "lng"
+                  "id",
+                  "name"
                 ],
                 "additionalProperties": false
+              },
+              {
+                "type": "null"
               }
-            },
-            "required": [
-              "id",
-              "name",
-              "location"
-            ],
-            "additionalProperties": false
+            ]
+          },
+          "pickup_nursery": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "object",
+                    "properties": {
+                      "lat": {
+                        "type": "number"
+                      },
+                      "lng": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "lat",
+                      "lng"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "location"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -12690,6 +15981,15 @@
           "funder_name",
           "funder_type",
           "purpose",
+          "offer_type",
+          "subsidised_price",
+          "eligibility_requirements",
+          "application_procedure",
+          "application_deadline",
+          "closes_at",
+          "contact",
+          "distribution_locations",
+          "accepts_platform_applications",
           "allocated_stock",
           "remaining_stock",
           "remaining_pct",
@@ -12697,6 +15997,7 @@
           "starts_at",
           "ends_at",
           "is_active",
+          "status",
           "is_open",
           "species",
           "sub_county",
@@ -12724,7 +16025,10 @@
                 "type": "string"
               },
               "pickup_nursery": {
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
@@ -12808,7 +16112,10 @@
                 "type": "string"
               },
               "pickup_nursery": {
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
@@ -12908,7 +16215,126 @@
         ],
         "additionalProperties": false
       },
-      "ServiceRequest": {
+      "TreeCategory": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sort_order": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "species_count": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Trees in this category"
+          }
+        },
+        "required": [
+          "slug",
+          "label",
+          "description",
+          "sort_order",
+          "is_active",
+          "species_count"
+        ],
+        "additionalProperties": false
+      },
+      "AdminCategory": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sort_order": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "uses": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "slug",
+          "label",
+          "description",
+          "sort_order",
+          "is_active",
+          "uses"
+        ],
+        "additionalProperties": false
+      },
+      "NewsCategory": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sort_order": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "post_count": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Published posts in this category"
+          }
+        },
+        "required": [
+          "slug",
+          "label",
+          "description",
+          "sort_order",
+          "is_active",
+          "post_count"
+        ],
+        "additionalProperties": false
+      },
+      "ServiceCategory": {
         "type": "object",
         "properties": {
           "id": {
@@ -12916,183 +16342,71 @@
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
-          "service": {
-            "type": "string",
-            "enum": [
-              "farm_plan",
-              "site_visit",
-              "planting",
-              "watering",
-              "orchard_care",
-              "survival_check",
-              "training"
-            ]
-          },
-          "location": {
+          "slug": {
             "type": "string"
           },
-          "land_acres": {
-            "type": [
-              "number",
-              "null"
-            ]
+          "title": {
+            "type": "string"
           },
-          "notes": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "intro": {
+            "type": "string"
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "contacted",
-              "scheduled",
-              "done",
-              "cancelled"
-            ]
+          "icon": {
+            "type": "string"
           },
-          "admin_note": {
-            "description": "Latest note from the team, e.g. the agreed date",
-            "type": [
-              "string",
-              "null"
-            ]
+          "sort_order": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
-          "created_at": {
-            "type": "string",
-            "description": "ISO 8601 date-time"
+          "is_active": {
+            "type": "boolean"
           },
-          "updated_at": {
-            "type": "string",
-            "description": "ISO 8601 date-time"
+          "services": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "sort_order": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "is_active": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "sort_order",
+                "is_active"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
           "id",
-          "service",
-          "location",
-          "land_acres",
-          "notes",
-          "status",
-          "admin_note",
-          "created_at",
-          "updated_at"
+          "slug",
+          "title",
+          "intro",
+          "icon",
+          "sort_order",
+          "is_active",
+          "services"
         ],
         "additionalProperties": false
       },
-      "AdminServiceRequest": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          },
-          "service": {
-            "type": "string",
-            "enum": [
-              "farm_plan",
-              "site_visit",
-              "planting",
-              "watering",
-              "orchard_care",
-              "survival_check",
-              "training"
-            ]
-          },
-          "location": {
-            "type": "string"
-          },
-          "land_acres": {
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "notes": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "contacted",
-              "scheduled",
-              "done",
-              "cancelled"
-            ]
-          },
-          "admin_note": {
-            "description": "Latest note from the team, e.g. the agreed date",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "created_at": {
-            "type": "string",
-            "description": "ISO 8601 date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "description": "ISO 8601 date-time"
-          },
-          "requester": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              },
-              "full_name": {
-                "type": "string"
-              },
-              "phone": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "full_name",
-              "phone"
-            ],
-            "additionalProperties": false
-          },
-          "handled_by": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "service",
-          "location",
-          "land_acres",
-          "notes",
-          "status",
-          "admin_note",
-          "created_at",
-          "updated_at",
-          "requester",
-          "handled_by"
-        ],
-        "additionalProperties": false
-      },
-      "FeedbackReceipt": {
+      "EnquiryReceipt": {
         "type": "object",
         "properties": {
           "id": {
@@ -13111,7 +16425,7 @@
         ],
         "additionalProperties": false
       },
-      "AdminFeedback": {
+      "AdminEnquiry": {
         "type": "object",
         "properties": {
           "id": {
@@ -13119,36 +16433,105 @@
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
-          "kind": {
+          "type": {
             "type": "string",
             "enum": [
-              "experience",
-              "suggestion",
-              "problem"
+              "service",
+              "donation",
+              "partnership",
+              "contact",
+              "feedback"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "in_progress",
+              "closed"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organization": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "district": {
+            "type": [
+              "string",
+              "null"
             ]
           },
           "message": {
             "type": "string"
           },
-          "name": {
-            "description": "The account's name when signed in, else what they typed",
-            "type": [
-              "string",
-              "null"
+          "consent": {
+            "type": "boolean"
+          },
+          "service_category": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "title"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
             ]
           },
-          "contact": {
-            "description": "The account's phone when signed in, else what they typed",
-            "type": [
-              "string",
-              "null"
-            ]
+          "services": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
-          "page": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "details": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "description": "Extra details by type, e.g. feedback kind and page"
           },
           "user_id": {
             "anyOf": [
@@ -13160,14 +16543,6 @@
               {
                 "type": "null"
               }
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "read",
-              "done"
             ]
           },
           "admin_note": {
@@ -13199,17 +16574,338 @@
         },
         "required": [
           "id",
-          "kind",
-          "message",
-          "name",
-          "contact",
-          "page",
-          "user_id",
+          "type",
           "status",
+          "name",
+          "phone",
+          "email",
+          "organization",
+          "district",
+          "message",
+          "consent",
+          "service_category",
+          "services",
+          "details",
+          "user_id",
           "admin_note",
           "handled_by",
           "created_at",
           "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "EnquiryCounts": {
+        "type": "object",
+        "properties": {
+          "new_by_type": {
+            "type": "object",
+            "properties": {
+              "service": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "donation": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "partnership": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "contact": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "feedback": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "service",
+              "donation",
+              "partnership",
+              "contact",
+              "feedback"
+            ],
+            "additionalProperties": false
+          },
+          "new_total": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "new_by_type",
+          "new_total"
+        ],
+        "additionalProperties": false
+      },
+      "Partner": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "logo_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "website_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sort_order": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "logo_url",
+          "website_url",
+          "sort_order",
+          "is_active"
+        ],
+        "additionalProperties": false
+      },
+      "PageContent": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subtitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "body": {
+            "description": "Markdown",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "ISO 8601 date-time"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "subtitle",
+          "body",
+          "data",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "SearchResults": {
+        "type": "object",
+        "properties": {
+          "nurseries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The record id, or slug for trees and news"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "subtitle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "link": {
+                  "type": "string",
+                  "description": "Site path to open"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "subtitle",
+                "link"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "species": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The record id, or slug for trees and news"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "subtitle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "link": {
+                  "type": "string",
+                  "description": "Site path to open"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "subtitle",
+                "link"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "services": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The record id, or slug for trees and news"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "subtitle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "link": {
+                  "type": "string",
+                  "description": "Site path to open"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "subtitle",
+                "link"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "news": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The record id, or slug for trees and news"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "subtitle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "link": {
+                  "type": "string",
+                  "description": "Site path to open"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "subtitle",
+                "link"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "giveaways": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The record id, or slug for trees and news"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "subtitle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "link": {
+                  "type": "string",
+                  "description": "Site path to open"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "subtitle",
+                "link"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "nurseries",
+          "species",
+          "services",
+          "news",
+          "giveaways"
         ],
         "additionalProperties": false
       },
@@ -14073,6 +17769,51 @@
               "unverified"
             ]
           },
+          "certification": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string"
+                  },
+                  "ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "verified_at": {
+                    "type": "string",
+                    "description": "ISO 8601 date-time"
+                  },
+                  "verified_by": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "body",
+                  "ref",
+                  "verified_at",
+                  "verified_by"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The recorded verification; the nursery shows as Certified only with one"
+          },
           "operator_name": {
             "type": "string"
           },
@@ -14191,6 +17932,7 @@
           "name",
           "type",
           "certification_status",
+          "certification",
           "operator_name",
           "contact_phone",
           "payout_phone",
@@ -14451,13 +18193,24 @@
             "type": "string"
           },
           "category": {
-            "type": "string",
-            "enum": [
-              "weather",
-              "market",
-              "policy",
-              "grant"
-            ]
+            "type": "object",
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "slug",
+              "label"
+            ],
+            "additionalProperties": false
+          },
+          "needs_review": {
+            "type": "boolean",
+            "description": "The category was guessed when categories changed: check it"
           },
           "body": {
             "type": "string"
@@ -14488,6 +18241,7 @@
           "title",
           "slug",
           "category",
+          "needs_review",
           "body",
           "cover_url",
           "is_published",
@@ -15311,6 +19065,120 @@
             "additionalProperties": false,
             "description": "Imported nurseries waiting for an admin to check them and switch them on"
           },
+          "new_enquiries": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "service",
+                        "donation",
+                        "partnership",
+                        "contact",
+                        "feedback"
+                      ]
+                    },
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "description": "ISO 8601 date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "name",
+                    "message",
+                    "created_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "count",
+              "items"
+            ],
+            "additionalProperties": false,
+            "description": "Unread messages in the inbox (service requests, donations, partnerships, contact, feedback)"
+          },
+          "news_to_review": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "object",
+                      "properties": {
+                        "slug": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "slug",
+                        "label"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "category"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "count",
+              "items"
+            ],
+            "additionalProperties": false,
+            "description": "Posts whose category was guessed when categories changed"
+          },
           "unparsed_sms": {
             "type": "object",
             "properties": {
@@ -15402,6 +19270,8 @@
           "stale_stock",
           "pending_applications",
           "nurseries_to_verify",
+          "new_enquiries",
+          "news_to_review",
           "unparsed_sms",
           "thresholds"
         ],
@@ -15731,16 +19601,20 @@
               "type": "object",
               "properties": {
                 "category": {
-                  "type": "string",
-                  "enum": [
-                    "indigenous",
-                    "agroforestry",
-                    "exotic",
-                    "ornamental",
-                    "medicinal",
-                    "coffee",
-                    "cocoa"
-                  ]
+                  "type": "object",
+                  "properties": {
+                    "slug": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "slug",
+                    "label"
+                  ],
+                  "additionalProperties": false
                 },
                 "seedlings": {
                   "type": "integer",
@@ -15758,7 +19632,8 @@
                 "seedlings",
                 "lines"
               ],
-              "additionalProperties": false
+              "additionalProperties": false,
+              "description": "A tree in several categories counts in each"
             }
           },
           "campaigns": {

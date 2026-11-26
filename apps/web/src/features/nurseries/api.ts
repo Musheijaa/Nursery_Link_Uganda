@@ -22,7 +22,8 @@ const filterQuery = (p: NurseryParams) => ({
   ...(p.district ? { district_id: p.district } : {}),
   ...(p.subCounty ? { sub_county_id: p.subCounty } : {}),
   ...(p.species ? { species: p.species } : {}),
-  ...(p.category ? { category: p.category } : {}),
+  ...(p.categories.length ? { categories: p.categories.join(',') } : {}),
+  ...(p.certified !== null ? { certified: p.certified ? ('true' as const) : ('false' as const) } : {}),
 });
 
 /**

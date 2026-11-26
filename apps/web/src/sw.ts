@@ -36,7 +36,7 @@ const markFromCache: WorkboxPlugin = {
 };
 
 // Public catalogue data only. Never auth, orders, applications or admin: those are personal.
-const PUBLIC_API = /^\/api\/v1\/(nurseries|species|boundaries|news|campaigns|stats)(\/|$|\?)/;
+const PUBLIC_API = /^\/api\/v1\/(nurseries|species|tree-categories|boundaries|news|giveaways|stats|expert-services|partners|page-content)(\/|$|\?)/;
 const PRIVATE = /\/applications\//;
 
 registerRoute(

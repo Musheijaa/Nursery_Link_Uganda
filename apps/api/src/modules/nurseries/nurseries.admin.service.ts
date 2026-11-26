@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import type { z } from 'zod';
-import type { AdminNurseryDto, nurseryCreateSchema, nurseryUpdateSchema, PaginationMeta } from '@nurserylink/shared';
+import type { AdminNurseryDto, nurseryCertificationSchema, nurseryCreateSchema, nurseryUpdateSchema, PaginationMeta } from '@nurserylink/shared';
 import type { Database, DbOrTx } from '../../db/client.js';
 import { nurseries } from '../../db/schema.js';
 import { writeAudit } from '../../lib/audit.js';
@@ -12,6 +12,7 @@ import * as repo from './nurseries.admin.repo.js';
 
 type CreateInput = z.output<typeof nurseryCreateSchema>;
 type UpdateInput = z.output<typeof nurseryUpdateSchema>;
+type CertificationInput = z.output<typeof nurseryCertificationSchema>;
 
 /** Shape fixed by adminNurserySchema in @nurserylink/shared (the OpenAPI contract). */
 export type AdminNursery = AdminNurseryDto;
@@ -21,6 +22,15 @@ export const toAdminNursery = (r: Omit<repo.AdminNurseryRow, 'total'>): AdminNur
   name: r.name,
   type: r.type,
   certification_status: r.certification_status,
+  certification:
+    r.certification_verified_at && r.certification_body
+      ? {
+          body: r.certification_body,
+          ref: r.certification_ref,
+          verified_at: new Date(r.certification_verified_at).toISOString(),
+          verified_by: r.certification_verified_by,
+        }
+      : null,
   operator_name: r.operator_name,
   contact_phone: r.contact_phone,
   payout_phone: r.payout_phone,
@@ -90,7 +100,12 @@ export class NurseriesAdminService {
       if (input.payout_phone !== undefined) set.payoutPhone = input.payout_phone;
       if (input.annual_capacity !== undefined) set.annualCapacity = input.annual_capacity;
       if (input.seed_source !== undefined) set.seedSource = input.seed_source;
-      if (input.certification_status !== undefined) set.certificationStatus = input.certification_status;
+      if (input.certification_status !== undefined && input.certification_status !== before.certification_status) {
+        if (before.certification) {
+          throw new ConflictError('This nursery has a recorded certification. Remove the certification record first.');
+        }
+        set.certificationStatus = input.certification_status;
+      }
       if (input.is_active !== undefined) set.isActive = input.is_active;
       if (input.location) {
         // Moving a nursery re-derives its sub-county and district from the boundaries
@@ -102,6 +117,43 @@ export class NurseriesAdminService {
       await tx.update(nurseries).set(set).where(eq(nurseries.id, id));
       const after = await this.mustFind(tx, id);
       await writeAudit(tx, { actorId, action: 'nursery.update', entity: 'nursery', entityId: id, before, after });
+      return after;
+    });
+  }
+
+  /**
+   * Records the certification an admin checked: the only way a nursery becomes "Certified".
+   * Recording again replaces the record.
+   */
+  async certify(actorId: string, id: string, input: CertificationInput): Promise<AdminNursery> {
+    return this.deps.db.transaction(async tx => {
+      const before = await this.mustFind(tx, id, true);
+      await tx
+        .update(nurseries)
+        .set({
+          certificationStatus: 'certified',
+          certificationBody: input.body,
+          certificationRef: input.ref ?? null,
+          certificationVerifiedAt: input.verified_at ? new Date(input.verified_at) : new Date(),
+          certificationVerifiedBy: actorId,
+        })
+        .where(eq(nurseries.id, id));
+      const after = await this.mustFind(tx, id);
+      await writeAudit(tx, { actorId, action: 'nursery.certify', entity: 'nursery', entityId: id, before, after });
+      return after;
+    });
+  }
+
+  /** Removes the certification record: the nursery shows as uncertified again. */
+  async uncertify(actorId: string, id: string): Promise<AdminNursery> {
+    return this.deps.db.transaction(async tx => {
+      const before = await this.mustFind(tx, id, true);
+      await tx
+        .update(nurseries)
+        .set({ certificationStatus: 'unverified', certificationBody: null, certificationRef: null, certificationVerifiedAt: null, certificationVerifiedBy: null })
+        .where(eq(nurseries.id, id));
+      const after = await this.mustFind(tx, id);
+      await writeAudit(tx, { actorId, action: 'nursery.uncertify', entity: 'nursery', entityId: id, before, after });
       return after;
     });
   }

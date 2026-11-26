@@ -17,7 +17,12 @@ export const healthRoutes = (pool: pg.Pool, config: Config, payments: PaymentPro
       assistant: config.ASSISTANT_PROVIDER,
     };
     const payment_methods = { mtn_momo: payments.isAvailable('mtn_momo'), airtel_money: payments.isAvailable('airtel_money') };
-    const features = { phone_verification: config.PHONE_VERIFICATION === 'required', payments: config.PAYMENTS === 'on', assistant: config.ASSISTANT_PROVIDER !== 'off' };
+    const features = {
+      phone_verification: config.PHONE_VERIFICATION === 'required',
+      payments: config.PAYMENTS === 'on',
+      orders: config.FEATURE_ORDERS === 'on',
+      assistant: config.ASSISTANT_PROVIDER !== 'off',
+    };
     const site = { demo_notice: config.DEMO_NOTICE === 'on', survey_url: config.SURVEY_URL ?? null };
     try {
       await pool.query('SELECT 1');

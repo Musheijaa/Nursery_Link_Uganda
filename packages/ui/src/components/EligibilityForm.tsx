@@ -21,7 +21,7 @@ export const defaultEligibilityLabels: EligibilityFormLabels = {
   quantityLabel: 'How many seedlings do you need?',
   quantityHint: max => `Up to ${max}. Ask only for what you can plant and care for.`,
   quantityInvalid: max => `Enter a number from 1 to ${max}.`,
-  apply: 'Apply for free seedlings',
+  apply: 'Apply',
 };
 
 /** Raw form values: checkboxes are booleans, everything typed is text until validated. */

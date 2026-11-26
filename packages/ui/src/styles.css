@@ -52,6 +52,9 @@
   --color-laterite: #b42318;
   --color-laterite-tint: #fdecea;
   --color-sun-tint: #fdf3cf;
+  /* Donate: a bright leaf green that still belongs to the palette, with deep green text (7.9:1) */
+  --color-sprout: #9be15d;
+  --color-sprout-ink: #0f3d24;
 
   /* Interface text: buttons, form fields, tables, small print */
   --font-sans: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;

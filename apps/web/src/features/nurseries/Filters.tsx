@@ -1,8 +1,8 @@
-import { speciesCategories } from '@nurserylink/shared';
 import { Field, Select, cn } from '@nurserylink/ui';
 import { LocateFixed } from 'lucide-react';
 import { SearchBox, type SuggestConfig } from '../../components/SearchBox';
 import { en } from '../../copy/en';
+import { useTreeCategories } from '../content/api';
 import { useDistricts, useSubCounties } from './api';
 import type { NurseryParams, ParamUpdate } from './params';
 
@@ -32,23 +32,47 @@ export const BoundaryFilters = ({ district, subCounty, onChange }: { district: s
   );
 };
 
+const chip = (on: boolean) =>
+  cn('min-h-11 shrink-0 rounded-full px-3.5 text-sm font-bold ring-1 transition-colors', on ? 'bg-forest text-paper ring-forest' : 'bg-paper text-forest ring-field hover:bg-forest-tint');
+
+/** Certification (nursery-level, one choice): All, Certified (verified by an admin) or Uncertified. */
+export const CertificationFilter = ({ value, onChange }: { value: NurseryParams['certified']; onChange: (u: ParamUpdate) => void }) => {
+  const options = [
+    { v: null, label: en.nurseries.certification.all },
+    { v: true, label: en.nurseries.certification.certified },
+    { v: false, label: en.nurseries.certification.uncertified },
+  ] as const;
+  return (
+    <div role="radiogroup" aria-labelledby="certification-filter-label" className="flex flex-col gap-1.5">
+      <span id="certification-filter-label" className="font-bold text-bark">{en.nurseries.certification.label}</span>
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 lg:flex-wrap">
+        {options.map(o => (
+          <button key={String(o.v)} type="button" role="radio" aria-checked={value === o.v} onClick={() => { onChange({ certified: o.v }); }} className={chip(value === o.v)}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 /**
- * Seedling type (Coffee, Cocoa, Indigenous…): shows nurseries with at least one tree of that type in
- * stock, so one nursery can appear under several types.
+ * Nursery Categories (tree-level, several at once): nurseries with a tree in any chosen category in stock,
+ * so one nursery can appear under several.
  */
-export const CategoryFilter = ({ value, onChange }: { value: NurseryParams['category']; onChange: (u: ParamUpdate) => void }) => {
-  const chip = (on: boolean) =>
-    cn('min-h-11 shrink-0 rounded-full px-3.5 text-sm font-bold ring-1 transition-colors', on ? 'bg-forest text-paper ring-forest' : 'bg-paper text-forest ring-field hover:bg-forest-tint');
+export const CategoryFilter = ({ value, onChange }: { value: string[]; onChange: (u: ParamUpdate) => void }) => {
+  const categories = useTreeCategories();
+  const toggle = (slug: string) => { onChange({ categories: value.includes(slug) ? value.filter(c => c !== slug) : [...value, slug] }); };
   return (
     <div role="group" aria-labelledby="category-filter-label" className="flex flex-col gap-1.5">
-      <span id="category-filter-label" className="font-bold text-bark">{en.nurseries.category}</span>
+      <span id="category-filter-label" className="font-bold text-bark">{en.nurseries.categories}</span>
       <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 lg:flex-wrap">
-        <button type="button" aria-pressed={value === null} onClick={() => { onChange({ category: null }); }} className={chip(value === null)}>
+        <button type="button" aria-pressed={value.length === 0} onClick={() => { onChange({ categories: [] }); }} className={chip(value.length === 0)}>
           {en.nurseries.allCategories}
         </button>
-        {speciesCategories.map(c => (
-          <button key={c} type="button" aria-pressed={value === c} onClick={() => { onChange({ category: value === c ? null : c }); }} className={chip(value === c)}>
-            {en.categories[c]}
+        {categories.data?.map(c => (
+          <button key={c.slug} type="button" aria-pressed={value.includes(c.slug)} onClick={() => { toggle(c.slug); }} className={chip(value.includes(c.slug))}>
+            {c.label}
           </button>
         ))}
       </div>
@@ -104,7 +128,8 @@ export const FilterPanel = ({ params, update, onNearest, findingLocation, showSe
   <div className="flex flex-col gap-3">
     {showSearch && <SearchBox value={params.q} onChange={q => { update({ q }, { replace: true }); }} suggest={nurserySuggest(update)} />}
     <BoundaryFilters district={params.district} subCounty={params.subCounty} onChange={u => { update(u); }} />
-    <CategoryFilter value={params.category} onChange={u => { update(u); }} />
+    <CertificationFilter value={params.certified} onChange={u => { update(u); }} />
+    <CategoryFilter value={params.categories} onChange={u => { update(u); }} />
     <div className="flex flex-wrap items-center gap-2">
       <NearestToggle on={params.sort === 'nearest'} busy={findingLocation} onToggle={onNearest} />
     </div>

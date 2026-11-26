@@ -1,12 +1,13 @@
 import { sql, type SQL } from 'drizzle-orm';
 import type { ApplicationStatus, EligibilityRule } from '@nurserylink/shared';
 import type { DbOrTx } from '../../db/client.js';
+import { openSql } from './campaigns.repo.js';
 import type { Answers } from '@nurserylink/shared';
 
 export type CampaignForApply = {
   id: string;
   title: string;
-  nursery_name: string;
+  nursery_name: string | null;
   remaining_stock: number;
   eligibility_rules: EligibilityRule[];
   is_open: boolean;
@@ -18,8 +19,8 @@ export const campaignForApply = async (db: DbOrTx, id: string, lock = false): Pr
   return (
     await db.execute<CampaignForApply>(sql`
       SELECT c.id, c.title, n.name AS nursery_name, c.remaining_stock, c.eligibility_rules,
-             (c.is_active AND now() BETWEEN c.starts_at AND c.ends_at AND c.remaining_stock > 0) AS is_open
-      FROM campaigns c JOIN nurseries n ON n.id = c.nursery_id
+             ${openSql} AS is_open
+      FROM campaigns c LEFT JOIN nurseries n ON n.id = c.nursery_id
       WHERE c.id = ${id}`)
   ).rows[0];
 };
@@ -49,7 +50,7 @@ export type ApplicationRow = {
   id: string;
   campaign_id: string;
   campaign_title: string;
-  pickup_nursery: string;
+  pickup_nursery: string | null;
   user_id: string;
   applicant_name: string;
   applicant_phone: string;
@@ -71,7 +72,7 @@ const selectApplications = async (db: DbOrTx, where: SQL, limit: number, offset:
              count(*) OVER ()::int AS total
       FROM campaign_applications a
       JOIN campaigns c ON c.id = a.campaign_id
-      JOIN nurseries n ON n.id = c.nursery_id
+      LEFT JOIN nurseries n ON n.id = c.nursery_id
       JOIN users u ON u.id = a.user_id
       WHERE ${where}
       ORDER BY a.created_at DESC, a.id

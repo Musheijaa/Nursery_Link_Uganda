@@ -64,7 +64,7 @@ export const AssistantLauncher = ({ floating }: { floating: boolean }) => {
           onClick={() => { setOpen(true); }}
           className={cn(
             'fixed right-4 z-30 flex min-h-13 items-center gap-2 rounded-full bg-murram py-3 pr-5 pl-4 font-bold text-paper shadow-float',
-            'bottom-[max(1rem,env(safe-area-inset-bottom))] hover:bg-[color-mix(in_srgb,var(--color-murram),black_14%)] md:right-6 md:bottom-6'
+            'bottom-[calc(4.5rem+env(safe-area-inset-bottom))] hover:bg-[color-mix(in_srgb,var(--color-murram),black_14%)] md:right-6 md:bottom-6'
           )}
         >
           <MessageCircleQuestion aria-hidden className="size-6" />

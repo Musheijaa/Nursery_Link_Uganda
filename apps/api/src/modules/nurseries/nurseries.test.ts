@@ -86,11 +86,25 @@ describe('GET /nurseries', () => {
     expect(byTree).toEqual(names(await list('?species=mvule')));
   });
 
-  it('filters by seedling category, so one nursery can appear under several', async () => {
-    expect(names(await list('?category=coffee'))).toEqual(["Kasawo Farmers' Nursery", 'Kyampisi Agroforestry Group', 'Nabbaale Tree Hub']);
-    expect(names(await list('?category=cocoa'))).toEqual(['Kyampisi Agroforestry Group', 'Nabbaale Tree Hub']);
-    expect(names(await list('?category=medicinal'))).toContain('Nabbaale Tree Hub');
-    await request(app).get('/api/v1/nurseries?category=fruit').expect(400);
+  it('filters by tree categories (any of several), so one nursery can appear under several', async () => {
+    const agroforestry = names(await list('?categories=agroforestry'));
+    // Coffee and cocoa are agroforestry trees
+    expect(agroforestry).toEqual(expect.arrayContaining(["Kasawo Farmers' Nursery", 'Kyampisi Agroforestry Group', 'Nabbaale Tree Hub']));
+    const medicinal = names(await list('?categories=medicinal'));
+    expect(medicinal).toContain('Nabbaale Tree Hub');
+    const either = names(await list('?categories=agroforestry,medicinal'));
+    expect(new Set(either)).toEqual(new Set([...agroforestry, ...medicinal]));
+    expect(names(await list('?categories=no-such-category'))).toEqual([]);
+    await request(app).get('/api/v1/nurseries?categories=Not_A_Slug').expect(400);
+  });
+
+  it('filters by certification: only a verified record counts as certified', async () => {
+    const all = (await list('')).meta.total;
+    // Nothing is seeded as certified; the 'pending' seed nurseries count as uncertified
+    expect((await list('?certified=true')).meta.total).toBe(0);
+    expect((await list('?certified=false')).meta.total).toBe(all);
+    const first = (await list('?limit=1')).data[0];
+    expect(first).toMatchObject({ certified: false, certification: null });
   });
 
   it('filters by active campaign and combines filters', async () => {
@@ -181,10 +195,10 @@ describe('GET /nurseries/:id', () => {
   it('returns the full profile with an inventory linked to the tree library (FR-10, FR-21)', async () => {
     const res = await request(app).get(`/api/v1/nurseries/${await katosiId()}`).expect(200);
     const profile = (res.body as { data: NurseryProfile }).data;
-    expect(profile).toMatchObject({ name: 'Katosi Lakeshore Seedlings', type: 'private', certification_status: 'unverified', seed_source: expect.any(String) as string });
+    expect(profile).toMatchObject({ name: 'Katosi Lakeshore Seedlings', type: 'private', certified: false, certification: null, seed_source: expect.any(String) as string });
     expect(profile.inventory.map(i => i.species.slug)).toEqual(['bottlebrush', 'musizi', 'mutuba', 'mvule', 'nsambya']);
-    expect(profile.inventory[0]).toMatchObject({ quantity_available: 400, unit_price: 3000, species: { common_name: 'Bottlebrush', category: 'ornamental' } });
-    expect(profile.stock_categories).toEqual(['indigenous', 'ornamental']);
+    expect(profile.inventory[0]).toMatchObject({ quantity_available: 400, unit_price: 3000, species: { common_name: 'Bottlebrush', categories: [{ slug: 'ornamental', label: 'Ornamental Trees' }] } });
+    expect(profile.stock_categories.map(c => c.slug)).toEqual(['agroforestry', 'timber', 'ornamental', 'indigenous', 'shade', 'multipurpose']);
     expect(profile.active_campaigns.map(c => c.title)).toEqual(['Lake Victoria shoreline restoration']);
     expect(profile).not.toHaveProperty('distance_km');
   });
