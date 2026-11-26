@@ -109,7 +109,7 @@ test.describe('phase 7: admin console', () => {
 
     // Campaign form: the rule builder drives the live preview of the buyer's form
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/campaigns');
+    await page.goto('/giveaways');
     await page.getByRole('link', { name: /Coffee shade trees/ }).click();
     await expect(page.getByRole('heading', { name: 'What applicants will see' })).toBeVisible();
     await page.getByRole('button', { name: 'Add a rule' }).click();
@@ -138,10 +138,10 @@ test.describe('phase 7: admin console', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     const nursery = (await (await page.request.get('/api/v1/nurseries?q=Mukono%20Town')).json()) as { data: { id: string }[] };
     const paths = ['/', '/insights', '/nurseries', `/nurseries/${nursery.data[0]?.id ?? ''}`, '/nurseries/new', `/inventory?nursery=${nursery.data[0]?.id ?? ''}`, '/species', '/news', '/news/new',
-      '/delivery-rates', '/campaigns', '/campaigns/new', '/orders', '/payouts', '/audit-log'];
+      '/delivery-rates', '/giveaways', '/giveaways/new', '/inbox', '/categories', '/expert-services', '/partners', '/page-content', '/orders', '/payouts', '/audit-log'];
     const species = (await (await page.request.get('/api/v1/species?q=Mvule')).json()) as { data: { id: string }[] };
-    const campaigns = (await (await page.request.get('/api/v1/campaigns?limit=1')).json()) as { data: { id: string }[] };
-    paths.push(`/species/${species.data[0]?.id ?? ''}`, '/species/new', `/campaigns/${campaigns.data[0]?.id ?? ''}`, `/campaigns/${campaigns.data[0]?.id ?? ''}/applications`);
+    const campaigns = (await (await page.request.get('/api/v1/giveaways?limit=1')).json()) as { data: { id: string }[] };
+    paths.push(`/species/${species.data[0]?.id ?? ''}`, '/species/new', `/giveaways/${campaigns.data[0]?.id ?? ''}`, `/giveaways/${campaigns.data[0]?.id ?? ''}/applications`);
     for (const path of paths) {
       await page.goto(path);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -215,9 +215,9 @@ test.describe('phase 7: admin console', () => {
 
   test('buyer applies, admin approves in the queue', async ({ browser, request }) => {
     const buyer = await apiBuyer(request, 'Nabirye Ruth');
-    const campaigns = (await (await request.get('/api/v1/campaigns?limit=50')).json()) as { data: { id: string; title: string }[] };
+    const campaigns = (await (await request.get('/api/v1/giveaways?limit=50')).json()) as { data: { id: string; title: string }[] };
     const coffee = campaigns.data.find(c => c.title.startsWith('Coffee shade'));
-    const applied = await request.post(`/api/v1/campaigns/${coffee?.id ?? ''}/apply`, {
+    const applied = await request.post(`/api/v1/giveaways/${coffee?.id ?? ''}/apply`, {
       headers: buyer.auth,
       data: { answers: { coffee_farmer: true, coffee_trees: 300, farmer_group: 'Ntenjeru growers' }, quantity_requested: 25 },
     });
@@ -227,7 +227,7 @@ test.describe('phase 7: admin console', () => {
     await expect(admin.getByText(/Nabirye Ruth/).first()).toBeVisible();
     await settle(admin, 300);
     await admin.screenshot({ path: `${DIR}/dashboard-items-desktop.png`, fullPage: true });
-    await admin.goto(`/campaigns/${coffee?.id ?? ''}/applications`);
+    await admin.goto(`/giveaways/${coffee?.id ?? ''}/applications`);
     const row = admin.getByRole('row').filter({ hasText: 'Nabirye Ruth' });
     await expect(row).toBeVisible();
     await settle(admin, 300);

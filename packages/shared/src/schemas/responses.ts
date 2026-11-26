@@ -653,7 +653,7 @@ export const analyticsSchema = s({
     seedlings_sold: kpi,
     avg_order_ugx: kpi,
     new_buyers: kpi,
-    free_seedlings: kpi.describe('Free seedlings approved through campaigns'),
+    free_seedlings: kpi.describe('Seedlings approved through giveaways'),
   }),
   series: z.array(s({ date: z.string().describe('Start of the day, week or month (YYYY-MM-DD, Kampala)'), sales_ugx: z.number(), orders: z.number().int() })),
   order_status: z.array(s({ status: orderStatusSchema, count: z.number().int() })),

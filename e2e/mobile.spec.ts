@@ -16,7 +16,7 @@ const audit = (page: Page): Promise<Problems> =>
     const visible = (el: Element) => {
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
-      return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && !el.closest('[aria-hidden="true"], .leaflet-container, .sr-only');
+      return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && !el.closest('[aria-hidden="true"], .leaflet-container, gmp-map, .gm-style, .sr-only');
     };
     const name = (el: Element) => `${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') ?? el.textContent).trim().slice(0, 40)}"`;
     // A link inside a sentence is exempt (WCAG 2.5.8 "inline" exception)
@@ -31,7 +31,7 @@ const audit = (page: Page): Promise<Problems> =>
     return { overflow, smallTargets: [...new Set(smallTargets)], smallInputs };
   });
 
-const PAGES = ['/', '/nurseries', '/nurseries?view=list', '/library', '/library/mvule', '/news', '/free-seedlings', '/services', '/feedback', '/survey', '/login', '/register', '/forgot-password', '/credits', '/no-such-page'];
+const PAGES = ['/', '/nurseries', '/nurseries?view=list', '/library', '/library/mvule', '/news', '/giveaways', '/expert-services', '/donate', '/search', '/feedback', '/survey', '/login', '/register', '/forgot-password', '/credits', '/no-such-page'];
 
 for (const phone of PHONES) {
   test.describe(`phones at ${String(phone.width)} px`, () => {
@@ -53,8 +53,8 @@ for (const phone of PHONES) {
       await page.locator('main a[href^="/news/"]').first().click();
       await settle(page, 1200);
       report['news article'] = await audit(page);
-      await page.goto('/free-seedlings');
-      await page.locator('main a[href^="/free-seedlings/"]').first().click();
+      await page.goto('/giveaways');
+      await page.locator('main a[href^="/giveaways/"]').first().click();
       await settle(page, 1200);
       report.campaign = await audit(page);
 

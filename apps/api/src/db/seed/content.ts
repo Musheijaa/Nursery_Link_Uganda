@@ -44,7 +44,7 @@ export const NEWS_POSTS: { slug: string; title: string; categorySlug: string; bo
       '',
       'Most trees in a large 16-inch pot cost UGX 5,000 at NFA. They are older and establish faster, but cost more to carry and plant.',
       '',
-      'Each tree page in the Tree library shows its NFA price next to what nurseries on Nursery Link charge.',
+      'Each tree page in the Tree Library shows its NFA price next to what nurseries on Nursery Link charge.',
       '',
       '*Source: National Forestry Authority, price list of assorted tree seedlings, January 2024.*',
     ].join('\n'),
@@ -75,7 +75,7 @@ export const NEWS_POSTS: { slug: string; title: string; categorySlug: string; bo
     publishedAt: '2026-09-05T08:00:00+03:00',
     body:
       'Sample post. Households and groups along the Lake Victoria shoreline in Ntenjeru can apply for free indigenous seedlings. ' +
-      'See the Free Seedlings page for the eligibility checklist and the pickup nursery.',
+      'See the Giveaways page for the eligibility checklist and the pickup nursery.',
   },
 ];
 

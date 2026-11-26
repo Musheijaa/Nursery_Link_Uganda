@@ -73,7 +73,7 @@ const Preview = ({ control }: { control: Control<Input, unknown, Output> }) => {
   );
 };
 
-/** Add or edit a Tree library species, including its local names and photos. */
+/** Add or edit a Tree Library species, including its local names and photos. */
 const SpeciesForm = () => {
   const { id = null } = useParams();
   const editing = id !== null && id !== 'new';

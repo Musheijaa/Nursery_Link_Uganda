@@ -36,6 +36,8 @@ export default defineConfig({
         PAYMENTS: TRIAL ? 'off' : 'on',
         // The first-visit notice would cover every page the suite opens; WelcomeNotice.test.tsx covers it
         DEMO_NOTICE: 'off',
+        // The order journeys stay tested; production defaults to calling the operator instead
+        FEATURE_ORDERS: 'on',
         SMS_PROVIDER: 'mock',
         ROUTING_PROVIDER: 'mock',
         EMAIL_PROVIDER: 'mock',

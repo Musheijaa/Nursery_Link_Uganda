@@ -3207,7 +3207,7 @@ export interface components {
                     /** @description The same figure for the period just before */
                     previous: number;
                 };
-                /** @description Free seedlings approved through campaigns */
+                /** @description Seedlings approved through giveaways */
                 free_seedlings: {
                     value: number;
                     /** @description The same figure for the period just before */

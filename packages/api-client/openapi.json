@@ -19172,7 +19172,7 @@
                   "previous"
                 ],
                 "additionalProperties": false,
-                "description": "Free seedlings approved through campaigns"
+                "description": "Seedlings approved through giveaways"
               }
             },
             "required": [

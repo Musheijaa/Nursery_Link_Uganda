@@ -28,7 +28,7 @@ test.describe('phase 3: /nurseries', () => {
     await expect(page.getByRole('dialog', { name: 'Use your location?' })).toBeVisible();
     await page.screenshot({ path: `${DIR}/location-ask-desktop.png` });
     await page.getByRole('button', { name: 'Use my location' }).click();
-    await expect(page.getByRole('heading', { name: 'Nearest first, by road distance' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Nearest first (approx. distances)' })).toBeVisible();
     await settle(page);
     await page.screenshot({ path: `${DIR}/nearest-mvule-desktop.png` });
 
@@ -42,10 +42,8 @@ test.describe('phase 3: /nurseries', () => {
     await settle(page);
     await page.screenshot({ path: `${DIR}/species-drawer-desktop.png` });
     await page.getByRole('button', { name: 'Close tree details' }).click();
-    await page.getByRole('button', { name: 'Get directions' }).click();
-    await expect(page.getByRole('list', { name: 'Steps' })).toBeVisible();
-    await settle(page);
-    await page.screenshot({ path: `${DIR}/directions-desktop.png` });
+    // Directions open Google Maps (brief §2)
+    await expect(page.getByRole('link', { name: /Get directions/ })).toHaveAttribute('href', /^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=/);
   });
 
   test('district filter highlights its boundary', async ({ page }) => {
@@ -76,7 +74,7 @@ test.describe('phase 3: /nurseries', () => {
     await page.goto('/nurseries?species=mvule&sort=nearest&view=list');
     await expect(page.getByRole('dialog', { name: 'Use your location?' })).toBeVisible();
     await page.getByRole('button', { name: 'Use my location' }).click();
-    await expect(page.getByRole('heading', { name: 'Nearest first, by road distance' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Nearest first (approx. distances)' })).toBeVisible();
     await settle(page);
     await page.screenshot({ path: `${DIR}/deeplink-species-nearest-mobile.png`, fullPage: true });
   });
