@@ -12,7 +12,7 @@ export const useAdminSpecies = (q: string, category: string | null, page: number
   useQuery({
     queryKey: ['admin', 'species', q, category, page],
     queryFn: async () =>
-      unwrap(api.GET('/admin/species', { params: { query: { page, limit, ...(q ? { q } : {}), ...(category ? { category: category as SpeciesProfile['category'] } : {}) } } })),
+      unwrap(api.GET('/admin/species', { params: { query: { page, limit, ...(q ? { q } : {}), ...(category ? { category } : {}) } } })),
     placeholderData: keepPreviousData,
   });
 

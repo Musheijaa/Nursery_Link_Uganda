@@ -16,7 +16,15 @@ const News = () => {
   const list = useAdminNews(page);
   const columns = useMemo<ColumnDef<AdminNews>[]>(() => [
     { header: en.news.columns.title, cell: ({ row }) => <Link to={`/news/${row.original.id}`} className="font-bold">{row.original.title}</Link> },
-    { header: en.news.columns.category, cell: ({ row }) => en.news.categories[row.original.category] },
+    {
+      header: en.news.columns.category,
+      cell: ({ row }) => (
+        <span className="flex flex-col gap-1">
+          {row.original.category.label}
+          {row.original.needs_review && <Badge tone="stale" className="self-start text-xs">{en.news.needsReview}</Badge>}
+        </span>
+      ),
+    },
     { header: en.news.columns.status, cell: ({ row }) => { const s = state(row.original); return <Badge tone={s === 'published' ? 'positive' : s === 'scheduled' ? 'info' : 'neutral'}>{en.news[s]}</Badge>; } },
     { header: en.news.columns.date, cell: ({ row }) => (row.original.published_at ? formatDate(row.original.published_at) : '—') },
   ], []);

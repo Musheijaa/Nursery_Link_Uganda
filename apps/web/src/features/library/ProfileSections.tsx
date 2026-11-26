@@ -53,7 +53,7 @@ export const ProfileSections = ({ s, extra = {} }: { s: ProfileValues; extra?: P
     {speciesProfileSections
       .filter(section => section.key !== 'identity')
       .map(section => {
-        const key = section.key as 'about' | 'where' | 'grow' | 'uses';
+        const key = section.key;
         const fields = filledFields(s, section.fields);
         const more = extra[key];
         if (!fields.length && !more) return null;

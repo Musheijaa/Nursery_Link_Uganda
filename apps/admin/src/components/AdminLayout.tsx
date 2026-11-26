@@ -1,27 +1,37 @@
 import { BrandMark, Button, OfflineBanner, Toaster, cn } from '@nurserylink/ui';
 import {
-  AlertCircle, Banknote, BarChart3, BookOpen, ClipboardList, Gift, Layers, LogOut, Map as MapIcon, Menu, MessageSquare, Newspaper, Package, ScrollText, Sprout, Truck, X, type LucideIcon,
+  AlertCircle, Banknote, BarChart3, BookOpen, ClipboardList, FileText, Gift, Handshake, Inbox, Layers, LogOut, Map as MapIcon, Menu, Newspaper, Package, ScrollText, Sprout, Tags, Truck, X, type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router';
 import { en } from '../copy/en';
 import { useDashboard } from '../features/dashboard/api';
+import { useInboxCounts } from '../features/inbox/api';
 import { useOnline } from '../lib/online';
 import { signOut, useSession } from '../lib/session';
 
 interface Item { to: string; label: string; icon: LucideIcon }
 
 const SECTIONS: { title?: string; items: Item[] }[] = [
-  { items: [{ to: '/', label: en.nav.dashboard, icon: AlertCircle }, { to: '/insights', label: en.nav.insights, icon: BarChart3 }] },
+  {
+    items: [
+      { to: '/', label: en.nav.dashboard, icon: AlertCircle },
+      { to: '/insights', label: en.nav.insights, icon: BarChart3 },
+      { to: '/inbox', label: en.nav.inbox, icon: Inbox },
+    ],
+  },
   {
     title: en.nav.sections.catalogue,
     items: [
       { to: '/nurseries', label: en.nav.nurseries, icon: MapIcon },
       { to: '/inventory', label: en.nav.inventory, icon: Layers },
       { to: '/species', label: en.nav.species, icon: BookOpen },
+      { to: '/categories', label: en.nav.categories, icon: Tags },
       { to: '/news', label: en.nav.news, icon: Newspaper },
-      { to: '/delivery-rates', label: en.nav.deliveryRates, icon: Truck },
-      { to: '/campaigns', label: en.nav.campaigns, icon: Gift },
+      { to: '/expert-services', label: en.nav.expertServices, icon: Sprout },
+      { to: '/giveaways', label: en.nav.giveaways, icon: Gift },
+      { to: '/partners', label: en.nav.partners, icon: Handshake },
+      { to: '/page-content', label: en.nav.pageContent, icon: FileText },
     ],
   },
   {
@@ -29,13 +39,12 @@ const SECTIONS: { title?: string; items: Item[] }[] = [
     items: [
       { to: '/orders', label: en.nav.orders, icon: Package },
       { to: '/payouts', label: en.nav.payouts, icon: Banknote },
-      { to: '/service-requests', label: en.nav.serviceRequests, icon: Sprout },
+      { to: '/delivery-rates', label: en.nav.deliveryRates, icon: Truck },
     ],
   },
   {
     title: en.nav.sections.analysis,
     items: [
-      { to: '/feedback', label: en.nav.feedback, icon: MessageSquare },
       { to: '/shadow', label: en.nav.shadow, icon: ClipboardList },
       { to: '/audit-log', label: en.nav.audit, icon: ScrollText },
     ],
@@ -74,6 +83,12 @@ const initials = (name: string | undefined) =>
 const Sidebar = ({ name }: { name: string | undefined }) => {
   // New orders waiting for dispatch, so they're seen from every page
   const toDispatch = useDashboard().data?.orders_to_dispatch.count ?? 0;
+  // Unread messages, likewise
+  const inboxNew = useInboxCounts().data?.new_total ?? 0;
+  const badge = (to: string) =>
+    to === '/orders' && toDispatch > 0 ? { n: toDispatch, label: en.nav.toDispatch }
+    : to === '/inbox' && inboxNew > 0 ? { n: inboxNew, label: en.nav.inboxNew }
+    : null;
   return (
   <>
     <nav aria-label="Admin" className="flex flex-1 flex-col gap-3">
@@ -84,10 +99,10 @@ const Sidebar = ({ name }: { name: string | undefined }) => {
             <NavLink key={to} to={to} end={to === '/'} className={link}>
               <Icon aria-hidden className="size-4" />
               {label}
-              {to === '/orders' && toDispatch > 0 && (
+              {badge(to) && (
                 <span className="ml-auto rounded-full bg-murram-light px-2 py-0.5 text-xs leading-none text-canopy tabular-nums">
-                  {toDispatch}
-                  <span className="sr-only"> {en.nav.toDispatch}</span>
+                  {badge(to)?.n}
+                  <span className="sr-only"> {badge(to)?.label}</span>
                 </span>
               )}
             </NavLink>

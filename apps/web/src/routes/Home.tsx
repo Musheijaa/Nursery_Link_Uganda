@@ -133,7 +133,7 @@ const Home = () => {
         <Container className="flex flex-col justify-end pt-48 pb-14 sm:pt-56 md:min-h-[calc(100dvh-4rem)] md:justify-center md:py-16">
           <div className="flex flex-col gap-4 md:w-[56%] lg:w-[52%]">
             <p className="flex flex-col gap-1">
-              <span className="font-label text-sm font-bold tracking-wide text-murram-light">{String(hero.data.eyebrow ?? en.content['home.hero'].data.eyebrow)}</span>
+              <span className="font-label text-sm font-bold tracking-wide text-murram-light">{typeof hero.data.eyebrow === 'string' ? hero.data.eyebrow : en.content['home.hero'].data.eyebrow}</span>
               {hero.subtitle && <span className="font-display text-lg text-mist">{hero.subtitle}</span>}
             </p>
             <h1 id="home-title" className="max-w-2xl text-display text-paper">{hero.title}</h1>

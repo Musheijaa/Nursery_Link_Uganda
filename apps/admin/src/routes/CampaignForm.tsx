@@ -1,6 +1,6 @@
 import { isApiError } from '@nurserylink/api-client';
-import { campaignCreateSchema, funderTypes } from '@nurserylink/shared';
-import { Button, Checkbox, EligibilityForm, ErrorState, Field, Input, Select, SkeletonList, formatCount, toast } from '@nurserylink/ui';
+import { campaignCreateSchema, funderTypes, giveawayOfferTypes } from '@nurserylink/shared';
+import { Button, Checkbox, EligibilityForm, ErrorState, Field, Input, Select, SkeletonList, Textarea, formatCount, formatPhone, toast } from '@nurserylink/ui';
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -24,6 +24,16 @@ interface Draft {
   is_active: boolean;
   items: { species_id: string; quantity: string }[];
   rules: DraftRule[];
+  offer_type: Campaign['offer_type'];
+  subsidised_price: string;
+  eligibility_requirements: string;
+  application_procedure: string;
+  deadline: string;
+  contact_phone: string;
+  contact_email: string;
+  website_url: string;
+  distribution_locations: string;
+  accepts_platform_applications: boolean;
 }
 
 // Campaigns run whole days in local time: from the start of the first day to the end of the last
@@ -34,12 +44,28 @@ const toDay = (iso: string) => { const d = new Date(iso); return `${String(d.get
 const fromCampaign = (c: Campaign | undefined): Draft =>
   c
     ? {
-        title: c.title, funder_name: c.funder_name, funder_type: c.funder_type, purpose: c.purpose, nursery_id: c.pickup_nursery.id, district_id: '', sub_county_id: c.sub_county.id,
+        title: c.title, funder_name: c.funder_name, funder_type: c.funder_type, purpose: c.purpose, nursery_id: c.pickup_nursery?.id ?? '', district_id: '', sub_county_id: c.sub_county?.id ?? '',
         starts: toDay(c.starts_at), ends: toDay(c.ends_at), is_active: c.is_active,
-        items: c.species.map(s => ({ species_id: s.species_id, quantity: String(s.quantity) })),
+        items: c.species.length ? c.species.map(s => ({ species_id: s.species_id, quantity: String(s.quantity) })) : [{ species_id: '', quantity: '' }],
         rules: c.eligibility_rules.map(r => ({ ...r })),
+        offer_type: c.offer_type,
+        subsidised_price: c.subsidised_price === null ? '' : String(c.subsidised_price),
+        eligibility_requirements: c.eligibility_requirements ?? '',
+        application_procedure: c.application_procedure ?? '',
+        deadline: c.application_deadline ? toDay(c.application_deadline) : '',
+        contact_phone: c.contact.phone ? formatPhone(c.contact.phone) : '',
+        contact_email: c.contact.email ?? '',
+        website_url: c.contact.website ?? '',
+        distribution_locations: c.distribution_locations ?? '',
+        accepts_platform_applications: c.accepts_platform_applications,
       }
-    : { title: '', funder_name: '', funder_type: 'ngo', purpose: '', nursery_id: '', district_id: '', sub_county_id: '', starts: '', ends: '', is_active: true, items: [{ species_id: '', quantity: '' }], rules: [] };
+    : {
+        title: '', funder_name: '', funder_type: 'ngo', purpose: '', nursery_id: '', district_id: '', sub_county_id: '', starts: '', ends: '', is_active: true,
+        items: [{ species_id: '', quantity: '' }], rules: [], offer_type: 'free', subsidised_price: '', eligibility_requirements: '', application_procedure: '',
+        deadline: '', contact_phone: '', contact_email: '', website_url: '', distribution_locations: '', accepts_platform_applications: true,
+      };
+
+const orNull = (v: string) => (v.trim() ? v.trim() : null);
 
 const Form = ({ campaign }: { campaign: Campaign | undefined }) => {
   const [d, setD] = useState<Draft>(() => fromCampaign(campaign));
@@ -57,10 +83,23 @@ const Form = ({ campaign }: { campaign: Campaign | undefined }) => {
 
   const submit = () => {
     setFormError(null);
+    const platform = d.accepts_platform_applications;
     const candidate = {
-      title: d.title, funder_name: d.funder_name, funder_type: d.funder_type, purpose: d.purpose, nursery_id: d.nursery_id, sub_county_id: d.sub_county_id,
-      starts_at: d.starts ? dayStart(d.starts) : '', ends_at: d.ends ? dayEnd(d.ends) : '', is_active: d.is_active, eligibility_rules: rules,
+      title: d.title, funder_name: d.funder_name, funder_type: d.funder_type, purpose: d.purpose,
+      nursery_id: orNull(d.nursery_id), sub_county_id: orNull(d.sub_county_id),
+      starts_at: d.starts ? dayStart(d.starts) : '', ends_at: d.ends ? dayEnd(d.ends) : '', is_active: d.is_active,
+      eligibility_rules: platform ? rules : [],
       items: d.items.filter(i => i.species_id).map(i => ({ species_id: i.species_id, quantity: Number(i.quantity.replace(/,/g, '')) })),
+      offer_type: d.offer_type,
+      subsidised_price: d.offer_type === 'subsidised' ? Number(d.subsidised_price.replace(/,/g, '')) || 0 : null,
+      eligibility_requirements: orNull(d.eligibility_requirements),
+      application_procedure: orNull(d.application_procedure),
+      application_deadline: d.deadline ? dayEnd(d.deadline) : null,
+      contact_phone: orNull(d.contact_phone),
+      contact_email: orNull(d.contact_email),
+      website_url: orNull(d.website_url),
+      distribution_locations: orNull(d.distribution_locations),
+      accepts_platform_applications: platform,
     };
     // Same schema the API validates with
     const parsed = campaignCreateSchema.safeParse(candidate);
@@ -74,7 +113,7 @@ const Form = ({ campaign }: { campaign: Campaign | undefined }) => {
       return;
     }
     save.mutate(parsed.data, {
-      onSuccess: c => { toast.success(en.campaigns.created); void navigate(`/campaigns/${c.id}`, { replace: true }); },
+      onSuccess: c => { toast.success(en.campaigns.created); void navigate(`/giveaways/${c.id}`, { replace: true }); },
       onError: err => { setFormError(isApiError(err) ? err.message : en.common.loadFailed); },
     });
   };
@@ -89,6 +128,41 @@ const Form = ({ campaign }: { campaign: Campaign | undefined }) => {
           <Field label={en.campaigns.funderType}>{({ id }) => <Select id={id} value={d.funder_type} onChange={e => { set('funder_type', e.target.value as Draft['funder_type']); }}>{funderTypes.map(t => <option key={t} value={t}>{en.campaigns.funderTypes[t]}</option>)}</Select>}</Field>
         </div>
         <Field label={en.campaigns.purpose} error={errors.purpose}>{({ id, describedBy, invalid }) => <Input id={id} value={d.purpose} onChange={e => { set('purpose', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}</Field>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Field label={en.campaigns.offerType}>
+            {({ id }) => (
+              <Select id={id} value={d.offer_type} onChange={e => { set('offer_type', e.target.value as Draft['offer_type']); }}>
+                {giveawayOfferTypes.map(o => <option key={o} value={o}>{en.campaigns.offerTypes[o]}</option>)}
+              </Select>
+            )}
+          </Field>
+          {d.offer_type === 'subsidised' && (
+            <Field label={en.campaigns.subsidisedPrice} error={errors.subsidised_price}>
+              {({ id, describedBy, invalid }) => <Input id={id} inputMode="numeric" value={d.subsidised_price} onChange={e => { set('subsidised_price', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}
+            </Field>
+          )}
+        </div>
+        <Field label={en.campaigns.eligibilityRequirements} hint={en.campaigns.optionalShown} error={errors.eligibility_requirements}>
+          {({ id, describedBy, invalid }) => <Textarea id={id} rows={3} value={d.eligibility_requirements} onChange={e => { set('eligibility_requirements', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}
+        </Field>
+        <Field label={en.campaigns.applicationProcedure} hint={en.campaigns.optionalShown} error={errors.application_procedure}>
+          {({ id, describedBy, invalid }) => <Textarea id={id} rows={3} value={d.application_procedure} onChange={e => { set('application_procedure', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}
+        </Field>
+        <Field label={en.campaigns.distributionLocations} hint={en.campaigns.optionalShown} error={errors.distribution_locations}>
+          {({ id, describedBy, invalid }) => <Textarea id={id} rows={2} value={d.distribution_locations} onChange={e => { set('distribution_locations', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}
+        </Field>
+        <fieldset className="grid gap-3 rounded-lg bg-paper p-4 shadow-card ring-1 ring-line md:grid-cols-3">
+          <legend className="font-bold">{en.campaigns.contactHeading}</legend>
+          <Field label={en.campaigns.contactPhone} error={errors.contact_phone}>{({ id, describedBy, invalid }) => <Input id={id} type="tel" value={d.contact_phone} onChange={e => { set('contact_phone', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}</Field>
+          <Field label={en.campaigns.contactEmail} error={errors.contact_email}>{({ id, describedBy, invalid }) => <Input id={id} type="email" value={d.contact_email} onChange={e => { set('contact_email', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}</Field>
+          <Field label={en.campaigns.website} error={errors.website_url}>{({ id, describedBy, invalid }) => <Input id={id} type="url" placeholder="https://" value={d.website_url} onChange={e => { set('website_url', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}</Field>
+        </fieldset>
+        <Checkbox
+          label={en.campaigns.acceptsPlatform}
+          checked={d.accepts_platform_applications}
+          onChange={e => { set('accepts_platform_applications', e.target.checked); }}
+        />
+        {errors.accepts_platform_applications && <p role="alert" className="text-sm font-bold text-laterite">{errors.accepts_platform_applications}</p>}
         <Field label={en.campaigns.pickup} error={errors.nursery_id}>
           {({ id, describedBy, invalid }) => (
             <Select id={id} value={d.nursery_id} onChange={e => { set('nursery_id', e.target.value); }} aria-describedby={describedBy} aria-invalid={invalid || undefined}>
@@ -109,13 +183,14 @@ const Form = ({ campaign }: { campaign: Campaign | undefined }) => {
           <Field label={en.campaigns.subCounty} error={errors.sub_county_id}>
             {({ id, describedBy, invalid }) => (
               <Select id={id} value={d.sub_county_id} disabled={!d.district_id} onChange={e => { set('sub_county_id', e.target.value); }} aria-describedby={describedBy} aria-invalid={invalid || undefined}>
-                <option value={campaign?.sub_county.id ?? ''}>{campaign?.sub_county.name ?? '—'}</option>
-                {subs.data?.filter(s => s.id !== campaign?.sub_county.id).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                <option value={campaign?.sub_county?.id ?? ''}>{campaign?.sub_county?.name ?? '—'}</option>
+                {subs.data?.filter(s => s.id !== campaign?.sub_county?.id).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
             )}
           </Field>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
+          <Field label={en.campaigns.deadline} hint={en.campaigns.deadlineHint} error={errors.application_deadline}>{({ id, describedBy, invalid }) => <Input id={id} type="date" value={d.deadline} onChange={e => { set('deadline', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}</Field>
           <Field label={en.campaigns.starts} error={errors.starts}>{({ id, describedBy, invalid }) => <Input id={id} type="date" value={d.starts} onChange={e => { set('starts', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}</Field>
           <Field label={en.campaigns.ends} error={errors.ends}>{({ id, describedBy, invalid }) => <Input id={id} type="date" value={d.ends} onChange={e => { set('ends', e.target.value); }} aria-describedby={describedBy} invalid={invalid} />}</Field>
           <Checkbox label={en.campaigns.active} className="self-end" checked={d.is_active} onChange={e => { set('is_active', e.target.checked); }} />
@@ -140,12 +215,12 @@ const Form = ({ campaign }: { campaign: Campaign | undefined }) => {
           {errors.items && <p role="alert" className="text-sm font-bold text-laterite">{errors.items}</p>}
         </fieldset>
 
-        <fieldset className="flex min-w-0 flex-col gap-2 rounded-lg bg-paper shadow-card p-4 ring-1 ring-line">
+        {d.accepts_platform_applications && <fieldset className="flex min-w-0 flex-col gap-2 rounded-lg bg-paper shadow-card p-4 ring-1 ring-line">
           <legend className="font-bold">{en.campaigns.rules}</legend>
           <p className="text-sm text-bark-muted">{en.campaigns.rulesHelp}</p>
           <RuleBuilder rules={d.rules} onChange={r => { set('rules', r); }} />
           {errors.rules && <p role="alert" className="text-sm font-bold text-laterite">{errors.rules}</p>}
-        </fieldset>
+        </fieldset>}
         <Button type="submit" busy={save.isPending} className="self-start">{en.common.save}</Button>
       </form>
 
@@ -173,8 +248,8 @@ const CampaignForm = () => {
         title={existing.data ? en.campaigns.editTitle(existing.data.title) : en.campaigns.newTitle}
         actions={
           <>
-            {existing.data && <Button asChild size="sm" variant="secondary"><Link to={`/campaigns/${existing.data.id}/applications`}>{en.campaigns.applications}</Link></Button>}
-            <Button asChild size="sm" variant="ghost"><Link to="/campaigns">{en.common.back}</Link></Button>
+            {existing.data && <Button asChild size="sm" variant="secondary"><Link to={`/giveaways/${existing.data.id}/applications`}>{en.campaigns.applications}</Link></Button>}
+            <Button asChild size="sm" variant="ghost"><Link to="/giveaways">{en.common.back}</Link></Button>
           </>
         }
       />

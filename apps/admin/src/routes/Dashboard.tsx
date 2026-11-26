@@ -1,5 +1,5 @@
 import { Button, ErrorState, Skeleton, cn, formatDateTime, formatPhone, formatRelative, formatUGX } from '@nurserylink/ui';
-import { AlertTriangle, BarChart3, Banknote, CheckCircle2, ClipboardCheck, Clock, Gift, MessageSquareWarning, Package, PackageX, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, BarChart3, Banknote, CheckCircle2, ClipboardCheck, Clock, Gift, Inbox, MessageSquareWarning, Newspaper, Package, PackageX, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { PageHeader } from '../components/PageHeader';
@@ -47,7 +47,7 @@ const Dashboard = () => {
       {dash.isError && <ErrorState title={en.common.loadFailed} onRetry={() => { void dash.refetch(); }} retryLabel={en.common.retry} />}
       {d && (
         <>
-          {[d.orders_to_dispatch, d.disputed_orders, d.stuck_escrow, d.failed_payouts, d.stale_stock, d.pending_applications, d.unparsed_sms, d.nurseries_to_verify].every(s => s.count === 0) && (
+          {[d.orders_to_dispatch, d.disputed_orders, d.stuck_escrow, d.failed_payouts, d.stale_stock, d.pending_applications, d.unparsed_sms, d.nurseries_to_verify, d.new_enquiries, d.news_to_review].every(s => s.count === 0) && (
             <p className="mb-4 flex items-center gap-2 rounded-md bg-seedling-tint px-4 py-3 font-bold text-canopy"><CheckCircle2 aria-hidden className="size-5" />{en.dashboard.allClear}</p>
           )}
           <div className="grid gap-4 lg:grid-cols-2">
@@ -83,9 +83,25 @@ const Dashboard = () => {
                 </Row>
               ))}
             </Panel>
-            <Panel icon={Gift} title={en.dashboard.pendingApps} help={en.dashboard.pendingAppsHelp} count={d.pending_applications.count} to={`/campaigns/${d.pending_applications.items[0]?.campaign_id ?? ''}/applications`}>
+            <Panel icon={Inbox} title={en.dashboard.newEnquiries} help={en.dashboard.newEnquiriesHelp} count={d.new_enquiries.count} to="/inbox">
+              {d.new_enquiries.items.map(e => (
+                <Row key={e.id} to={`/inbox?type=${e.type}`}>
+                  <span><span className="font-bold">{en.inbox.types[e.type]}</span> · {e.name ?? en.inbox.anonymous}: {e.message.length > 80 ? `${e.message.slice(0, 80)}…` : e.message}</span>
+                  <span className="whitespace-nowrap text-bark-muted">{formatRelative(e.created_at)}</span>
+                </Row>
+              ))}
+            </Panel>
+            <Panel icon={Newspaper} title={en.dashboard.newsToReview} help={en.dashboard.newsToReviewHelp} count={d.news_to_review.count} to="/news">
+              {d.news_to_review.items.map(n => (
+                <Row key={n.id} to={`/news/${n.id}`}>
+                  <span>{n.title}</span>
+                  <span className="whitespace-nowrap text-bark-muted">{n.category.label}</span>
+                </Row>
+              ))}
+            </Panel>
+            <Panel icon={Gift} title={en.dashboard.pendingApps} help={en.dashboard.pendingAppsHelp} count={d.pending_applications.count} to={`/giveaways/${d.pending_applications.items[0]?.campaign_id ?? ''}/applications`}>
               {d.pending_applications.items.map(a => (
-                <Row key={a.id} to={`/campaigns/${a.campaign_id}/applications`}>
+                <Row key={a.id} to={`/giveaways/${a.campaign_id}/applications`}>
                   <span>{a.applicant_name} · {a.campaign_title}</span>
                   <span className="whitespace-nowrap">{a.quantity_requested}</span>
                 </Row>

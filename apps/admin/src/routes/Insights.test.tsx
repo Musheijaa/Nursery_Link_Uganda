@@ -28,7 +28,7 @@ const analytics = (range: '30d' | '90d' | '12m') => ({
   payment_methods: [{ method: 'mtn_momo' as const, count: 5, sales_ugx: 1_200_000 }, { method: 'airtel_money' as const, count: 1, sales_ugx: 300_000 }],
   top_species: [{ species_id: '00000000-0000-4000-8000-0000000000a1', common_name: 'Mvule', seedlings: 600, sales_ugx: 1_080_000 }],
   top_nurseries: [{ nursery_id: '00000000-0000-4000-8000-0000000000b1', name: 'Mukono Town Nursery', orders: 4, sales_ugx: 1_000_000 }],
-  stock_by_category: [{ category: 'indigenous' as const, seedlings: 3000, lines: 4 }],
+  stock_by_category: [{ category: { slug: 'indigenous', label: 'Indigenous and Native Trees' }, seedlings: 3000, lines: 4 }],
   campaigns: [{ id: '00000000-0000-4000-8000-0000000000c1', title: 'Coffee shade trees', allocated: 1000, remaining: 750, applications: 3 }],
 });
 
@@ -53,7 +53,7 @@ describe('Insights', () => {
     expect(within(payments).getByText('MTN MoMo').closest('li')).toHaveTextContent('583%');
     // The sales chart's figures are available as a table
     expect(screen.getByRole('table', { name: 'Figures behind the chart' })).toHaveTextContent('1 OctUGX 1,000,000');
-    expect(screen.getByRole('region', { name: 'Free-seedling campaigns' })).toHaveTextContent('250 of 1,000 given out');
+    expect(screen.getByRole('region', { name: 'Giveaways' })).toHaveTextContent('250 of 1,000 given out');
 
     await userEvent.click(screen.getByRole('button', { name: 'Last 12 months' }));
     expect(await screen.findAllByText('vs the year before', { exact: false })).toHaveLength(6);

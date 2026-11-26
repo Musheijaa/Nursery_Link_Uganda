@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { certificationStatuses, nurseryCreateSchema, nurseryTypes } from '@nurserylink/shared';
+import { nurseryCreateSchema, nurseryTypes } from '@nurserylink/shared';
 import { Button, Checkbox, ErrorState, Field, Input, Select, Skeleton, SkeletonList, formatPhone, toast } from '@nurserylink/ui';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -9,6 +9,7 @@ import type { z } from 'zod';
 import { PageHeader } from '../components/PageHeader';
 import { en } from '../copy/en';
 import { useAdminNursery, useBoundaryShape, useDistricts, useSaveNursery, useSubCounties } from '../features/nurseries/api';
+import { CertificationPanel } from '../features/nurseries/CertificationPanel';
 import { applyApiError } from '../lib/forms';
 
 const PointPicker = lazy(() => import('../features/nurseries/PointPicker'));
@@ -55,7 +56,7 @@ const NurseryForm = () => {
     if (!n) return;
     reset({
       name: n.name, type: n.type, location: n.location, operator_name: n.operator_name, contact_phone: formatPhone(n.contact_phone), payout_phone: formatPhone(n.payout_phone),
-      annual_capacity: n.annual_capacity, seed_source: n.seed_source ?? '', certification_status: n.certification_status, is_active: n.is_active,
+      annual_capacity: n.annual_capacity, seed_source: n.seed_source ?? '', certification_status: n.certification_status === 'certified' ? 'pending' : n.certification_status, is_active: n.is_active,
     });
   }, [existing.data, reset]);
 
@@ -82,7 +83,9 @@ const NurseryForm = () => {
         onSubmit={e => {
           setFormError(null);
           void handleSubmit(values => {
-            save.mutate({ ...values, seed_source: values.seed_source || null }, {
+            const { certification_status, ...rest } = values;
+            const certified = existing.data?.certification != null;
+            save.mutate(certified ? { ...rest, seed_source: rest.seed_source || null } : { ...rest, certification_status, seed_source: rest.seed_source || null }, {
               onSuccess: n => {
                 toast.success(editing ? en.common.changesSaved : en.nurseries.created, en.nurseries.derived(n.sub_county.name, n.district.name));
                 void navigate(`/nurseries/${n.id}`, { replace: true });
@@ -106,7 +109,17 @@ const NurseryForm = () => {
           <Field label={en.nurseries.name} error={errors.name?.message}>{({ id: f, describedBy, invalid }) => <Input id={f} aria-describedby={describedBy} invalid={invalid} {...register('name')} />}</Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label={en.nurseries.type}>{({ id: f }) => <Select id={f} {...register('type')}>{nurseryTypes.map(t => <option key={t} value={t}>{en.nurseries.types[t]}</option>)}</Select>}</Field>
-            <Field label={en.nurseries.certification}>{({ id: f }) => <Select id={f} {...register('certification_status')}>{certificationStatuses.map(t => <option key={t} value={t}>{en.nurseries.certs[t]}</option>)}</Select>}</Field>
+            {existing.data?.certification ? (
+              <p className="self-end pb-2 text-sm font-bold text-canopy">{en.nurseries.certs.certified}</p>
+            ) : (
+              <Field label={en.nurseries.certification} hint={en.nurseries.certificationHint}>
+                {({ id: f, describedBy }) => (
+                  <Select id={f} aria-describedby={describedBy} {...register('certification_status')}>
+                    {(['pending', 'unverified'] as const).map(t => <option key={t} value={t}>{en.nurseries.certs[t]}</option>)}
+                  </Select>
+                )}
+              </Field>
+            )}
           </div>
           <Field label={en.nurseries.operator} error={errors.operator_name?.message}>{({ id: f, describedBy, invalid }) => <Input id={f} aria-describedby={describedBy} invalid={invalid} {...register('operator_name')} />}</Field>
           <div className="grid grid-cols-2 gap-3">
@@ -174,6 +187,7 @@ const NurseryForm = () => {
           )}
         />
       </form>
+      {existing.data && <CertificationPanel nursery={existing.data} />}
     </div>
   );
 };
