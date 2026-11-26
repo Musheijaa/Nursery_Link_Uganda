@@ -12,7 +12,6 @@ export const healthRoutes = (pool: pg.Pool, config: Config, payments: PaymentPro
       payment: config.PAYMENT_PROVIDER_MODE,
       sms: config.SMS_PROVIDER,
       routing: config.ROUTING_PROVIDER,
-      directions: config.DIRECTIONS_PROVIDER === 'routing' ? config.ROUTING_PROVIDER : config.DIRECTIONS_PROVIDER,
       email: config.EMAIL_PROVIDER,
       assistant: config.ASSISTANT_PROVIDER,
     };

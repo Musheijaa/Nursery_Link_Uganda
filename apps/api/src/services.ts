@@ -52,7 +52,7 @@ export const buildServices = ({ config, pool, logger, providers, queue }: AppDep
   const notifications = new OrderNotifications({ queue, config });
   const payments = new PaymentsService({ db, providers: providers.payments, queue, notifications, logger });
   const search = new SearchService({ db, geocoding: providers.geocoding, logger });
-  const nurseries = new NurseriesService({ db, routing: providers.routing, directions: providers.directions, search, logger });
+  const nurseries = new NurseriesService({ db, search, logger });
   const species = new SpeciesService({ db, nurseries, search });
   const orders = new OrdersService({ db, config, routing: providers.routing, providers: providers.payments, payments, notifications, logger });
   return {

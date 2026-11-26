@@ -24,7 +24,7 @@ const health = (assistant: 'mock' | 'anthropic') => {
       response(200).json({
         data: {
           status: 'ok', db: 'ok', version: 'test', commit: null,
-          providers: { payment: 'mock', sms: 'mock', routing: 'mock', directions: 'mock', email: 'mock', assistant },
+          providers: { payment: 'mock', sms: 'mock', routing: 'mock', email: 'mock', assistant },
           payment_methods: { mtn_momo: true, airtel_money: true },
           features: { phone_verification: true, payments: true, orders: true, assistant: true },
           site: { demo_notice: false, survey_url: null },

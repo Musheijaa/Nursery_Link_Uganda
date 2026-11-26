@@ -105,10 +105,10 @@ describe('GET /species/:slug/nurseries (FR-20)', () => {
     }
   });
 
-  it('ranks nearest-first by road distance when given the buyer location', async () => {
+  it('ranks nearest-first (straight line) when given the buyer location', async () => {
     const res = await request(app).get('/api/v1/species/mvule/nurseries?lat=0.358&lng=32.757').expect(200);
     const body = res.body as { data: Row[]; meta: { distance_mode: string } };
-    expect(body.meta.distance_mode).toBe('road');
+    expect(body.meta.distance_mode).toBe('straight_line');
     expect(body.data[0]?.name).toBe('Namilyango Tree Growers');
   });
 

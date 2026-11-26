@@ -930,7 +930,7 @@
         "tags": [
           "Nurseries"
         ],
-        "summary": "Find nurseries (JSON or GeoJSON), optionally nearest-first by road",
+        "summary": "Find nurseries (JSON or GeoJSON), optionally nearest-first (straight line)",
         "description": "Public. `q` matches a nursery name or any tree it stocks (common, scientific or local name). Use format=geojson for the map: one unpaginated collection.",
         "security": [],
         "parameters": [
@@ -1200,7 +1200,7 @@
         "tags": [
           "Nurseries"
         ],
-        "summary": "Nursery profile with stock; road distance when lat/lng are given",
+        "summary": "Nursery profile with stock; straight-line distance when lat/lng are given",
         "description": "Public.",
         "security": [],
         "parameters": [
@@ -1277,110 +1277,6 @@
           },
           "429": {
             "description": "Too many requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/nurseries/{id}/route": {
-      "get": {
-        "operationId": "getNurseriesIdRoute",
-        "tags": [
-          "Nurseries"
-        ],
-        "summary": "Driving route from a point to the nursery",
-        "description": "Public.",
-        "security": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            }
-          },
-          {
-            "name": "lat",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "number",
-              "minimum": -90,
-              "maximum": 90
-            }
-          },
-          {
-            "name": "lng",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "number",
-              "minimum": -180,
-              "maximum": 180
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Route line, distance, duration and turn-by-turn steps",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/Route"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request is not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Routing is unavailable (routes never fall back to a straight line)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13511,10 +13407,8 @@
                 "type": "string"
               },
               "routing": {
-                "type": "string"
-              },
-              "directions": {
-                "type": "string"
+                "type": "string",
+                "description": "Road routing for the Nursery Shadow and delivery quotes"
               },
               "email": {
                 "type": "string"
@@ -13532,7 +13426,6 @@
               "payment",
               "sms",
               "routing",
-              "directions",
               "email",
               "assistant"
             ],
@@ -14550,135 +14443,6 @@
           "inventory",
           "stock_categories",
           "active_campaigns"
-        ],
-        "additionalProperties": false
-      },
-      "Route": {
-        "type": "object",
-        "properties": {
-          "nursery": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid",
-                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-              },
-              "name": {
-                "type": "string"
-              },
-              "location": {
-                "type": "object",
-                "properties": {
-                  "lat": {
-                    "type": "number"
-                  },
-                  "lng": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "lat",
-                  "lng"
-                ],
-                "additionalProperties": false
-              }
-            },
-            "required": [
-              "id",
-              "name",
-              "location"
-            ],
-            "additionalProperties": false
-          },
-          "distance_km": {
-            "type": "number"
-          },
-          "distance_mode": {
-            "type": "string",
-            "enum": [
-              "road",
-              "straight_line"
-            ]
-          },
-          "duration_min": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "geometry": {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "const": "LineString"
-              },
-              "coordinates": {
-                "type": "array",
-                "items": {
-                  "type": "array",
-                  "prefixItems": [
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ],
-                  "items": false,
-                  "minItems": 2,
-                  "maxItems": 2
-                }
-              }
-            },
-            "required": [
-              "type",
-              "coordinates"
-            ],
-            "additionalProperties": false
-          },
-          "steps": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "instruction": {
-                  "type": "string"
-                },
-                "road": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "distance_m": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "duration_s": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                }
-              },
-              "required": [
-                "instruction",
-                "road",
-                "distance_m",
-                "duration_s"
-              ],
-              "additionalProperties": false
-            }
-          }
-        },
-        "required": [
-          "nursery",
-          "distance_km",
-          "distance_mode",
-          "duration_min",
-          "geometry",
-          "steps"
         ],
         "additionalProperties": false
       },

@@ -15,7 +15,7 @@ const pool = createPool(inject('databaseUrl'));
 const config = testConfig(inject('databaseUrl'));
 const logger = pino({ level: 'silent' });
 const app = createApp({ config, pool, logger, providers: mockProviders(), queue: new RecordingQueue() });
-const appWithoutRouting = createApp({ config, pool, logger, providers: { ...mockProviders(), routing: new DownRouting(), directions: new DownRouting() }, queue: new RecordingQueue() });
+const appWithoutRouting = createApp({ config, pool, logger, providers: { ...mockProviders(), routing: new DownRouting() }, queue: new RecordingQueue() });
 
 beforeAll(() => prepareTestDatabase(pool));
 afterAll(() => pool.end());
@@ -151,18 +151,15 @@ describe('GET /nurseries', () => {
 describe('GET /nurseries?sort=nearest', () => {
   const nearestQuery = `?sort=nearest&lat=${String(MUKONO_TOWN.lat)}&lng=${String(MUKONO_TOWN.lng)}`;
 
-  it('ranks by road distance and returns both distances', async () => {
+  it('ranks by straight-line distance (PostGIS), with no road routing involved', async () => {
     const body = await list(nearestQuery);
-    expect(body.meta.distance_mode).toBe('road');
+    expect(body.meta.distance_mode).toBe('straight_line');
     expect(body.data[0]?.name).toBe('Mukono Town Nursery');
-    const road = body.data.map(n => n.road_km ?? Infinity);
-    expect(road).toEqual([...road].sort((a, b) => a - b));
-    // Mock road distance = spherical distance × 1.3; straight_km is PostGIS's ellipsoidal distance (≈0.5% apart)
-    for (const n of body.data.filter(x => (x.straight_km ?? 0) > 0)) {
-      const ratio = (n.road_km ?? 0) / (n.straight_km ?? 1);
-      expect(ratio).toBeGreaterThan(1.28);
-      expect(ratio).toBeLessThan(1.32);
-    }
+    expect(body.data.every(n => n.road_km === undefined)).toBe(true);
+    const straight = body.data.map(n => n.straight_km ?? 0);
+    expect(straight).toEqual([...straight].sort((a, b) => a - b));
+    // The same with the routing provider down: nearest-first never depends on it
+    expect(names(await list(nearestQuery, appWithoutRouting))).toEqual(names(body));
   });
 
   it('considers at most 20 candidates and respects limit', async () => {
@@ -176,13 +173,6 @@ describe('GET /nurseries?sort=nearest', () => {
     expect(names(body).sort()).toEqual(['Kimenyedde Green Nursery', 'Mukono Town Nursery', 'Nabbaale Tree Hub', 'Seeta Fruit & Tree Seedlings']);
   });
 
-  it('falls back to straight-line order when routing is down', async () => {
-    const body = await list(nearestQuery, appWithoutRouting);
-    expect(body.meta.distance_mode).toBe('straight_line');
-    expect(body.data.every(n => n.road_km === undefined)).toBe(true);
-    const straight = body.data.map(n => n.straight_km ?? 0);
-    expect(straight).toEqual([...straight].sort((a, b) => a - b));
-  });
 });
 
 describe('GET /nurseries/:id', () => {
@@ -203,15 +193,13 @@ describe('GET /nurseries/:id', () => {
     expect(profile).not.toHaveProperty('distance_km');
   });
 
-  it('includes road distance from the buyer, falling back to straight line', async () => {
+  it('includes the straight-line distance from the person (directions open Google Maps)', async () => {
     const id = await katosiId();
-    const road = (await request(app).get(`/api/v1/nurseries/${id}?lat=0.358&lng=32.757`).expect(200)).body as { data: NurseryProfile };
-    expect(road.data).toMatchObject({ distance_mode: 'road' });
-    const straight = (await request(appWithoutRouting).get(`/api/v1/nurseries/${id}?lat=0.358&lng=32.757`).expect(200)).body as { data: NurseryProfile };
-    expect(straight.data.distance_mode).toBe('straight_line');
-    const ratio = (road.data.distance_km ?? 0) / (straight.data.distance_km ?? 1);
-    expect(ratio).toBeGreaterThan(1.28);
-    expect(ratio).toBeLessThan(1.32);
+    const res = (await request(app).get(`/api/v1/nurseries/${id}?lat=0.358&lng=32.757`).expect(200)).body as { data: NurseryProfile };
+    expect(res.data.distance_mode).toBe('straight_line');
+    // About 17.6 km from Mukono town to Katosi as the crow flies
+    expect(res.data.distance_km).toBeGreaterThan(17);
+    expect(res.data.distance_km).toBeLessThan(18.5);
   });
 
   it('404s for unknown or inactive nurseries and 400s for malformed ids', async () => {
@@ -220,25 +208,9 @@ describe('GET /nurseries/:id', () => {
   });
 });
 
-describe('GET /nurseries/:id/route', () => {
-  it('returns route geometry and steps (FR-11)', async () => {
+describe('directions', () => {
+  it('has no in-app route: directions are a Google Maps link', async () => {
     const [n] = (await list('?q=katosi')).data;
-    const res = await request(app).get(`/api/v1/nurseries/${n?.id ?? ''}/route?lat=0.358&lng=32.757`).expect(200);
-    expect(res.body).toMatchObject({
-      data: {
-        nursery: { name: 'Katosi Lakeshore Seedlings', location: { lat: 0.205, lng: 32.8 } },
-        // The mock draws a straight line and must say so, so the map doesn't pass it off as a road
-        distance_mode: 'straight_line',
-        geometry: { type: 'LineString', coordinates: [[32.757, 0.358], [32.8, 0.205]] },
-        steps: [{ instruction: 'Head towards the nursery' }, { instruction: 'Arrive at the nursery' }],
-      },
-    });
-  });
-
-  it('needs the buyer location, and reports routing outages as 503', async () => {
-    const [n] = (await list('?q=katosi')).data;
-    await request(app).get(`/api/v1/nurseries/${n?.id ?? ''}/route`).expect(400);
-    const res = await request(appWithoutRouting).get(`/api/v1/nurseries/${n?.id ?? ''}/route?lat=0.358&lng=32.757`).expect(503);
-    expect(errorOf(res).code).toBe('provider_unavailable');
+    await request(app).get(`/api/v1/nurseries/${n?.id ?? ''}/route?lat=0.358&lng=32.757`).expect(404);
   });
 });

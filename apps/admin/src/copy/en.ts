@@ -128,6 +128,7 @@ export const en = {
     seedSource: 'Seed source',
     certification: 'Certification',
     certs: { certified: 'Certified', pending: 'Pending', unverified: 'Not verified' },
+    mapUnavailable: 'The map needs a Google Maps key (VITE_GOOGLE_MAPS_API_KEY). Paste the coordinates below instead.',
     certificationHint: 'The site shows Uncertified until a checked certification is recorded below.',
     certHeading: 'Certification record',
     certIntro: 'Only a certification you have checked makes the nursery show as Certified on the site. Its details appear in the badge’s tooltip.',

@@ -5,6 +5,10 @@ RUN npm install -g pnpm@11.22.0
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
+# Google Maps key and Map ID, from the service's variables at build time (Vite builds them in).
+# Restrict the key to the site's domains in Google Cloud; it is visible to browsers by design.
+ARG VITE_GOOGLE_MAPS_API_KEY=""
+ARG VITE_GOOGLE_MAPS_MAP_ID=""
 # Production mode only for the build (during install it would skip the devDependencies Vite needs)
 RUN NODE_ENV=production pnpm --filter @nurserylink/admin build
 

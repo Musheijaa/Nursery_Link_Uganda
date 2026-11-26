@@ -1,15 +1,13 @@
 import type { Logger } from 'pino';
 import type { InventoryItemDto, NurseryProfileDto, NurserySummaryDto, PaginationMeta } from '@nurserylink/shared';
 import type { Database } from '../../db/client.js';
-import type { DirectionsProvider, RoutingProvider } from '../../providers/routing/routing.js';
-import { NotFoundError, ProviderUnavailableError } from '../../lib/errors.js';
-import { roundKm, type FeatureCollection, type GeoJsonLineString, type GeoJsonPoint, type LatLng } from '../../lib/geo.js';
+import { NotFoundError } from '../../lib/errors.js';
+import { roundKm, type FeatureCollection, type GeoJsonPoint, type LatLng } from '../../lib/geo.js';
 import { paginationMeta, toOffset, type Pagination } from '../../lib/pagination.js';
-import type { RouteStep } from '../../providers/routing/routing.js';
 import type { SearchService } from '../search/search.service.js';
 import * as repo from './nurseries.repo.js';
 
-/** Nearest-first ranking prefilters this many candidates by straight line before asking for road distances. */
+/** Nearest-first returns at most this many nurseries, closest first by straight line. */
 export const NEAREST_CANDIDATES = 20;
 
 export type DistanceMode = 'road' | 'straight_line';
@@ -65,7 +63,7 @@ export const toInventoryItem = (row: repo.InventoryRow): InventoryItem => ({
 });
 
 export class NurseriesService {
-  constructor(private readonly deps: { db: Database; routing: RoutingProvider; directions: DirectionsProvider; search: SearchService; logger: Logger }) {}
+  constructor(private readonly deps: { db: Database; search: SearchService; logger: Logger }) {}
 
   /**
    * The nursery list. When the search text matches nothing as typed, it is retried with the
@@ -98,29 +96,13 @@ export class NurseriesService {
   }
 
   /**
-   * Nearest-first: take the 20 closest by straight line (KNN on the GiST index), then rank those
-   * by road distance. If routing is unavailable, fall back to straight-line order.
+   * Nearest-first: the 20 closest by straight line (PostGIS KNN on the GiST index), as one ranked page.
+   * Road directions are Google Maps' job (the site links to it), so no road routing is needed here.
    */
   private async nearest(query: ListQuery, point: LatLng): Promise<ListResult> {
     const rows = await repo.listNurseries(this.deps.db, query.filters, { point, order: 'knn', limit: NEAREST_CANDIDATES, offset: 0 });
-    let items = rows.map(toSummary);
-    let mode: DistanceMode = 'road';
-
-    try {
-      const roadKm = await this.deps.routing.table(point, items.map(i => i.location));
-      items = items
-        .map((item, i) => ({ ...item, road_km: roadKm[i] ?? null }))
-        // Unreachable by road goes last; ties broken by straight line
-        .sort((a, b) => (a.road_km ?? Infinity) - (b.road_km ?? Infinity) || (a.straight_km ?? 0) - (b.straight_km ?? 0));
-    } catch (err) {
-      if (!(err instanceof ProviderUnavailableError)) throw err;
-      this.deps.logger.warn({ err }, 'Routing unavailable; ranking nurseries by straight-line distance');
-      mode = 'straight_line';
-    }
-
-    // Nearest results are a single ranked page of at most 20
-    const limited = items.slice(0, query.limit);
-    return { items: limited, meta: { page: 1, limit: query.limit, total: items.length, distance_mode: mode } };
+    const items = rows.map(toSummary);
+    return { items: items.slice(0, query.limit), meta: { page: 1, limit: query.limit, total: items.length, distance_mode: 'straight_line' } };
   }
 
   /** A page past the end has no rows to carry the window count, so ask for the total separately. */
@@ -160,42 +142,10 @@ export class NurseriesService {
       active_campaigns: campaigns.map(c => ({ ...c, ends_at: new Date(c.ends_at).toISOString() })),
     };
 
-    if (point) {
-      try {
-        const [roadKm] = await this.deps.routing.table(point, [summary.location]);
-        if (roadKm !== null && roadKm !== undefined) return { ...profile, distance_km: roadKm, distance_mode: 'road' };
-      } catch (err) {
-        if (!(err instanceof ProviderUnavailableError)) throw err;
-        this.deps.logger.warn({ err }, 'Routing unavailable; using straight-line distance for nursery profile');
-      }
-      return { ...profile, distance_km: summary.straight_km ?? 0, distance_mode: 'straight_line' };
-    }
+    // Straight-line distance from the person (approx.); directions open Google Maps
+    if (point) return { ...profile, distance_km: summary.straight_km ?? 0, distance_mode: 'straight_line' };
     return profile;
   }
 
-  /**
-   * Turn-by-turn route from the buyer to the nursery (FR-11). Routing failures surface as 503.
-   * The mock provider only draws a straight line, and says so (`distance_mode`).
-   */
-  async route(id: string, from: LatLng): Promise<{
-    nursery: { id: string; name: string; location: LatLng };
-    distance_km: number;
-    distance_mode: 'road' | 'straight_line';
-    duration_min: number;
-    geometry: GeoJsonLineString;
-    steps: RouteStep[];
-  }> {
-    const row = await repo.findNursery(this.deps.db, id);
-    if (!row) throw new NotFoundError('Nursery not found');
-    const to = { lat: row.lat, lng: row.lng };
-    const route = await this.deps.directions.route(from, to);
-    return {
-      nursery: { id: row.id, name: row.name, location: to },
-      distance_km: route.distanceKm,
-      distance_mode: this.deps.directions.name === 'mock' ? 'straight_line' : 'road',
-      duration_min: route.durationMin,
-      geometry: route.geometry,
-      steps: route.steps,
-    };
-  }
+
 }

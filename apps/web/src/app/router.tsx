@@ -40,6 +40,7 @@ export const router = createBrowserRouter([
       page('/giveaways/:id', () => import('../routes/Giveaway')),
       page('/expert-services', () => import('../routes/ExpertServices')),
       page('/donate', () => import('../routes/Donate')),
+      page('/search', () => import('../routes/Search')),
       { path: '/free-seedlings', element: <Redirect to={() => '/giveaways'} /> },
       { path: '/free-seedlings/:id', element: <Redirect to={p => `/giveaways/${p.id ?? ''}`} /> },
       { path: '/services', element: <Redirect to={() => '/expert-services'} /> },

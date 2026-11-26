@@ -33,6 +33,9 @@ const donateLink = 'ml-1.5 flex min-h-11 items-center gap-2 whitespace-nowrap ro
 // lucide's House icon, as components/Layout.tsx shows it next to "Home"
 const HOUSE = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="size-5"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
 
+// lucide's Search icon, as the header shows it
+const SEARCH = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="size-6"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>';
+
 const MARK = `<svg width="34" height="34" viewBox="${BRAND_MARK_VIEWBOX}" aria-hidden="true" class="shrink-0 rounded-[9px] ring-1 ring-paper/15">${BRAND_MARK_BODY}</svg>`;
 
 /** The header bar (every page). Links work before the app loads; the account area is left empty. */
@@ -48,6 +51,7 @@ const header = () =>
       : `<a href="${n.to}" class="${navLink}">${n.to === '/' ? `${HOUSE}<span class="sr-only min-[1500px]:not-sr-only">${esc(n.label)}</span>` : esc(n.label)}</a>`
   ).join('') +
   '</nav><div class="flex items-center gap-1">' +
+  `<a href="/search" aria-label="${esc(en.siteSearch.open)}" class="flex size-11 items-center justify-center rounded-sm text-paper hover:bg-paper/10">${SEARCH}</a>` +
   `<a href="/" aria-label="${esc(en.app.home)}" class="flex size-11 items-center justify-center rounded-sm text-paper hover:bg-paper/10 xl:hidden">${HOUSE.replace('class="size-5"', 'class="size-6"')}</a>` +
   '<span class="size-11 xl:hidden"></span></div></div></header>';
 

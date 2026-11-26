@@ -92,7 +92,7 @@ export const createApp = (deps: AppDeps, services: Services = buildServices(deps
   // Overall per-account (or per-IP for visitors) limit; generous because of carrier-grade NAT
   v1.use(limit({ windowMinutes: 1, limit: 300, key: userOrIpKey }));
   v1.use('/auth', authRoutes(auth, config));
-  v1.use('/nurseries', nurseriesRoutes(nurseries, limit));
+  v1.use('/nurseries', nurseriesRoutes(nurseries));
   v1.use('/species', speciesRoutes(species));
   v1.use('/tree-categories', treeCategoryRoutes(species));
   v1.use('/boundaries', boundariesRoutes(db));

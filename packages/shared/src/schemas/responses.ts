@@ -64,7 +64,7 @@ export const healthSchema = s({
   db: z.enum(['ok', 'down']),
   version: z.string(),
   commit: z.string().nullable().describe('The deployed Git commit, when the host provides it'),
-  providers: s({ payment: z.enum(['mock', 'live']), sms: z.string(), routing: z.string(), directions: z.string(), email: z.string(), assistant: z.enum(['off', 'mock', 'anthropic']) }),
+  providers: s({ payment: z.enum(['mock', 'live']), sms: z.string(), routing: z.string().describe('Road routing for the Nursery Shadow and delivery quotes'), email: z.string(), assistant: z.enum(['off', 'mock', 'anthropic']) }),
   /** Which payment methods buyers can use right now (Airtel Money is not integrated in live mode yet) */
   payment_methods: s({ mtn_momo: z.boolean(), airtel_money: z.boolean() }),
   /** Trial switches: while off, there is no SMS code at sign-up and no payment step at checkout */
@@ -174,15 +174,6 @@ export const nurseryProfileSchema = s({
   distance_mode: distanceModeSchema.optional(),
 });
 
-export const routeSchema = s({
-  nursery: s({ id: z.uuid(), name: z.string(), location: latLng }),
-  distance_km: z.number(),
-  /** `straight_line` when no road routing is configured (the mock): the line shows the direction only */
-  distance_mode: distanceModeSchema,
-  duration_min: z.number().int(),
-  geometry: s({ type: z.literal('LineString'), coordinates: z.array(position) }),
-  steps: z.array(s({ instruction: z.string(), road: z.string().nullable(), distance_m: z.number().int(), duration_s: z.number().int() })),
-});
 
 // ── Species ────────────────────────────────────────────────
 
@@ -716,7 +707,6 @@ export type SuggestionDto = z.infer<typeof suggestionSchema>;
 export type PlaceDto = z.infer<typeof placeSchema>;
 export type NurseryProfileDto = z.infer<typeof nurseryProfileSchema>;
 export type InventoryItemDto = z.infer<typeof inventoryItemSchema>;
-export type RouteDto = z.infer<typeof routeSchema>;
 export type SpeciesListItemDto = z.infer<typeof speciesListItemSchema>;
 export type SpeciesProfileDto = z.infer<typeof speciesProfileSchema>;
 export type CampaignDto = z.infer<typeof campaignSchema>;
@@ -753,7 +743,6 @@ export const namedResponseSchemas = {
   NurseryFeatureCollection: nurseryFeatureCollectionSchema,
   InventoryItem: inventoryItemSchema,
   NurseryProfile: nurseryProfileSchema,
-  Route: routeSchema,
   SpeciesListItem: speciesListItemSchema,
   SpeciesProfile: speciesProfileSchema,
   SpeciesNursery: speciesNurserySchema,

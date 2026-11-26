@@ -2,12 +2,13 @@ import { isApiError, type Schemas } from '@nurserylink/api-client';
 import {
   Badge, Button, Drawer, ErrorState, SkeletonList, formatCount, formatDate, formatDistance, formatPhone, formatRelative, formatUGX, telHref,
 } from '@nurserylink/ui';
-import { ArrowLeft, BadgeCheck, Clock, Gift, Map as MapIcon, MapPin, MessageCircle, Navigation, Phone, ShoppingCart } from 'lucide-react';
+import { BadgeCheck, Clock, Gift, MapPin, MessageCircle, Navigation, Phone, ShoppingCart } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { en } from '../../copy/en';
 import type { LatLng } from '../../lib/geo';
-import { useNurseryProfile, useRoute } from './api';
+import { useNurseryProfile } from './api';
+import { directionsHref } from '../../lib/googleMaps';
 import { useFeatures } from '../orders/api';
 import { isStale } from './stock';
 import { SpeciesPill } from '../../components/Pills';
@@ -153,109 +154,11 @@ const Details = ({ n, onSpecies }: { n: Profile; onSpecies: (slug: string) => vo
   </div>
 );
 
-/** Step numbers, with the first and last drawn like the start and destination markers on the map. */
-const StepMark = ({ index, last }: { index: number; last: boolean }) => {
-  if (index === 0) {
-    return (
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-canopy ring-[3px] ring-paper outline outline-1 outline-canopy">
-        <span className="size-2.5 rounded-full bg-paper" />
-        <span className="sr-only">{en.directions.stepStart}</span>
-      </span>
-    );
-  }
-  if (last) {
-    return (
-      <span className="flex size-7 shrink-0 items-center justify-center text-murram">
-        <MapPin aria-hidden className="size-7 fill-murram stroke-paper" />
-        <span className="sr-only">{en.directions.stepEnd}</span>
-      </span>
-    );
-  }
-  return <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-forest-tint text-sm font-bold text-forest">{index + 1}</span>;
-};
-
-/**
- * Live turn-by-turn navigation (GPS, voice, re-routing) is left to Google Maps, which opens its app
- * on phones. Without an origin it starts from wherever the phone is.
- */
-export const googleMapsHref = (to: LatLng, from: LatLng | null) => {
-  const q = new URLSearchParams({ api: '1', destination: `${String(to.lat)},${String(to.lng)}`, travelmode: 'driving' });
-  if (from) q.set('origin', `${String(from.lat)},${String(from.lng)}`);
-  return `https://www.google.com/maps/dir/?${q.toString()}`;
-};
-
-const Directions = ({ n, position, onBack, onShowOnMap }: { n: Profile; position: LatLng | null; onBack: () => void; onShowOnMap?: () => void }) => {
-  const route = useRoute(n.id, position, true);
-  const name = n.name;
-  return (
-    <div className="flex flex-col gap-4">
-      <button type="button" onClick={onBack} className="flex min-h-11 items-center gap-2 self-start font-bold text-forest">
-        <ArrowLeft aria-hidden className="size-5" />
-        {en.directions.back}
-      </button>
-      <h3 className="text-lg">{en.directions.title(name)}</h3>
-      {!position && <p>{en.directions.needLocation}</p>}
-      {route.isPending && position && <SkeletonList rows={4} />}
-      {route.isError && <ErrorState title={en.directions.failed} onRetry={() => { void route.refetch(); }} retryLabel={en.states.retry} />}
-      {!n.is_demo && (
-        <Button asChild>
-          <a href={googleMapsHref(n.location, position)} target="_blank" rel="noopener noreferrer">
-            <Navigation aria-hidden />
-            {en.directions.navigate}
-            <span className="sr-only"> {en.directions.newTab}</span>
-          </a>
-        </Button>
-      )}
-      {route.data && (
-        <>
-          <p className="font-bold text-canopy">
-            {en.directions.summary(formatDistance(route.data.distance_km, route.data.distance_mode), route.data.duration_min)}
-          </p>
-          {onShowOnMap && (
-            <Button variant="secondary" onClick={onShowOnMap}>
-              <MapIcon aria-hidden />
-              {en.directions.showOnMap}
-            </Button>
-          )}
-          {route.data.distance_mode === 'straight_line' && (
-            <p role="note" className="rounded-md bg-amber-tint px-3 py-2 text-sm ring-1 ring-amber/30">{en.directions.straightLine}</p>
-          )}
-          <ol aria-label={en.directions.steps} className="flex flex-col divide-y divide-line">
-            {route.data.steps.map((step, i, all) => (
-              <li key={i} className="flex gap-3 py-2">
-                <StepMark index={i} last={i === all.length - 1} />
-                <span className="flex flex-col">
-                  <span>{step.instruction}</span>
-                  {step.distance_m > 0 && <span className="text-sm text-bark-muted">{step.distance_m >= 1000 ? `${(step.distance_m / 1000).toFixed(1)} km` : `${String(step.distance_m)} m`}</span>}
-                </span>
-              </li>
-            ))}
-          </ol>
-          {route.data.distance_mode === 'road' && (
-            <p className="text-sm text-bark-muted">
-              {en.directions.credit}{' '}
-              <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-                {en.directions.fixMap}
-              </a>
-            </p>
-          )}
-        </>
-      )}
-    </div>
-  );
-};
-
 /** The nursery card: a side drawer on desktop, a full-height sheet on phones (FR-10). */
-export const NurseryCard = ({ id, position, directions, onClose, onDirections, onSpecies, onShowRouteOnMap, hidden = false, modal }: {
+export const NurseryCard = ({ id, position, onClose, onSpecies, modal }: {
   id: string | null;
   position: LatLng | null;
-  directions: boolean;
   onClose: () => void;
-  onDirections: (on: boolean) => void;
-  /** Phones: the card covers the map, so directions offer to step aside and show the route */
-  onShowRouteOnMap?: () => void;
-  /** Stepped aside to show the route on the map (directions stay on) */
-  hidden?: boolean;
   onSpecies: (slug: string) => void;
   modal: boolean;
 }) => {
@@ -267,19 +170,25 @@ export const NurseryCard = ({ id, position, directions, onClose, onDirections, o
   const offline = isApiError(profile.error) && profile.error.isOffline;
   return (
     <Drawer
-      open={id !== null && !hidden}
+      open={id !== null}
       onOpenChange={open => { if (!open) onClose(); }}
       title={n?.name ?? '…'}
       closeLabel={en.nurseryCard.close}
       modal={modal}
       footer={
-        n && !directions ? (
+        n && !(n.is_demo && !ordering) ? (
           // Side by side where they fit; stacked on small phones so labels stay on one line
-          <div className={ordering ? 'grid grid-cols-1 gap-2 min-[420px]:grid-cols-2' : 'grid grid-cols-1'}>
-            <Button variant="secondary" onClick={() => { onDirections(true); }}>
-              <Navigation aria-hidden />
-              {en.nurseryCard.directions}
-            </Button>
+          <div className={ordering && !n.is_demo ? 'grid grid-cols-1 gap-2 min-[420px]:grid-cols-2' : 'grid grid-cols-1'}>
+            {/* Turn-by-turn directions are Google Maps' job: this opens its app on phones (brief §2) */}
+            {!n.is_demo && (
+              <Button asChild variant="secondary">
+                <a href={directionsHref(n.location)} target="_blank" rel="noopener noreferrer">
+                  <Navigation aria-hidden />
+                  {en.maps.getDirections}
+                  <span className="sr-only"> {en.maps.opensGoogleMaps}</span>
+                </a>
+              </Button>
+            )}
             {ordering && (
               <Button asChild>
                 <Link to={`/nurseries/${n.id}/order`}>
@@ -296,7 +205,7 @@ export const NurseryCard = ({ id, position, directions, onClose, onDirections, o
       {profile.isError && !n && (
         <ErrorState title={offline ? en.states.offlineNoCache : en.nurseryCard.loadFailed} offline={offline} onRetry={() => { void profile.refetch(); }} retryLabel={en.states.retry} />
       )}
-      {n && (directions ? <Directions n={n} position={position} onBack={() => { onDirections(false); }} onShowOnMap={onShowRouteOnMap} /> : <Details n={n} onSpecies={onSpecies} />)}
+      {n && <Details n={n} onSpecies={onSpecies} />}
     </Drawer>
   );
 };

@@ -94,13 +94,6 @@ export const useNurseryProfile = (id: string | null, position: LatLng | null) =>
   });
 
 /** Driving route from the user to a nursery (FR-11). */
-export const useRoute = (id: string | null, position: LatLng | null, enabled: boolean) =>
-  useQuery({
-    queryKey: ['nurseries', 'route', id, position],
-    enabled: enabled && id !== null && position !== null,
-    queryFn: async () => (await unwrap(api.GET('/nurseries/{id}/route', { params: { path: { id: id ?? '' }, query: position ?? { lat: 0, lng: 0 } } }))).data,
-    retry: false,
-  });
 
 /** A Library entry, for the side drawer opened from a nursery's stock list (FR-21). */
 export const useSpecies = (slug: string | null) =>

@@ -40,7 +40,7 @@ export class SpeciesService {
 
   /**
    * Nurseries stocking this species (FR-20), each with its stock line for the species.
-   * With the buyer's location the list is ranked nearest-first by road distance.
+   * With the buyer's location the list is ranked nearest-first (straight line).
    */
   async nurseries(slug: string, point: LatLng | undefined, page: Pagination): Promise<{
     species: { id: string; slug: string; common_name: string };

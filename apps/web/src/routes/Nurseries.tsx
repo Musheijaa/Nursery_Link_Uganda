@@ -6,25 +6,21 @@ import { CachedNote } from '../components/CachedNote';
 import { CorrectedNote } from '../components/CorrectedNote';
 import { usePageTitle } from '../components/usePageTitle';
 import { en } from '../copy/en';
-import { useBoundaryShape, useNearest, useNurseryMap, useRoute } from '../features/nurseries/api';
+import { useBoundaryShape, useNearest, useNurseryMap } from '../features/nurseries/api';
 import { FilterPanel, SearchBox, nurserySuggest } from '../features/nurseries/Filters';
 import { useAskLocation } from '../features/nurseries/LocationDialog';
 import { NurseryCard } from '../features/nurseries/NurseryCard';
-import { RouteBar } from '../features/nurseries/RouteBar';
 import { NurseryList, type ListNursery } from '../features/nurseries/NurseryList';
 import { useNurseryParams } from '../features/nurseries/params';
 import { SpeciesDrawer } from '../features/nurseries/SpeciesDrawer';
 import { DESKTOP, useMedia } from '../lib/media';
 
-// Leaflet is the biggest dependency on the site: it loads only when a map is on screen
+// The map code (and Google's script) loads only when a map is on screen
 const loadMap = () => import('../features/nurseries/NurseryMap');
 const NurseryMap = lazy(loadMap);
 // The map is this page's largest element: start downloading its code now, alongside the page's data,
 // rather than after the first render. List view never shows the map, so it skips this (saves data).
 if (new URLSearchParams(window.location.search).get('view') !== 'list') void loadMap();
-
-/** Roughly the phone route bar's height, which the map keeps the route clear of */
-const ROUTE_BAR_HEIGHT = 190;
 
 const MapFallback = () => <Skeleton className="size-full rounded-none" />;
 
@@ -40,15 +36,6 @@ const Nurseries = () => {
   const nearest = useNearest(params, position);
   const nearestOn = params.sort === 'nearest' && position !== null;
   const shape = useBoundaryShape(params.subCounty ?? params.district);
-  const route = useRoute(params.nursery, position, params.directions);
-  // Phones: the nursery card has stepped aside so the route can be seen on the map
-  const [routeOnMap, setRouteOnMap] = useState(false);
-  const showingRoute = routeOnMap && !desktop && params.directions && route.data !== undefined;
-  // Memoised: a new object would make the map re-frame the route on every render
-  const routeEnds = useMemo(
-    () => (position && route.data ? { start: position, end: route.data.nursery.location, name: route.data.nursery.name } : null),
-    [position, route.data]
-  );
 
   // Deep links such as /nurseries?species=mvule&sort=nearest ask for the location once (FR-20)
   useEffect(() => {
@@ -56,17 +43,8 @@ const Nurseries = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only on arrival
   }, []);
 
-  // Road distances (by id) for the closest nurseries, when routing answered
-  const roadKm = useMemo(() => {
-    const km = new Map<string, number>();
-    if (nearest.data?.distanceMode !== 'road') return km;
-    for (const n of nearest.data.data) if (n.road_km !== undefined && n.road_km !== null) km.set(n.id, n.road_km);
-    return km;
-  }, [nearest.data]);
-  const features = useMemo(() => {
-    const all = map.data?.data.features ?? [];
-    return roadKm.size === 0 ? all : all.map(f => (roadKm.has(f.id) ? { ...f, properties: { ...f.properties, road_km: roadKm.get(f.id) } } : f));
-  }, [map.data, roadKm]);
+  // Distances are straight-line ("approx."): directions themselves open Google Maps
+  const features = useMemo(() => map.data?.data.features ?? [], [map.data]);
   const items: ListNursery[] | undefined = useMemo(() => {
     if (nearestOn) {
       return nearest.data?.data.map(n => ({
@@ -76,8 +54,8 @@ const Nurseries = () => {
         hasCampaign: n.has_active_campaign,
         isDemo: n.is_demo,
         speciesCount: n.species_count,
-        km: n.road_km ?? n.straight_km ?? null,
-        distanceMode: n.road_km !== undefined && n.road_km !== null && nearest.data.distanceMode === 'road' ? 'road' : 'straight_line',
+        km: n.straight_km ?? null,
+        distanceMode: 'straight_line' as const,
       }));
     }
     if (!map.data) return undefined;
@@ -88,16 +66,14 @@ const Nurseries = () => {
       hasCampaign: f.properties.has_active_campaign,
       isDemo: f.properties.is_demo,
       speciesCount: f.properties.species_count,
-      km: roadKm.get(f.id) ?? f.properties.straight_km ?? null,
-      distanceMode: roadKm.has(f.id) ? 'road' : 'straight_line',
+      km: f.properties.straight_km ?? null,
+      distanceMode: 'straight_line' as const,
     }));
-  }, [nearestOn, nearest.data, map.data, features, roadKm]);
+  }, [nearestOn, nearest.data, map.data, features]);
 
   const listQuery = nearestOn ? nearest : map;
   const correctedQ = (listQuery.data?.meta as { corrected_q?: string } | undefined)?.corrected_q;
-  const heading = nearestOn
-    ? nearest.data?.distanceMode === 'straight_line' ? en.nurseries.sortedStraight : en.nurseries.sortedByRoad
-    : en.nurseries.count(items?.length ?? 0);
+  const heading = nearestOn ? en.nurseries.sortedStraight : en.nurseries.count(items?.length ?? 0);
 
   const openNursery = useCallback((id: string) => { update({ nursery: id }); }, [update]);
   const toggleNearest = () => {
@@ -117,10 +93,6 @@ const Nurseries = () => {
         onSelect={openNursery}
         boundary={(shape.data as unknown as GeoFeature | undefined) ?? null}
         areaChosen={(params.subCounty ?? params.district) !== null}
-        route={params.directions && route.data ? route.data.geometry.coordinates : null}
-        routeStraight={route.data?.distance_mode === 'straight_line'}
-        routeEnds={routeEnds}
-        routeBottomPad={showingRoute ? ROUTE_BAR_HEIGHT : 0}
         position={position}
         onLocate={() => { ask(() => undefined); }}
         compact={!desktop}
@@ -160,18 +132,8 @@ const Nurseries = () => {
       <NurseryCard
         id={params.nursery}
         position={position}
-        directions={params.directions}
-        onClose={() => { setRouteOnMap(false); update({ nursery: null }); }}
-        onDirections={on => {
-          if (on) ask(() => { update({ directions: true }); });
-          else { setRouteOnMap(false); update({ directions: false }); }
-        }}
+        onClose={() => { update({ nursery: null }); }}
         onSpecies={setSpeciesSlug}
-        onShowRouteOnMap={desktop ? undefined : () => {
-          if (params.view === 'list') update({ view: 'map' });
-          setRouteOnMap(true);
-        }}
-        hidden={showingRoute}
         modal={!desktop}
       />
       <SpeciesDrawer slug={speciesSlug} onClose={() => { setSpeciesSlug(null); }} />
@@ -226,33 +188,28 @@ const Nurseries = () => {
   }
 
   return (
-    // `isolate` keeps the floating search (z-500, above Leaflet's panes) under the nursery card
-    <div className="relative isolate h-[calc(100dvh-4rem)] overflow-hidden">
+    // `isolate` keeps the floating search under the nursery card. The phone bottom bar sits below.
+    <div className="relative isolate h-[calc(100dvh-7.5rem-env(safe-area-inset-bottom))] overflow-hidden">
       <h1 className="sr-only">{en.nurseries.title}</h1>
       {mapElement}
-      {showingRoute ? (
-        <RouteBar
-          route={route.data}
-          position={position}
-          isDemo={map.data?.data.features.find(f => f.id === params.nursery)?.properties.is_demo ?? false}
-          onSteps={() => { setRouteOnMap(false); }}
-          onEnd={() => { setRouteOnMap(false); update({ directions: false }); }}
-        />
-      ) : (
-      <>
-      <div className="absolute inset-x-3 top-3 z-[500] flex flex-col gap-2">
+      <div className="absolute inset-x-3 top-3 z-20 flex flex-col gap-2">
         <SearchBox value={params.q} onChange={q => { update({ q }, { replace: true }); }} suggest={nurserySuggest(update)} className="shadow-float" />
         <div className="self-start">{viewToggle}</div>
       </div>
-      <BottomSheet title={en.nurseries.title} snap={snap} onSnapChange={setSnap} expandLabel={en.nurseries.expandList} collapseLabel={en.nurseries.collapseList}>
+      <BottomSheet
+        title={en.nurseries.title}
+        snap={snap}
+        onSnapChange={setSnap}
+        expandLabel={en.nurseries.expandList}
+        collapseLabel={en.nurseries.collapseList}
+        className="bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
+      >
         <div className="flex flex-col gap-4 pt-1">
           {/* The search box floats over the map on phones, so it isn't repeated here */}
           <FilterPanel params={params} update={update} onNearest={toggleNearest} findingLocation={finding} showSearch={false} />
           {list}
         </div>
       </BottomSheet>
-      </>
-      )}
       {overlays}
     </div>
   );

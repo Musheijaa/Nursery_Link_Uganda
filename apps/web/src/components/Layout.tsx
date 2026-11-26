@@ -1,5 +1,5 @@
 import { Button, OfflineBanner, cn } from '@nurserylink/ui';
-import { BookOpen, Ellipsis, Gift, HandHeart, House, LogIn, LogOut, Map as MapIcon, Menu, Newspaper, Package, Sprout, type LucideIcon } from 'lucide-react';
+import { BookOpen, Ellipsis, Gift, HandHeart, House, LogIn, LogOut, Map as MapIcon, Menu, Newspaper, Package, Search, Sprout, type LucideIcon } from 'lucide-react';
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useMatches } from 'react-router';
 import { en } from '../copy/en';
@@ -171,6 +171,10 @@ export const Header = ({ menu }: { menu: ReturnType<typeof useMenu> }) => (
         ))}
       </nav>
       <div className="flex items-center gap-1">
+        {/* The site-wide search: a page of its own, so it works the same on phones (brief §10.3) */}
+        <Link to="/search" aria-label={en.siteSearch.open} className="flex size-11 items-center justify-center rounded-sm text-paper hover:bg-paper/10">
+          <Search aria-hidden className="size-6" />
+        </Link>
         <AssistantHeaderButton />
         <div className="hidden xl:block">
           <AccountLinks />
@@ -241,11 +245,12 @@ export const Layout = ({ children }: { children?: ReactNode }) => {
   // floating button; the header's "Ask" still opens the assistant there
   const ownBottomBar = /^\/nurseries\/[^/]+\/order|^\/o\//.test(pathname);
   const floatingAssistant = !fullBleed && !ownBottomBar;
-  // The phone bottom bar, except where the page has its own bottom bar (map sheet, checkout, order map)
-  const bottomNav = !fullBleed && !ownBottomBar;
+  // The phone bottom bar on every page except those with their own (checkout, order map). The map
+  // page sizes itself to sit above it.
+  const bottomNav = !ownBottomBar;
   const menu = useMenu();
   return (
-    <div className={cn('flex min-h-dvh flex-col overflow-x-clip', bottomNav && 'pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0')}>
+    <div className={cn('flex min-h-dvh flex-col overflow-x-clip', bottomNav && !fullBleed && 'pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0')}>
       <a href="#main" className="sr-only z-50 bg-paper p-3 font-bold focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         {en.app.skipToContent}
       </a>

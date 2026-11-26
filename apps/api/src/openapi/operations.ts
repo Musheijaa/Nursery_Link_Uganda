@@ -41,7 +41,7 @@ import {
   speciesUpdateSchema,
   verifyPhoneSchema,
 } from '@nurserylink/shared';
-import { optionalLatLngQuery, requiredLatLngQuery } from '../lib/geo.js';
+import { optionalLatLngQuery } from '../lib/geo.js';
 import { paginationQuerySchema } from '../lib/pagination.js';
 import * as admin from '../modules/admin/admin.routes.js';
 import * as boundaries from '../modules/boundaries/boundaries.routes.js';
@@ -115,14 +115,11 @@ export const operations: Operation[] = [
     success: { status: 200, description: 'The account' } },
 
   // ── Public catalogue ─────────────────────────────────────
-  { method: 'get', path: '/nurseries', tag: 'Nurseries', summary: 'Find nurseries (JSON or GeoJSON), optionally nearest-first by road', response: { data: z.union([z.array(r.nurserySummarySchema), r.nurseryFeatureCollectionSchema]), meta: z.union([r.nurseryListMetaSchema, r.nurseryGeoJsonMetaSchema]) }, access: 'public',
+  { method: 'get', path: '/nurseries', tag: 'Nurseries', summary: 'Find nurseries (JSON or GeoJSON), optionally nearest-first (straight line)', response: { data: z.union([z.array(r.nurserySummarySchema), r.nurseryFeatureCollectionSchema]), meta: z.union([r.nurseryListMetaSchema, r.nurseryGeoJsonMetaSchema]) }, access: 'public',
     description: '`q` matches a nursery name or any tree it stocks (common, scientific or local name). Use format=geojson for the map: one unpaginated collection.',
     query: listNurseriesQuery, success: { status: 200, description: 'Nurseries, or a FeatureCollection with format=geojson' } },
-  { method: 'get', path: '/nurseries/:id', tag: 'Nurseries', summary: 'Nursery profile with stock; road distance when lat/lng are given', response: { data: r.nurseryProfileSchema }, access: 'public',
+  { method: 'get', path: '/nurseries/:id', tag: 'Nurseries', summary: 'Nursery profile with stock; straight-line distance when lat/lng are given', response: { data: r.nurseryProfileSchema }, access: 'public',
     params: id, query: optionalLatLngQuery, success: { status: 200, description: 'The nursery' } },
-  { method: 'get', path: '/nurseries/:id/route', tag: 'Nurseries', summary: 'Driving route from a point to the nursery', response: { data: r.routeSchema }, access: 'public',
-    params: id, query: requiredLatLngQuery, success: { status: 200, description: 'Route line, distance, duration and turn-by-turn steps' },
-    errors: { 503: 'Routing is unavailable (routes never fall back to a straight line)' } },
   { method: 'get', path: '/species', tag: 'Species', summary: 'Digital Tree Library', response: { data: z.array(r.speciesListItemSchema), meta: r.speciesListMetaSchema }, access: 'public',
     query: species.listQuery, success: { status: 200, description: 'Species' } },
   { method: 'get', path: '/species/:slug', tag: 'Species', summary: 'One species', response: { data: r.speciesProfileSchema }, access: 'public',

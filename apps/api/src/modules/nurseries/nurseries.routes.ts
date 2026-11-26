@@ -2,11 +2,9 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validate } from '../../middleware/validate.js';
 import { paginationQuerySchema } from '../../lib/pagination.js';
-import { optionalLatLngQuery, requiredLatLngQuery } from '../../lib/geo.js';
+import { optionalLatLngQuery } from '../../lib/geo.js';
 import type { NurseriesService } from './nurseries.service.js';
 import { categoryListParam } from '../species/species.routes.js';
-import type { Limit } from '../../middleware/rateLimit.js';
-import { userOrIpKey } from '../../middleware/security.js';
 
 /** GeoJSON is for the map: one unpaginated collection (capped) rather than pages */
 export const GEOJSON_MAX_FEATURES = 2000;
@@ -37,10 +35,8 @@ export const listNurseriesQuery = z
 
 const idParams = z.object({ id: z.uuid() });
 
-export const nurseriesRoutes = (service: NurseriesService, limit: Limit): Router => {
+export const nurseriesRoutes = (service: NurseriesService): Router => {
   const router = Router();
-  // Each route request is a call to the routing service
-  const routeLimit = limit({ windowMinutes: 1, limit: 60, key: userOrIpKey });
 
   router.get('/', validate({ query: listNurseriesQuery }), async (_req, res) => {
     const q = (res.locals.validated as { query: z.output<typeof listNurseriesQuery> }).query;
@@ -70,10 +66,6 @@ export const nurseriesRoutes = (service: NurseriesService, limit: Limit): Router
     res.json({ data: await service.profile(params.id, point) });
   });
 
-  router.get('/:id/route', routeLimit, validate({ params: idParams, query: requiredLatLngQuery }), async (_req, res) => {
-    const { params, query } = res.locals.validated as { params: z.output<typeof idParams>; query: z.output<typeof requiredLatLngQuery> };
-    res.json({ data: await service.route(params.id, { lat: query.lat, lng: query.lng }) });
-  });
 
   return router;
 };

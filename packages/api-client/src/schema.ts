@@ -232,7 +232,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Find nurseries (JSON or GeoJSON), optionally nearest-first by road
+         * Find nurseries (JSON or GeoJSON), optionally nearest-first (straight line)
          * @description Public. `q` matches a nursery name or any tree it stocks (common, scientific or local name). Use format=geojson for the map: one unpaginated collection.
          */
         get: operations["getNurseries"];
@@ -252,30 +252,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Nursery profile with stock; road distance when lat/lng are given
+         * Nursery profile with stock; straight-line distance when lat/lng are given
          * @description Public.
          */
         get: operations["getNurseriesId"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/nurseries/{id}/route": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Driving route from a point to the nursery
-         * @description Public.
-         */
-        get: operations["getNurseriesIdRoute"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1944,8 +1924,8 @@ export interface components {
                 /** @enum {string} */
                 payment: "mock" | "live";
                 sms: string;
+                /** @description Road routing for the Nursery Shadow and delivery quotes */
                 routing: string;
-                directions: string;
                 email: string;
                 /** @enum {string} */
                 assistant: "off" | "mock" | "anthropic";
@@ -2198,35 +2178,6 @@ export interface components {
             distance_km?: number;
             /** @enum {string} */
             distance_mode?: "road" | "straight_line";
-        };
-        Route: {
-            nursery: {
-                /** Format: uuid */
-                id: string;
-                name: string;
-                location: {
-                    lat: number;
-                    lng: number;
-                };
-            };
-            distance_km: number;
-            /** @enum {string} */
-            distance_mode: "road" | "straight_line";
-            duration_min: number;
-            geometry: {
-                /** @constant */
-                type: "LineString";
-                coordinates: [
-                    number,
-                    number
-                ][];
-            };
-            steps: {
-                instruction: string;
-                road: string | null;
-                distance_m: number;
-                duration_s: number;
-            }[];
         };
         SpeciesListItem: {
             /** Format: uuid */
@@ -4020,69 +3971,6 @@ export interface operations {
             };
             /** @description Too many requests */
             429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
-    getNurseriesIdRoute: {
-        parameters: {
-            query: {
-                lat: number;
-                lng: number;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Route line, distance, duration and turn-by-turn steps */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["Route"];
-                    };
-                };
-            };
-            /** @description The request is not valid */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Too many requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Routing is unavailable (routes never fall back to a straight line) */
-            503: {
                 headers: {
                     [name: string]: unknown;
                 };
