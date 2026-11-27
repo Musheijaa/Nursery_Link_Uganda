@@ -39,7 +39,8 @@ export const AssistantHeaderButton = () => {
       aria-haspopup="dialog"
       aria-expanded={open}
       onClick={() => { setOpen(true); }}
-      className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-sm px-2.5 font-label text-label whitespace-nowrap text-paper hover:bg-paper/10"
+      // 1280–1536 px: the full menu needs the room; the floating "Ask Nursery Link" button is there instead
+      className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-sm px-2.5 font-label text-label whitespace-nowrap text-paper hover:bg-paper/10 xl:hidden 2xl:flex"
     >
       <MessageCircleQuestion aria-hidden className="size-6 xl:size-5" />
       <span className="sr-only sm:not-sr-only">{en.assistant.openShort}</span>

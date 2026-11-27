@@ -107,7 +107,7 @@ const Partners = () => {
             </li>
           ))}
         </ul>
-        <Link to="/donate" className="self-start font-bold">{en.home.partnerCta}</Link>
+        <Link to="/donate" className="flex min-h-11 items-center self-start font-bold">{en.home.partnerCta}</Link>
       </Container>
     </section>
   );

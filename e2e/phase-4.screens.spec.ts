@@ -9,10 +9,10 @@ test.describe('phase 4: Library, News, Home', () => {
       await page.goto(path);
       await ready();
     };
-    await shoot(page, PHASE, 'home', visit('/', async () => { await expect(page.getByRole('heading', { name: 'Latest advice' })).toBeVisible(); }));
+    await shoot(page, PHASE, 'home', visit('/', async () => { await expect(page.getByRole('heading', { name: 'Getting seedlings is easy!' })).toBeVisible(); }));
     await shoot(page, PHASE, 'library', visit('/library', async () => { await expect(page.getByRole('heading', { name: 'M', exact: true })).toBeVisible(); }));
     await shoot(page, PHASE, 'library-indigenous', visit('/library?category=indigenous', async () => { await expect(page.getByText(/trees?$/).first()).toBeVisible(); }));
-    await shoot(page, PHASE, 'species-mvule', visit('/library/mvule', async () => { await expect(page.getByRole('heading', { name: 'Growth over the years' })).toBeVisible(); }));
+    await shoot(page, PHASE, 'species-mvule', visit('/library/mvule', async () => { await expect(page.getByRole('heading', { name: 'About the Tree' })).toBeVisible(); }));
     await shoot(page, PHASE, 'news', visit('/news', async () => { await expect(page.getByRole('heading', { name: 'WELCOME TO NEWS & UPDATES' })).toBeVisible(); }));
     await shoot(page, PHASE, 'news-article', visit('/news/plant-early-in-the-second-rains', async () => { await expect(page.getByRole('heading', { name: 'Plant early in the second rains' })).toBeVisible(); }));
   });

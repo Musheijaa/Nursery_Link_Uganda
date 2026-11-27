@@ -193,7 +193,7 @@ export const en = {
   species: {
     title: 'Tree Library',
     new: 'Add a tree',
-    newTitle: 'Add a species',
+    newTitle: 'Add a tree',
     editTitle: (name: string) => `Edit ${name}`,
     searchPlaceholder: 'Search by name',
     columns: { name: 'Common name', scientific: 'Scientific name', category: 'Category', nurseries: 'Nurseries' },

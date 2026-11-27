@@ -56,10 +56,14 @@ const AccountLinks = ({ onNavigate, mobile = false }: { onNavigate?: () => void;
       <Link
         to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`}
         onClick={onNavigate}
-        className="flex min-h-11 items-center gap-2 whitespace-nowrap rounded-sm border border-paper/60 px-3 font-label text-label text-paper no-underline hover:bg-paper/10"
+        className={cn(
+          'flex min-h-11 min-w-11 items-center justify-center gap-2 whitespace-nowrap rounded-sm border border-paper/60 px-3 font-label text-label text-paper no-underline hover:bg-paper/10',
+          !mobile && 'px-2.5 2xl:px-3'
+        )}
       >
         <LogIn aria-hidden className="size-5" />
-        {en.nav.signIn}
+        {/* Icon only between 1280 and 1536 px, where the full menu takes the room */}
+        <span className={mobile ? undefined : 'sr-only 2xl:not-sr-only'}>{en.nav.signIn}</span>
       </Link>
     );
   }
@@ -68,7 +72,7 @@ const AccountLinks = ({ onNavigate, mobile = false }: { onNavigate?: () => void;
       {user.role === 'buyer' && (
         <NavLink to="/orders" className={navLink} onClick={onNavigate}>
           <Package aria-hidden className="size-5" />
-          {en.nav.orders}
+          <span className={mobile ? undefined : 'sr-only 2xl:not-sr-only'}>{en.nav.orders}</span>
         </NavLink>
       )}
       <button
@@ -77,10 +81,10 @@ const AccountLinks = ({ onNavigate, mobile = false }: { onNavigate?: () => void;
           onNavigate?.();
           void signOut();
         }}
-        className="flex min-h-11 items-center gap-2 whitespace-nowrap rounded-sm px-3 font-label text-label text-paper/90 hover:bg-paper/10 xl:px-2.5"
+        className="flex min-h-11 min-w-11 items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 font-label text-label text-paper/90 hover:bg-paper/10 xl:px-2.5"
       >
         <LogOut aria-hidden className="size-5" />
-        {en.nav.signOut}
+        <span className={mobile ? undefined : 'sr-only 2xl:not-sr-only'}>{en.nav.signOut}</span>
       </button>
     </div>
   );

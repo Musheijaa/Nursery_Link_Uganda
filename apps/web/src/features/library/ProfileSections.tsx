@@ -33,12 +33,12 @@ export const ProfileSection = ({ id, title, children }: { id: string; title: str
     );
   }
   return (
-    <details className={`group ${card}`}>
+    <details className="group rounded-lg bg-paper p-5 shadow-card ring-1 ring-line">
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
         <h2 id={id} className="text-h4">{title}</h2>
         <ChevronDown aria-hidden className="size-6 shrink-0 text-forest transition-transform group-open:rotate-180 motion-reduce:transition-none" />
       </summary>
-      <div className="flex flex-col gap-4">{children}</div>
+      <div className="mt-4 flex flex-col gap-4">{children}</div>
     </details>
   );
 };

@@ -47,8 +47,9 @@ test.describe('accessibility (axe, WCAG 2.1 AA)', () => {
       await page.getByRole('main').getByRole('list').getByRole('button', { name: /Mukono Town Nursery/ }).click();
       await expect(page.getByRole('heading', { name: 'In stock' })).toBeVisible();
       await scan(page, `nursery card @${w}`, found);
-      await page.getByRole('button', { name: 'Sort by nearest' }).or(page.getByRole('button', { name: 'Get directions' })).last().click();
-      await scan(page, `nursery card action @${w}`, found);
+      // The tree drawer opened from the card's stock list
+      await page.getByRole('button', { name: /: About / }).first().click();
+      await scan(page, `tree drawer @${w}`, found);
     }
     expect(found, report(found)).toEqual([]);
   });

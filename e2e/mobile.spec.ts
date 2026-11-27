@@ -66,8 +66,9 @@ for (const phone of PHONES) {
       await registerBuyer(page);
       const report: Record<string, Problems> = {};
       await page.goto('/nurseries?view=list');
-      await page.getByRole('list').getByRole('link').or(page.getByRole('list').getByRole('button')).first().click();
-      await page.getByRole('link', { name: 'Order' }).click();
+      // Inside main: the phone bottom bar is a list of links too
+      await page.getByRole('main').getByRole('list').getByRole('button').first().click();
+      await page.getByRole('link', { name: 'Order', exact: true }).click();
       await settle(page, 1200);
       report.checkout = await audit(page);
       await page.goto('/orders');
