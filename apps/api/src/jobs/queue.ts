@@ -8,6 +8,8 @@ export interface JobPayloads {
   'payment-poll': { paymentId: string };
   /** Send one SMS, with retries and backoff */
   'sms-send': { to: string; message: string; orderId?: string };
+  /** Send one email, with retries */
+  'email-send': { to: string; subject: string; text: string };
   /** Check a disbursement or refund; retry it if it failed */
   'payout-check': { paymentId: string };
   /** Hourly sweep: orders dispatched more than 72 hours ago are treated as delivered */
@@ -35,6 +37,7 @@ const RETRY: Record<JobName, Pick<PgBoss.SendOptions, 'retryLimit' | 'retryDelay
   // A missed poll is harmless: the next poll or the 15-minute check picks the payment up
   'payment-poll': { retryLimit: 0 },
   'sms-send': { retryLimit: 2, retryDelay: 30, retryBackoff: true },
+  'email-send': { retryLimit: 2, retryDelay: 60, retryBackoff: true },
   'payout-check': { retryLimit: 5, retryDelay: 60, retryBackoff: true },
   'auto-release': { retryLimit: 0 },
   // A failed run is recorded as failed; the admin starts a new one rather than it retrying silently

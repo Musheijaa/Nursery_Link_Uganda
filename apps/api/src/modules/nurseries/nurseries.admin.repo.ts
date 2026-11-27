@@ -9,6 +9,10 @@ export type AdminNurseryRow = {
   name: string;
   type: NurseryType;
   certification_status: CertificationStatus;
+  certification_verified_at: Date | null;
+  certification_verified_by: string | null;
+  certification_body: string | null;
+  certification_ref: string | null;
   operator_name: string;
   contact_phone: string;
   payout_phone: string;
@@ -42,7 +46,8 @@ export interface AdminNurseryFilters {
 
 const select = async (db: DbOrTx, where: SQL, limit: number, offset: number): Promise<AdminNurseryRow[]> => {
   const result = await db.execute<AdminNurseryRow>(sql`
-    SELECT n.id, n.name, n.type, n.certification_status, n.operator_name, n.contact_phone, n.payout_phone, n.annual_capacity,
+    SELECT n.id, n.name, n.type, n.certification_status, n.certification_verified_at, n.certification_verified_by,
+           n.certification_body, n.certification_ref, n.operator_name, n.contact_phone, n.payout_phone, n.annual_capacity,
            n.seed_source, n.is_active, n.is_demo, n.external_ref, n.listing_note, d.id AS district_id, d.name AS district_name, sc.id AS sub_county_id, sc.name AS sub_county_name,
            ST_Y(n.location) AS lat, ST_X(n.location) AS lng, n.created_at, n.updated_at,
            (SELECT max(i.updated_at) FROM inventory i WHERE i.nursery_id = n.id) AS stock_updated_at,
@@ -103,7 +108,8 @@ export type ExportRow = Omit<AdminNurseryRow, 'total'> & {
 
 export const exportNurseries = async (db: DbOrTx): Promise<ExportRow[]> => {
   const result = await db.execute<ExportRow>(sql`
-    SELECT n.id, n.name, n.type, n.certification_status, n.operator_name, n.contact_phone, n.payout_phone, n.annual_capacity,
+    SELECT n.id, n.name, n.type, n.certification_status, n.certification_verified_at, n.certification_verified_by,
+           n.certification_body, n.certification_ref, n.operator_name, n.contact_phone, n.payout_phone, n.annual_capacity,
            n.seed_source, n.is_active, n.is_demo, n.external_ref, n.listing_note, d.id AS district_id, d.name AS district_name, sc.id AS sub_county_id, sc.name AS sub_county_name,
            ST_Y(n.location) AS lat, ST_X(n.location) AS lng, n.created_at, n.updated_at,
            COALESCE((SELECT json_agg(json_build_object('species_slug', s.slug, 'common_name', s.common_name,

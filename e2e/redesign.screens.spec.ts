@@ -10,7 +10,7 @@ test.describe('redesign screens', () => {
     test.setTimeout(300_000);
     const species = (await (await page.request.get('/api/v1/species?q=Mvule')).json()) as { data: { slug: string }[] };
     const news = (await (await page.request.get('/api/v1/news?limit=1')).json()) as { data: { slug: string }[] };
-    const campaigns = (await (await page.request.get('/api/v1/campaigns?limit=1')).json()) as { data: { id: string }[] };
+    const campaigns = (await (await page.request.get('/api/v1/giveaways?limit=1')).json()) as { data: { id: string }[] };
     const all: Record<string, string> = {
       home: '/',
       nurseries: '/nurseries?view=list',
@@ -19,8 +19,8 @@ test.describe('redesign screens', () => {
       species: `/library/${species.data[0]?.slug ?? ''}`,
       news: '/news',
       article: `/news/${news.data[0]?.slug ?? ''}`,
-      free: '/free-seedlings',
-      campaign: `/free-seedlings/${campaigns.data[0]?.id ?? ''}`,
+      free: '/giveaways',
+      campaign: `/giveaways/${campaigns.data[0]?.id ?? ''}`,
       login: '/login',
       register: '/register',
       notfound: '/no-such-page',

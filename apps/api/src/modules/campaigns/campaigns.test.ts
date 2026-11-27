@@ -30,7 +30,7 @@ afterAll(() => pool.end());
 
 describe('campaigns (FR-16)', () => {
   it('lists running campaigns with the stock meter, pickup point and checklist', async () => {
-    const body = (await request(app).get('/api/v1/campaigns').expect(200)).body as { data: Campaign[]; meta: { total: number } };
+    const body = (await request(app).get('/api/v1/giveaways').expect(200)).body as { data: Campaign[]; meta: { total: number } };
     expect(body.meta.total).toBe(2);
     const shoreline = body.data.find(c => c.title === 'Lake Victoria shoreline restoration');
     expect(shoreline).toMatchObject({
@@ -44,17 +44,17 @@ describe('campaigns (FR-16)', () => {
 
   it('filters by sub-county and purpose, and leaves out ended campaigns', async () => {
     const { rows } = await pool.query<{ id: string }>(`SELECT id FROM admin_boundaries WHERE name = 'Nakisunga'`);
-    const bySubCounty = (await request(app).get(`/api/v1/campaigns?sub_county_id=${rows[0]?.id ?? ''}`).expect(200)).body as { data: Campaign[] };
+    const bySubCounty = (await request(app).get(`/api/v1/giveaways?sub_county_id=${rows[0]?.id ?? ''}`).expect(200)).body as { data: Campaign[] };
     expect(bySubCounty.data.map(c => c.title)).toEqual(['Coffee shade trees for Nakisunga farmers']);
-    const byPurpose = (await request(app).get('/api/v1/campaigns?purpose=shoreline').expect(200)).body as { data: Campaign[] };
+    const byPurpose = (await request(app).get('/api/v1/giveaways?purpose=shoreline').expect(200)).body as { data: Campaign[] };
     expect(byPurpose.data.map(c => c.title)).toEqual(['Lake Victoria shoreline restoration']);
-    const all = (await request(app).get('/api/v1/campaigns?limit=100').expect(200)).body as { data: Campaign[] };
+    const all = (await request(app).get('/api/v1/giveaways?limit=100').expect(200)).body as { data: Campaign[] };
     expect(all.data.map(c => c.id)).not.toContain(endedId);
   });
 
   it('shows any campaign by id, flagging whether it is still open', async () => {
-    const ended = (await request(app).get(`/api/v1/campaigns/${endedId}`).expect(200)).body as { data: Campaign };
+    const ended = (await request(app).get(`/api/v1/giveaways/${endedId}`).expect(200)).body as { data: Campaign };
     expect(ended.data).toMatchObject({ is_open: false, remaining_pct: 0 });
-    await request(app).get('/api/v1/campaigns/00000000-0000-4000-8000-000000000000').expect(404);
+    await request(app).get('/api/v1/giveaways/00000000-0000-4000-8000-000000000000').expect(404);
   });
 });

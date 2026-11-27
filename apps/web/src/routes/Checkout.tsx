@@ -1,11 +1,11 @@
 import { isApiError } from '@nurserylink/api-client';
-import { Button, ErrorState, SkeletonList, cn, formatCount, formatPhone, formatUGX } from '@nurserylink/ui';
+import { Button, EmptyState, ErrorState, SkeletonList, cn, formatCount, formatPhone, formatUGX } from '@nurserylink/ui';
 import { ArrowLeft, Check } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { usePageTitle } from '../components/usePageTitle';
 import { en } from '../copy/en';
-import { usePlaceOrder } from '../features/orders/api';
+import { useFeatures, usePlaceOrder } from '../features/orders/api';
 import { StepDelivery, type DeliveryErrors } from '../features/orders/checkout/StepDelivery';
 import { StepPay, type Change } from '../features/orders/checkout/StepPay';
 import { StepSeedlings } from '../features/orders/checkout/StepSeedlings';
@@ -189,4 +189,24 @@ const Checkout = () => {
     </div>
   );
 };
-export default Checkout;
+/**
+ * With online ordering switched off (FEATURE_ORDERS=off), buyers phone the nursery operator instead;
+ * an old link to a checkout says so and leads back to the nursery.
+ */
+const CheckoutGate = () => {
+  const { id = '' } = useParams();
+  const features = useFeatures();
+  if (features.isPending) return <SkeletonList rows={3} />;
+  if (features.data?.orders === false) {
+    return (
+      <EmptyState
+        title={en.checkout.ordersOffTitle}
+        action={<Button asChild><Link to={`/nurseries?nursery=${id}`}>{en.checkout.ordersOffBack}</Link></Button>}
+      >
+        {en.checkout.ordersOffBody}
+      </EmptyState>
+    );
+  }
+  return <Checkout />;
+};
+export default CheckoutGate;

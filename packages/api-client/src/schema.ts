@@ -12,7 +12,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The marketplace at a glance: nurseries, trees and seedlings in stock, open campaigns
+         * The marketplace at a glance: nurseries, trees and seedlings in stock, open giveaways
          * @description Public.
          */
         get: operations["getStats"];
@@ -232,7 +232,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Find nurseries (JSON or GeoJSON), optionally nearest-first by road
+         * Find nurseries (JSON or GeoJSON), optionally nearest-first (straight line)
          * @description Public. `q` matches a nursery name or any tree it stocks (common, scientific or local name). Use format=geojson for the map: one unpaginated collection.
          */
         get: operations["getNurseries"];
@@ -252,30 +252,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Nursery profile with stock; road distance when lat/lng are given
+         * Nursery profile with stock; straight-line distance when lat/lng are given
          * @description Public.
          */
         get: operations["getNurseriesId"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/nurseries/{id}/route": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Driving route from a point to the nursery
-         * @description Public.
-         */
-        get: operations["getNurseriesIdRoute"];
         put?: never;
         post?: never;
         delete?: never;
@@ -464,7 +444,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/campaigns": {
+    "/giveaways": {
         parameters: {
             query?: never;
             header?: never;
@@ -472,10 +452,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Running free-seedling campaigns
-         * @description Public.
+         * Free and subsidised seedling giveaways
+         * @description Public. Giveaways are stored as `campaigns` (the admin API keeps that name). `status=open` (the default) lists giveaways that have not closed, soonest-closing first, including those closing within 14 days; `closing_soon` only those; `closed` the rest, latest first.
          */
-        get: operations["getCampaigns"];
+        get: operations["getGiveaways"];
         put?: never;
         post?: never;
         delete?: never;
@@ -484,7 +464,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/campaigns/{id}": {
+    "/giveaways/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -492,10 +472,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * One campaign (including ended ones)
+         * One giveaway (including closed ones)
          * @description Public.
          */
-        get: operations["getCampaignsId"];
+        get: operations["getGiveawaysId"];
         put?: never;
         post?: never;
         delete?: never;
@@ -504,7 +484,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/campaigns/{id}/apply": {
+    "/giveaways/{id}/apply": {
         parameters: {
             query?: never;
             header?: never;
@@ -514,17 +494,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Apply for free seedlings
+         * Apply through this site
          * @description Buyers only.
          */
-        post: operations["postCampaignsIdApply"];
+        post: operations["postGiveawaysIdApply"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/campaigns/applications/me": {
+    "/giveaways/applications/me": {
         parameters: {
             query?: never;
             header?: never;
@@ -535,7 +515,7 @@ export interface paths {
          * My applications
          * @description Buyers only.
          */
-        get: operations["getCampaignsApplicationsMe"];
+        get: operations["getGiveawaysApplicationsMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -544,7 +524,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/service-requests": {
+    "/tree-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tree categories (Fruit Trees, Timber Trees…)
+         * @description Public.
+         */
+        get: operations["getTreeCategories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/news/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * News & Updates categories
+         * @description Public.
+         */
+        get: operations["getNewsCategories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expert-services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Expert service categories and their services
+         * @description Public.
+         */
+        get: operations["getExpertServices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/partners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Partner and supporter logos
+         * @description Public.
+         */
+        get: operations["getPartners"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/page-content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Editable site copy (page intros, hero, Donate, contacts)
+         * @description Public. Every block of site copy admins can edit, by key (see pageContentKeys). Clients fall back to their own copy for missing keys.
+         */
+        get: operations["getPageContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enquiries": {
         parameters: {
             query?: never;
             header?: never;
@@ -554,10 +634,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Ask for a tree-planting service
-         * @description Buyers only.
+         * Request an expert service, or send a donation, partnership or contact enquiry
+         * @description Public. No account needed. Lands in the admin Inbox; the team is told by email and/or SMS. The `website` field is a spam trap and must be left empty.
          */
-        post: operations["postServiceRequests"];
+        post: operations["postEnquiries"];
         delete?: never;
         options?: never;
         head?: never;
@@ -584,6 +664,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search the whole site
+         * @description Public. The best few nurseries (by name, a tree in stock, or district and sub-county), trees, expert services, news posts and open giveaways, each with the site link that opens it. Typo-tolerant.
+         */
+        get: operations["getSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/assistant/chat": {
         parameters: {
             query?: never;
@@ -598,26 +698,6 @@ export interface paths {
          * @description Public. Send the recent conversation (the last message is the new question). The answer streams back as server-sent events: one JSON object per `data:` line, `status` while it looks things up, `text` pieces of the Markdown answer, then `done` (or `error`). Signed-in buyers can ask about their own orders. Limited to 12 questions a minute and 300 a day per account or IP, plus a daily total (ASSISTANT_DAILY_LIMIT).
          */
         post: operations["postAssistantChat"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/service-requests/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * My service requests
-         * @description Buyers only.
-         */
-        get: operations["getServiceRequestsMe"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -836,6 +916,30 @@ export interface paths {
         patch: operations["patchAdminNurseriesId"];
         trace?: never;
     };
+    "/admin/nurseries/{id}/certification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Record a checked certification (the nursery shows as Certified)
+         * @description Admins only.
+         */
+        put: operations["putAdminNurseriesIdCertification"];
+        post?: never;
+        /**
+         * Remove the certification record (the nursery shows as uncertified)
+         * @description Admins only.
+         */
+        delete: operations["deleteAdminNurseriesIdCertification"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/nurseries/{id}/inventory": {
         parameters: {
             query?: never;
@@ -1032,7 +1136,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * All campaigns
+         * All giveaways
          * @description Admins only.
          */
         get: operations["getAdminCampaigns"];
@@ -1116,7 +1220,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/feedback": {
+    "/admin/enquiries": {
         parameters: {
             query?: never;
             header?: never;
@@ -1124,10 +1228,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Feedback from people using the site
+         * Inbox: service requests, donations, partnerships, contact messages and feedback
          * @description Admins only.
          */
-        get: operations["getAdminFeedback"];
+        get: operations["getAdminEnquiries"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1136,27 +1240,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/feedback/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Mark feedback new, read or done
-         * @description Admins only.
-         */
-        put: operations["putAdminFeedbackId"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/service-requests": {
+    "/admin/enquiries/counts": {
         parameters: {
             query?: never;
             header?: never;
@@ -1164,10 +1248,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Service requests to phone back
+         * Unread enquiries by type
          * @description Admins only.
          */
-        get: operations["getAdminServiceRequests"];
+        get: operations["getAdminEnquiriesCounts"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1176,7 +1260,263 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/service-requests/{id}": {
+    "/admin/enquiries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One enquiry
+         * @description Admins only.
+         */
+        get: operations["getAdminEnquiriesId"];
+        /**
+         * Mark an enquiry new, in progress or closed, with a note
+         * @description Admins only.
+         */
+        put: operations["putAdminEnquiriesId"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/export/enquiries.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inbox as CSV (same filters as the list)
+         * @description Admins only.
+         */
+        get: operations["getAdminExportEnquiriesCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/tree-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * All tree categories
+         * @description Admins only.
+         */
+        get: operations["getAdminTreeCategories"];
+        put?: never;
+        /**
+         * Add a tree category
+         * @description Admins only.
+         */
+        post: operations["postAdminTreeCategories"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/tree-categories/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete an unused tree category
+         * @description Admins only.
+         */
+        delete: operations["deleteAdminTreeCategoriesSlug"];
+        options?: never;
+        head?: never;
+        /**
+         * Rename, reorder or switch off a tree category
+         * @description Admins only.
+         */
+        patch: operations["patchAdminTreeCategoriesSlug"];
+        trace?: never;
+    };
+    "/admin/news-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * All news categories
+         * @description Admins only.
+         */
+        get: operations["getAdminNewsCategories"];
+        put?: never;
+        /**
+         * Add a news category
+         * @description Admins only.
+         */
+        post: operations["postAdminNewsCategories"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/news-categories/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete an unused news category
+         * @description Admins only.
+         */
+        delete: operations["deleteAdminNewsCategoriesSlug"];
+        options?: never;
+        head?: never;
+        /**
+         * Rename, reorder or switch off a news category
+         * @description Admins only.
+         */
+        patch: operations["patchAdminNewsCategoriesSlug"];
+        trace?: never;
+    };
+    "/admin/expert-services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * All expert service categories (including switched-off ones)
+         * @description Admins only.
+         */
+        get: operations["getAdminExpertServices"];
+        put?: never;
+        /**
+         * Add an expert service category
+         * @description Admins only.
+         */
+        post: operations["postAdminExpertServices"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/expert-services/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a category (enquiries keep the service names)
+         * @description Admins only.
+         */
+        delete: operations["deleteAdminExpertServicesId"];
+        options?: never;
+        head?: never;
+        /**
+         * Edit a category and its list of services
+         * @description Admins only.
+         */
+        patch: operations["patchAdminExpertServicesId"];
+        trace?: never;
+    };
+    "/admin/partners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * All partners
+         * @description Admins only.
+         */
+        get: operations["getAdminPartners"];
+        put?: never;
+        /**
+         * Add a partner logo
+         * @description Admins only.
+         */
+        post: operations["postAdminPartners"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/partners/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a partner
+         * @description Admins only.
+         */
+        delete: operations["deleteAdminPartnersId"];
+        options?: never;
+        head?: never;
+        /**
+         * Edit a partner
+         * @description Admins only.
+         */
+        patch: operations["patchAdminPartnersId"];
+        trace?: never;
+    };
+    "/admin/page-content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * All editable site copy
+         * @description Admins only.
+         */
+        get: operations["getAdminPageContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/page-content/{key}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1185,10 +1525,10 @@ export interface paths {
         };
         get?: never;
         /**
-         * Mark a request contacted, scheduled, done or cancelled
-         * @description Admins only.
+         * Edit one block of site copy
+         * @description Admins only. Title, subtitle and body (Markdown) are free text; `data` must match the key's shape (e.g. the four steps of How it works, or the contact numbers).
          */
-        put: operations["putAdminServiceRequestsId"];
+        put: operations["putAdminPageContentKey"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1584,8 +1924,8 @@ export interface components {
                 /** @enum {string} */
                 payment: "mock" | "live";
                 sms: string;
+                /** @description Road routing for the Nursery Shadow and delivery quotes */
                 routing: string;
-                directions: string;
                 email: string;
                 /** @enum {string} */
                 assistant: "off" | "mock" | "anthropic";
@@ -1597,6 +1937,8 @@ export interface components {
             features: {
                 phone_verification: boolean;
                 payments: boolean;
+                /** @description Online ordering (checkout); when off, buyers call or WhatsApp the nursery operator */
+                orders: boolean;
                 /** @description The site assistant (chat) is switched on */
                 assistant: boolean;
             };
@@ -1653,8 +1995,15 @@ export interface components {
             name: string;
             /** @enum {string} */
             type: "private" | "commercial" | "community";
-            /** @enum {string} */
-            certification_status: "certified" | "pending" | "unverified";
+            /** @description Only when an admin recorded a verified certification */
+            certified: boolean;
+            /** @description The recorded certification (for the badge tooltip), or null */
+            certification: {
+                body: string;
+                ref: string | null;
+                /** @description ISO 8601 date-time */
+                verified_at: string;
+            } | null;
             operator_name: string;
             /** @description Null for sample nurseries, which have no real number */
             contact_phone: string | null;
@@ -1708,8 +2057,15 @@ export interface components {
                     name: string;
                     /** @enum {string} */
                     type: "private" | "commercial" | "community";
-                    /** @enum {string} */
-                    certification_status: "certified" | "pending" | "unverified";
+                    /** @description Only when an admin recorded a verified certification */
+                    certified: boolean;
+                    /** @description The recorded certification (for the badge tooltip), or null */
+                    certification: {
+                        body: string;
+                        ref: string | null;
+                        /** @description ISO 8601 date-time */
+                        verified_at: string;
+                    } | null;
                     operator_name: string;
                     /** @description Null for sample nurseries, which have no real number */
                     contact_phone: string | null;
@@ -1748,8 +2104,10 @@ export interface components {
                 slug: string;
                 common_name: string;
                 scientific_name: string;
-                /** @enum {string} */
-                category: "indigenous" | "agroforestry" | "exotic" | "ornamental" | "medicinal" | "coffee" | "cocoa";
+                categories: {
+                    slug: string;
+                    label: string;
+                }[];
             };
             quantity_available: number;
             /** @description UGX */
@@ -1763,8 +2121,15 @@ export interface components {
             name: string;
             /** @enum {string} */
             type: "private" | "commercial" | "community";
-            /** @enum {string} */
-            certification_status: "certified" | "pending" | "unverified";
+            /** @description Only when an admin recorded a verified certification */
+            certified: boolean;
+            /** @description The recorded certification (for the badge tooltip), or null */
+            certification: {
+                body: string;
+                ref: string | null;
+                /** @description ISO 8601 date-time */
+                verified_at: string;
+            } | null;
             operator_name: string;
             /** @description Null for sample nurseries, which have no real number */
             contact_phone: string | null;
@@ -1796,7 +2161,11 @@ export interface components {
                 lng: number;
             };
             inventory: components["schemas"]["InventoryItem"][];
-            stock_categories: ("indigenous" | "agroforestry" | "exotic" | "ornamental" | "medicinal" | "coffee" | "cocoa")[];
+            /** @description Categories of the trees it has in stock */
+            stock_categories: {
+                slug: string;
+                label: string;
+            }[];
             active_campaigns: {
                 /** Format: uuid */
                 id: string;
@@ -1810,43 +2179,16 @@ export interface components {
             /** @enum {string} */
             distance_mode?: "road" | "straight_line";
         };
-        Route: {
-            nursery: {
-                /** Format: uuid */
-                id: string;
-                name: string;
-                location: {
-                    lat: number;
-                    lng: number;
-                };
-            };
-            distance_km: number;
-            /** @enum {string} */
-            distance_mode: "road" | "straight_line";
-            duration_min: number;
-            geometry: {
-                /** @constant */
-                type: "LineString";
-                coordinates: [
-                    number,
-                    number
-                ][];
-            };
-            steps: {
-                instruction: string;
-                road: string | null;
-                distance_m: number;
-                duration_s: number;
-            }[];
-        };
         SpeciesListItem: {
             /** Format: uuid */
             id: string;
             slug: string;
             common_name: string;
             scientific_name: string;
-            /** @enum {string} */
-            category: "indigenous" | "agroforestry" | "exotic" | "ornamental" | "medicinal" | "coffee" | "cocoa";
+            categories: {
+                slug: string;
+                label: string;
+            }[];
             /** @enum {string} */
             growth_pace: "fast" | "moderate" | "slow";
             local_names: {
@@ -1862,16 +2204,31 @@ export interface components {
             slug: string;
             common_name: string;
             scientific_name: string;
-            /** @enum {string} */
-            category: "indigenous" | "agroforestry" | "exotic" | "ornamental" | "medicinal" | "coffee" | "cocoa";
+            categories: {
+                slug: string;
+                label: string;
+            }[];
             /** @enum {string} */
             growth_pace: "fast" | "moderate" | "slow";
             height_timeline: {
                 years: number;
                 height_m: number;
             }[];
-            canopy_notes: string | null;
-            root_notes: string | null;
+            botanical_family: string | null;
+            appearance_and_identification: string | null;
+            growth_characteristics: string | null;
+            distribution_and_origin: string | null;
+            soil_conditions: string | null;
+            rainfall_requirements: string | null;
+            climate_and_ecology: string | null;
+            propagation_methods: string | null;
+            planting_requirements: string | null;
+            recommended_spacing: string | null;
+            management_practices: string | null;
+            economic_uses: string | null;
+            environmental_benefits: string | null;
+            agroforestry_applications: string | null;
+            other_uses: string | null;
             ecological_zones: string[];
             local_names: {
                 language: string;
@@ -1896,8 +2253,15 @@ export interface components {
             name: string;
             /** @enum {string} */
             type: "private" | "commercial" | "community";
-            /** @enum {string} */
-            certification_status: "certified" | "pending" | "unverified";
+            /** @description Only when an admin recorded a verified certification */
+            certified: boolean;
+            /** @description The recorded certification (for the badge tooltip), or null */
+            certification: {
+                body: string;
+                ref: string | null;
+                /** @description ISO 8601 date-time */
+                verified_at: string;
+            } | null;
             operator_name: string;
             /** @description Null for sample nurseries, which have no real number */
             contact_phone: string | null;
@@ -2011,8 +2375,10 @@ export interface components {
             id: string;
             title: string;
             slug: string;
-            /** @enum {string} */
-            category: "weather" | "market" | "policy" | "grant";
+            category: {
+                slug: string;
+                label: string;
+            };
             cover_url: string | null;
             excerpt: string;
             /** @description ISO 8601 date-time */
@@ -2023,8 +2389,10 @@ export interface components {
             id: string;
             title: string;
             slug: string;
-            /** @enum {string} */
-            category: "weather" | "market" | "policy" | "grant";
+            category: {
+                slug: string;
+                label: string;
+            };
             /** @description Markdown */
             body: string;
             cover_url: string | null;
@@ -2035,10 +2403,31 @@ export interface components {
             /** Format: uuid */
             id: string;
             title: string;
+            /** @description Organizer or programme */
             funder_name: string;
-            /** @enum {string} */
-            funder_type: "government" | "ngo" | "foundation" | "corporate";
+            /**
+             * @description Organizer type
+             * @enum {string}
+             */
+            funder_type: "government" | "ngo" | "foundation" | "corporate" | "community" | "other";
             purpose: string;
+            /** @enum {string} */
+            offer_type: "free" | "subsidised";
+            /** @description UGX per seedling, for subsidised giveaways */
+            subsidised_price: number | null;
+            eligibility_requirements: string | null;
+            application_procedure: string | null;
+            application_deadline: string | null;
+            /** @description When applications close: the deadline, or the end date */
+            closes_at: string;
+            contact: {
+                phone: string | null;
+                email: string | null;
+                website: string | null;
+            };
+            distribution_locations: string | null;
+            /** @description Apply on this site; otherwise follow the organizer's instructions */
+            accepts_platform_applications: boolean;
             allocated_stock: number;
             remaining_stock: number;
             remaining_pct: number;
@@ -2054,7 +2443,12 @@ export interface components {
             /** @description ISO 8601 date-time */
             ends_at: string;
             is_active: boolean;
-            /** @description Accepting applications: switched on, within its dates, stock left */
+            /**
+             * @description open, closing_soon (within 14 days) or closed
+             * @enum {string}
+             */
+            status: "open" | "closing_soon" | "closed";
+            /** @description Accepting applications on this site: switched on, within its dates, stock left */
             is_open: boolean;
             species: {
                 /** Format: uuid */
@@ -2067,7 +2461,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 name: string;
-            };
+            } | null;
             pickup_nursery: {
                 /** Format: uuid */
                 id: string;
@@ -2076,7 +2470,7 @@ export interface components {
                     lat: number;
                     lng: number;
                 };
-            };
+            } | null;
         };
         Application: {
             /** Format: uuid */
@@ -2085,7 +2479,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 title: string;
-                pickup_nursery: string;
+                pickup_nursery: string | null;
             };
             answers: {
                 [key: string]: boolean | number | string;
@@ -2104,7 +2498,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 title: string;
-                pickup_nursery: string;
+                pickup_nursery: string | null;
             };
             answers: {
                 [key: string]: boolean | number | string;
@@ -2123,73 +2517,159 @@ export interface components {
             };
             reviewed_by: string | null;
         };
-        ServiceRequest: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            service: "farm_plan" | "site_visit" | "planting" | "watering" | "orchard_care" | "survival_check" | "training";
-            location: string;
-            land_acres: number | null;
-            notes: string | null;
-            /** @enum {string} */
-            status: "new" | "contacted" | "scheduled" | "done" | "cancelled";
-            /** @description Latest note from the team, e.g. the agreed date */
-            admin_note: string | null;
-            /** @description ISO 8601 date-time */
-            created_at: string;
-            /** @description ISO 8601 date-time */
-            updated_at: string;
+        TreeCategory: {
+            slug: string;
+            label: string;
+            description: string | null;
+            sort_order: number;
+            is_active: boolean;
+            /** @description Trees in this category */
+            species_count: number;
         };
-        AdminServiceRequest: {
+        AdminCategory: {
+            slug: string;
+            label: string;
+            description: string | null;
+            sort_order: number;
+            is_active: boolean;
+            uses: number;
+        };
+        NewsCategory: {
+            slug: string;
+            label: string;
+            description: string | null;
+            sort_order: number;
+            is_active: boolean;
+            /** @description Published posts in this category */
+            post_count: number;
+        };
+        ServiceCategory: {
             /** Format: uuid */
             id: string;
-            /** @enum {string} */
-            service: "farm_plan" | "site_visit" | "planting" | "watering" | "orchard_care" | "survival_check" | "training";
-            location: string;
-            land_acres: number | null;
-            notes: string | null;
-            /** @enum {string} */
-            status: "new" | "contacted" | "scheduled" | "done" | "cancelled";
-            /** @description Latest note from the team, e.g. the agreed date */
-            admin_note: string | null;
-            /** @description ISO 8601 date-time */
-            created_at: string;
-            /** @description ISO 8601 date-time */
-            updated_at: string;
-            requester: {
+            slug: string;
+            title: string;
+            intro: string;
+            icon: string;
+            sort_order: number;
+            is_active: boolean;
+            services: {
                 /** Format: uuid */
                 id: string;
-                full_name: string;
-                phone: string;
-            };
-            handled_by: string | null;
+                title: string;
+                sort_order: number;
+                is_active: boolean;
+            }[];
         };
-        FeedbackReceipt: {
+        EnquiryReceipt: {
             /** Format: uuid */
             id: string;
             /** @description ISO 8601 date-time */
             created_at: string;
         };
-        AdminFeedback: {
+        AdminEnquiry: {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            kind: "experience" | "suggestion" | "problem";
-            message: string;
-            /** @description The account's name when signed in, else what they typed */
-            name: string | null;
-            /** @description The account's phone when signed in, else what they typed */
-            contact: string | null;
-            page: string | null;
-            user_id: string | null;
+            type: "service" | "donation" | "partnership" | "contact" | "feedback";
             /** @enum {string} */
-            status: "new" | "read" | "done";
+            status: "new" | "in_progress" | "closed";
+            name: string | null;
+            phone: string | null;
+            email: string | null;
+            organization: string | null;
+            district: string | null;
+            message: string;
+            consent: boolean;
+            service_category: {
+                /** Format: uuid */
+                id: string;
+                title: string;
+            } | null;
+            services: string[];
+            /** @description Extra details by type, e.g. feedback kind and page */
+            details: {
+                [key: string]: string | number | boolean | null;
+            };
+            user_id: string | null;
             admin_note: string | null;
             handled_by: string | null;
             /** @description ISO 8601 date-time */
             created_at: string;
             /** @description ISO 8601 date-time */
             updated_at: string;
+        };
+        EnquiryCounts: {
+            new_by_type: {
+                service: number;
+                donation: number;
+                partnership: number;
+                contact: number;
+                feedback: number;
+            };
+            new_total: number;
+        };
+        Partner: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            logo_url: string | null;
+            website_url: string | null;
+            sort_order: number;
+            is_active: boolean;
+        };
+        PageContent: {
+            key: string;
+            title: string | null;
+            subtitle: string | null;
+            /** @description Markdown */
+            body: string | null;
+            data: {
+                [key: string]: unknown;
+            };
+            /** @description ISO 8601 date-time */
+            updated_at: string;
+        };
+        SearchResults: {
+            nurseries: {
+                /** @description The record id, or slug for trees and news */
+                id: string;
+                title: string;
+                subtitle: string | null;
+                /** @description Site path to open */
+                link: string;
+            }[];
+            species: {
+                /** @description The record id, or slug for trees and news */
+                id: string;
+                title: string;
+                subtitle: string | null;
+                /** @description Site path to open */
+                link: string;
+            }[];
+            services: {
+                /** @description The record id, or slug for trees and news */
+                id: string;
+                title: string;
+                subtitle: string | null;
+                /** @description Site path to open */
+                link: string;
+            }[];
+            news: {
+                /** @description The record id, or slug for trees and news */
+                id: string;
+                title: string;
+                subtitle: string | null;
+                /** @description Site path to open */
+                link: string;
+            }[];
+            giveaways: {
+                /** @description The record id, or slug for trees and news */
+                id: string;
+                title: string;
+                subtitle: string | null;
+                /** @description Site path to open */
+                link: string;
+            }[];
         };
         Quote: {
             nursery: {
@@ -2365,6 +2845,14 @@ export interface components {
             type: "private" | "commercial" | "community";
             /** @enum {string} */
             certification_status: "certified" | "pending" | "unverified";
+            /** @description The recorded verification; the nursery shows as Certified only with one */
+            certification: {
+                body: string;
+                ref: string | null;
+                /** @description ISO 8601 date-time */
+                verified_at: string;
+                verified_by: string | null;
+            } | null;
             operator_name: string;
             contact_phone: string;
             payout_phone: string;
@@ -2450,8 +2938,12 @@ export interface components {
             id: string;
             title: string;
             slug: string;
-            /** @enum {string} */
-            category: "weather" | "market" | "policy" | "grant";
+            category: {
+                slug: string;
+                label: string;
+            };
+            /** @description The category was guessed when categories changed: check it */
+            needs_review: boolean;
             body: string;
             cover_url: string | null;
             is_published: boolean;
@@ -2636,6 +3128,33 @@ export interface components {
                     created_at: string;
                 }[];
             };
+            /** @description Unread messages in the inbox (service requests, donations, partnerships, contact, feedback) */
+            new_enquiries: {
+                count: number;
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** @enum {string} */
+                    type: "service" | "donation" | "partnership" | "contact" | "feedback";
+                    name: string | null;
+                    message: string;
+                    /** @description ISO 8601 date-time */
+                    created_at: string;
+                }[];
+            };
+            /** @description Posts whose category was guessed when categories changed */
+            news_to_review: {
+                count: number;
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    title: string;
+                    category: {
+                        slug: string;
+                        label: string;
+                    };
+                }[];
+            };
             unparsed_sms: {
                 count: number;
                 items: {
@@ -2688,7 +3207,7 @@ export interface components {
                     /** @description The same figure for the period just before */
                     previous: number;
                 };
-                /** @description Free seedlings approved through campaigns */
+                /** @description Seedlings approved through giveaways */
                 free_seedlings: {
                     value: number;
                     /** @description The same figure for the period just before */
@@ -2732,8 +3251,10 @@ export interface components {
                 sales_ugx: number;
             }[];
             stock_by_category: {
-                /** @enum {string} */
-                category: "indigenous" | "agroforestry" | "exotic" | "ornamental" | "medicinal" | "coffee" | "cocoa";
+                category: {
+                    slug: string;
+                    label: string;
+                };
                 seedlings: number;
                 lines: number;
             }[];
@@ -3344,7 +3865,8 @@ export interface operations {
                 district_id?: string;
                 sub_county_id?: string;
                 species?: string;
-                category?: "indigenous" | "agroforestry" | "exotic" | "ornamental" | "medicinal" | "coffee" | "cocoa";
+                categories?: string;
+                certified?: "true" | "false";
                 q?: string;
                 has_campaign?: "true" | "false";
                 format?: "json" | "geojson";
@@ -3458,75 +3980,13 @@ export interface operations {
             };
         };
     };
-    getNurseriesIdRoute: {
-        parameters: {
-            query: {
-                lat: number;
-                lng: number;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Route line, distance, duration and turn-by-turn steps */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["Route"];
-                    };
-                };
-            };
-            /** @description The request is not valid */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Too many requests */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Routing is unavailable (routes never fall back to a straight line) */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
     getSpecies: {
         parameters: {
             query?: {
                 page?: number;
                 limit?: number;
-                category?: "indigenous" | "agroforestry" | "exotic" | "ornamental" | "medicinal" | "coffee" | "cocoa";
+                /** @description One category slug, or several separated by commas (any of them) */
+                category?: string;
                 letter?: string;
                 q?: string;
             };
@@ -3884,7 +4344,7 @@ export interface operations {
             query?: {
                 page?: number;
                 limit?: number;
-                category?: "weather" | "market" | "policy" | "grant";
+                category?: string;
             };
             header?: never;
             path?: never;
@@ -3975,11 +4435,12 @@ export interface operations {
             };
         };
     };
-    getCampaigns: {
+    getGiveaways: {
         parameters: {
             query?: {
                 page?: number;
                 limit?: number;
+                status?: "open" | "closing_soon" | "closed";
                 sub_county_id?: string;
                 purpose?: string;
             };
@@ -3989,7 +4450,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Campaigns with the stock meter */
+            /** @description Giveaways */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4021,7 +4482,7 @@ export interface operations {
             };
         };
     };
-    getCampaignsId: {
+    getGiveawaysId: {
         parameters: {
             query?: never;
             header?: never;
@@ -4032,7 +4493,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The campaign, with is_open */
+            /** @description The giveaway, with is_open (taking applications on this site) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4072,7 +4533,7 @@ export interface operations {
             };
         };
     };
-    postCampaignsIdApply: {
+    postGiveawaysIdApply: {
         parameters: {
             query?: never;
             header?: never;
@@ -4139,7 +4600,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Already applied, campaign closed, or too few seedlings left */
+            /** @description Already applied, not taking applications here, or too few seedlings left */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4159,7 +4620,7 @@ export interface operations {
             };
         };
     };
-    getCampaignsApplicationsMe: {
+    getGiveawaysApplicationsMe: {
         parameters: {
             query?: {
                 page?: number;
@@ -4221,7 +4682,162 @@ export interface operations {
             };
         };
     };
-    postServiceRequests: {
+    getTreeCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active categories, in order, with how many trees each has */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["TreeCategory"][];
+                    };
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getNewsCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active categories, in order, with their published posts counted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["NewsCategory"][];
+                    };
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getExpertServices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active categories and services, in order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ServiceCategory"][];
+                    };
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getPartners: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active partners, in order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Partner"][];
+                    };
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getPageContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Content blocks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PageContent"][];
+                    };
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    postEnquiries: {
         parameters: {
             query?: never;
             header?: never;
@@ -4231,46 +4847,49 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    /** @constant */
+                    type: "service";
+                    name: string;
+                    phone: string;
+                    email?: string;
+                    organization?: string;
+                    district: string;
+                    message: string;
+                    /** @constant */
+                    consent: true;
+                    website?: string;
+                    /** Format: uuid */
+                    service_category_id: string;
+                    service_ids: string[];
+                } | {
                     /** @enum {string} */
-                    service: "farm_plan" | "site_visit" | "planting" | "watering" | "orchard_care" | "survival_check" | "training";
-                    location: string;
-                    land_acres?: number;
-                    notes?: string;
+                    type: "donation" | "partnership" | "contact";
+                    name: string;
+                    phone?: string;
+                    email?: string;
+                    organization?: string;
+                    district?: string;
+                    message: string;
+                    /** @constant */
+                    consent: true;
+                    website?: string;
                 };
             };
         };
         responses: {
-            /** @description Request recorded; the team phones the buyer back */
+            /** @description Received */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["ServiceRequest"];
+                        data: components["schemas"]["EnquiryReceipt"];
                     };
                 };
             };
             /** @description The request is not valid */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not signed in, or the access token has expired */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description The account does not have this role */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4309,14 +4928,57 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Feedback recorded */
+            /** @description Feedback recorded in the admin Inbox */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["FeedbackReceipt"];
+                        data: components["schemas"]["EnquiryReceipt"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getSearch: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Results grouped by kind */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SearchResults"];
                     };
                 };
             };
@@ -4397,68 +5059,6 @@ export interface operations {
             };
             /** @description The assistant is switched off, or its model provider is unavailable */
             503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
-    getServiceRequestsMe: {
-        parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Requests, newest first */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["ServiceRequest"][];
-                        meta: components["schemas"]["PageMeta"];
-                    };
-                };
-            };
-            /** @description The request is not valid */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not signed in, or the access token has expired */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description The account does not have this role */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Too many requests */
-            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5121,7 +5721,7 @@ export interface operations {
                      * @default unverified
                      * @enum {string}
                      */
-                    certification_status?: "certified" | "pending" | "unverified";
+                    certification_status?: "pending" | "unverified";
                     /** @default true */
                     is_active?: boolean;
                 };
@@ -5345,13 +5945,160 @@ export interface operations {
                     annual_capacity?: number;
                     seed_source?: string | null;
                     /** @enum {string} */
-                    certification_status?: "certified" | "pending" | "unverified";
+                    certification_status?: "pending" | "unverified";
                     is_active?: boolean;
                 };
             };
         };
         responses: {
             /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminNursery"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    putAdminNurseriesIdCertification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    body: string;
+                    ref?: string | null;
+                    /** Format: date-time */
+                    verified_at?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Certified */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminNursery"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteAdminNurseriesIdCertification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uncertified */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5767,7 +6514,7 @@ export interface operations {
             query?: {
                 page?: number;
                 limit?: number;
-                category?: "indigenous" | "agroforestry" | "exotic" | "ornamental" | "medicinal" | "coffee" | "cocoa";
+                category?: string;
                 q?: string;
             };
             header?: never;
@@ -5839,8 +6586,7 @@ export interface operations {
                     common_name: string;
                     scientific_name: string;
                     slug?: string;
-                    /** @enum {string} */
-                    category: "indigenous" | "agroforestry" | "exotic" | "ornamental" | "medicinal" | "coffee" | "cocoa";
+                    categories: string[];
                     /** @enum {string} */
                     growth_pace: "fast" | "moderate" | "slow";
                     /** @default [] */
@@ -5848,8 +6594,6 @@ export interface operations {
                         years: number;
                         height_m: number;
                     }[];
-                    canopy_notes?: string | null;
-                    root_notes?: string | null;
                     /** @default [] */
                     ecological_zones?: string[];
                     /** @default [] */
@@ -5862,6 +6606,21 @@ export interface operations {
                         url: string;
                         caption?: string | null;
                     }[];
+                    botanical_family?: string | null;
+                    appearance_and_identification?: string | null;
+                    growth_characteristics?: string | null;
+                    distribution_and_origin?: string | null;
+                    soil_conditions?: string | null;
+                    rainfall_requirements?: string | null;
+                    climate_and_ecology?: string | null;
+                    propagation_methods?: string | null;
+                    planting_requirements?: string | null;
+                    recommended_spacing?: string | null;
+                    management_practices?: string | null;
+                    economic_uses?: string | null;
+                    environmental_benefits?: string | null;
+                    agroforestry_applications?: string | null;
+                    other_uses?: string | null;
                 };
             };
         };
@@ -6073,16 +6832,13 @@ export interface operations {
                     common_name?: string;
                     scientific_name?: string;
                     slug?: string;
-                    /** @enum {string} */
-                    category?: "indigenous" | "agroforestry" | "exotic" | "ornamental" | "medicinal" | "coffee" | "cocoa";
+                    categories?: string[];
                     /** @enum {string} */
                     growth_pace?: "fast" | "moderate" | "slow";
                     height_timeline?: {
                         years: number;
                         height_m: number;
                     }[];
-                    canopy_notes?: string | null;
-                    root_notes?: string | null;
                     ecological_zones?: string[];
                     local_names?: {
                         language: string;
@@ -6092,6 +6848,21 @@ export interface operations {
                         url: string;
                         caption?: string | null;
                     }[];
+                    botanical_family?: string | null;
+                    appearance_and_identification?: string | null;
+                    growth_characteristics?: string | null;
+                    distribution_and_origin?: string | null;
+                    soil_conditions?: string | null;
+                    rainfall_requirements?: string | null;
+                    climate_and_ecology?: string | null;
+                    propagation_methods?: string | null;
+                    planting_requirements?: string | null;
+                    recommended_spacing?: string | null;
+                    management_practices?: string | null;
+                    economic_uses?: string | null;
+                    environmental_benefits?: string | null;
+                    agroforestry_applications?: string | null;
+                    other_uses?: string | null;
                 };
             };
         };
@@ -6159,8 +6930,9 @@ export interface operations {
             query?: {
                 page?: number;
                 limit?: number;
-                category?: "weather" | "market" | "policy" | "grant";
+                category?: string;
                 is_published?: "true" | "false";
+                needs_review?: "true" | "false";
             };
             header?: never;
             path?: never;
@@ -6230,8 +7002,7 @@ export interface operations {
                 "application/json": {
                     title: string;
                     slug?: string;
-                    /** @enum {string} */
-                    category: "weather" | "market" | "policy" | "grant";
+                    category: string;
                     body: string;
                     cover_url?: string | null;
                     /** @default false */
@@ -6439,10 +7210,10 @@ export interface operations {
                 "application/json": {
                     title?: string;
                     slug?: string;
-                    /** @enum {string} */
-                    category?: "weather" | "market" | "policy" | "grant";
+                    category?: string;
                     body?: string;
                     cover_url?: string | null;
+                    needs_review?: boolean;
                     is_published?: boolean;
                     published_at?: string | null;
                 };
@@ -6579,15 +7350,32 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** Format: uuid */
-                    nursery_id: string;
                     title: string;
                     funder_name: string;
                     /** @enum {string} */
-                    funder_type: "government" | "ngo" | "foundation" | "corporate";
+                    funder_type: "government" | "ngo" | "foundation" | "corporate" | "community" | "other";
                     purpose: string;
-                    /** Format: uuid */
-                    sub_county_id: string;
+                    /**
+                     * @default free
+                     * @enum {string}
+                     */
+                    offer_type?: "free" | "subsidised";
+                    /** @default null */
+                    subsidised_price?: number | null;
+                    eligibility_requirements?: string | null;
+                    application_procedure?: string | null;
+                    /** @default null */
+                    application_deadline?: string | null;
+                    contact_phone?: string | null;
+                    contact_email?: string | null;
+                    website_url?: string | null;
+                    distribution_locations?: string | null;
+                    /** @default true */
+                    accepts_platform_applications?: boolean;
+                    /** @default null */
+                    nursery_id?: string | null;
+                    /** @default null */
+                    sub_county_id?: string | null;
                     /** @default [] */
                     eligibility_rules?: {
                         key: string;
@@ -6602,7 +7390,8 @@ export interface operations {
                     ends_at: string;
                     /** @default true */
                     is_active?: boolean;
-                    items: {
+                    /** @default [] */
+                    items?: {
                         /** Format: uuid */
                         species_id: string;
                         quantity: number;
@@ -6815,15 +7604,24 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** Format: uuid */
-                    nursery_id?: string;
                     title?: string;
                     funder_name?: string;
                     /** @enum {string} */
-                    funder_type?: "government" | "ngo" | "foundation" | "corporate";
+                    funder_type?: "government" | "ngo" | "foundation" | "corporate" | "community" | "other";
                     purpose?: string;
-                    /** Format: uuid */
-                    sub_county_id?: string;
+                    /** @enum {string} */
+                    offer_type?: "free" | "subsidised";
+                    subsidised_price?: number | null;
+                    eligibility_requirements?: string | null;
+                    application_procedure?: string | null;
+                    application_deadline?: string | null;
+                    contact_phone?: string | null;
+                    contact_email?: string | null;
+                    website_url?: string | null;
+                    distribution_locations?: string | null;
+                    accepts_platform_applications?: boolean;
+                    nursery_id?: string | null;
+                    sub_county_id?: string | null;
                     eligibility_rules?: {
                         key: string;
                         label: string;
@@ -7072,11 +7870,12 @@ export interface operations {
             };
         };
     };
-    getAdminFeedback: {
+    getAdminEnquiries: {
         parameters: {
             query?: {
-                status?: "new" | "read" | "done";
-                kind?: "experience" | "suggestion" | "problem";
+                type?: "service" | "donation" | "partnership" | "contact" | "feedback";
+                status?: "new" | "in_progress" | "closed";
+                q?: string;
                 page?: number;
                 limit?: number;
             };
@@ -7086,14 +7885,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Feedback, newest first */
+            /** @description Enquiries, newest first */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["AdminFeedback"][];
+                        data: components["schemas"]["AdminEnquiry"][];
                         meta: components["schemas"]["PageMeta"];
                     };
                 };
@@ -7136,7 +7935,56 @@ export interface operations {
             };
         };
     };
-    putAdminFeedbackId: {
+    getAdminEnquiriesCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Counts of new enquiries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EnquiryCounts"];
+                    };
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAdminEnquiriesId: {
         parameters: {
             query?: never;
             header?: never;
@@ -7145,24 +7993,16 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @enum {string} */
-                    status: "new" | "read" | "done";
-                    note?: string;
-                };
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description Updated */
+            /** @description The enquiry */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["AdminFeedback"];
+                        data: components["schemas"]["AdminEnquiry"];
                     };
                 };
             };
@@ -7213,13 +8053,89 @@ export interface operations {
             };
         };
     };
-    getAdminServiceRequests: {
+    putAdminEnquiriesId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    status: "new" | "in_progress" | "closed";
+                    note?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminEnquiry"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAdminExportEnquiriesCsv: {
         parameters: {
             query?: {
-                status?: "new" | "contacted" | "scheduled" | "done" | "cancelled";
-                service?: "farm_plan" | "site_visit" | "planting" | "watering" | "orchard_care" | "survival_check" | "training";
-                page?: number;
-                limit?: number;
+                type?: "service" | "donation" | "partnership" | "contact" | "feedback";
+                status?: "new" | "in_progress" | "closed";
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -7227,15 +8143,131 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Requests with the requester's name and phone, newest first */
+            /** @description CSV file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAdminTreeCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Categories with how often each is used */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["AdminServiceRequest"][];
-                        meta: components["schemas"]["PageMeta"];
+                        data: components["schemas"]["AdminCategory"][];
+                    };
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    postAdminTreeCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    slug?: string;
+                    label: string;
+                    description?: string | null;
+                    /** @default 0 */
+                    sort_order?: number;
+                    /** @default true */
+                    is_active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCategory"];
                     };
                 };
             };
@@ -7277,35 +8309,23 @@ export interface operations {
             };
         };
     };
-    putAdminServiceRequestsId: {
+    deleteAdminTreeCategoriesSlug: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                slug: string;
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @enum {string} */
-                    status: "contacted" | "scheduled" | "done" | "cancelled";
-                    note?: string;
-                };
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description Updated */
-            200: {
+            /** @description Deleted */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["AdminServiceRequest"];
-                    };
-                };
+                content?: never;
             };
             /** @description The request is not valid */
             400: {
@@ -7343,8 +8363,1026 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Not a valid next step from its current status */
+            /** @description In use; switch it off instead */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    patchAdminTreeCategoriesSlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    label?: string;
+                    description?: string | null;
+                    sort_order?: number;
+                    is_active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCategory"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAdminNewsCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Categories with how often each is used */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCategory"][];
+                    };
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    postAdminNewsCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    slug?: string;
+                    label: string;
+                    description?: string | null;
+                    /** @default 0 */
+                    sort_order?: number;
+                    /** @default true */
+                    is_active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCategory"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteAdminNewsCategoriesSlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description In use; switch it off instead */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    patchAdminNewsCategoriesSlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    label?: string;
+                    description?: string | null;
+                    sort_order?: number;
+                    is_active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCategory"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAdminExpertServices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Categories with their services */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ServiceCategory"][];
+                    };
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    postAdminExpertServices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    slug?: string;
+                    title: string;
+                    intro: string;
+                    /** @default leaf */
+                    icon?: string;
+                    /** @default 0 */
+                    sort_order?: number;
+                    /** @default true */
+                    is_active?: boolean;
+                    /** @default [] */
+                    services?: {
+                        title: string;
+                        /** @default true */
+                        is_active?: boolean;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ServiceCategory"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteAdminExpertServicesId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    patchAdminExpertServicesId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title?: string;
+                    intro?: string;
+                    icon?: string;
+                    sort_order?: number;
+                    is_active?: boolean;
+                    services?: {
+                        title: string;
+                        /** @default true */
+                        is_active?: boolean;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ServiceCategory"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAdminPartners: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Partners */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Partner"][];
+                    };
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    postAdminPartners: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    /** @default null */
+                    logo_url?: string | null;
+                    website_url?: string | null;
+                    /** @default 0 */
+                    sort_order?: number;
+                    /** @default true */
+                    is_active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Partner"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteAdminPartnersId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    patchAdminPartnersId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    logo_url?: string | null;
+                    website_url?: string | null;
+                    sort_order?: number;
+                    is_active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Partner"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAdminPageContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Content blocks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PageContent"][];
+                    };
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    putAdminPageContentKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: "home.hero" | "home.how_it_works" | "home.partners" | "library.intro" | "expert_services.intro" | "news.intro" | "giveaways.intro" | "donate.page" | "donate.payment_instructions" | "site.contact";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title?: string | null;
+                    subtitle?: string | null;
+                    body?: string | null;
+                    data?: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PageContent"];
+                    };
+                };
+            };
+            /** @description The request is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in, or the access token has expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The account does not have this role */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

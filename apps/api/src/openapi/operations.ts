@@ -22,10 +22,18 @@ import {
   registerSchema,
   requestVerificationSchema,
   resetPasswordSchema,
-  serviceRequestCreateSchema,
-  serviceRequestUpdateSchema,
+  categoryCreateSchema,
+  categoryUpdateSchema,
+  enquiryCreateSchema,
+  enquiryUpdateSchema,
+  enquiriesQuerySchema,
   feedbackCreateSchema,
-  feedbackUpdateSchema,
+  nurseryCertificationSchema,
+  pageContentUpdateSchema,
+  partnerCreateSchema,
+  partnerUpdateSchema,
+  serviceCategoryCreateSchema,
+  serviceCategoryUpdateSchema,
   assistantChatSchema,
   assistantEventSchema,
   shadowRunCreateSchema,
@@ -33,7 +41,7 @@ import {
   speciesUpdateSchema,
   verifyPhoneSchema,
 } from '@nurserylink/shared';
-import { optionalLatLngQuery, requiredLatLngQuery } from '../lib/geo.js';
+import { optionalLatLngQuery } from '../lib/geo.js';
 import { paginationQuerySchema } from '../lib/pagination.js';
 import * as admin from '../modules/admin/admin.routes.js';
 import * as boundaries from '../modules/boundaries/boundaries.routes.js';
@@ -76,7 +84,7 @@ const id = z.object({ id: z.uuid() });
 /** Every API operation. The OpenAPI test checks this list against the routes Express really serves. */
 export const operations: Operation[] = [
   // ── Health ────────────────────────────────────────────────
-  { method: 'get', path: '/stats', tag: 'Health', summary: 'The marketplace at a glance: nurseries, trees and seedlings in stock, open campaigns', response: { data: r.publicStatsSchema }, access: 'public',
+  { method: 'get', path: '/stats', tag: 'Health', summary: 'The marketplace at a glance: nurseries, trees and seedlings in stock, open giveaways', response: { data: r.publicStatsSchema }, access: 'public',
     success: { status: 200, description: 'Counts' } },
   { method: 'get', path: '/health', tag: 'Health', summary: 'Service and database status', response: { data: r.healthSchema }, access: 'public',
     success: { status: 200, description: 'API and database are up; lists the provider selected for each service' },
@@ -107,14 +115,11 @@ export const operations: Operation[] = [
     success: { status: 200, description: 'The account' } },
 
   // ── Public catalogue ─────────────────────────────────────
-  { method: 'get', path: '/nurseries', tag: 'Nurseries', summary: 'Find nurseries (JSON or GeoJSON), optionally nearest-first by road', response: { data: z.union([z.array(r.nurserySummarySchema), r.nurseryFeatureCollectionSchema]), meta: z.union([r.nurseryListMetaSchema, r.nurseryGeoJsonMetaSchema]) }, access: 'public',
+  { method: 'get', path: '/nurseries', tag: 'Nurseries', summary: 'Find nurseries (JSON or GeoJSON), optionally nearest-first (straight line)', response: { data: z.union([z.array(r.nurserySummarySchema), r.nurseryFeatureCollectionSchema]), meta: z.union([r.nurseryListMetaSchema, r.nurseryGeoJsonMetaSchema]) }, access: 'public',
     description: '`q` matches a nursery name or any tree it stocks (common, scientific or local name). Use format=geojson for the map: one unpaginated collection.',
     query: listNurseriesQuery, success: { status: 200, description: 'Nurseries, or a FeatureCollection with format=geojson' } },
-  { method: 'get', path: '/nurseries/:id', tag: 'Nurseries', summary: 'Nursery profile with stock; road distance when lat/lng are given', response: { data: r.nurseryProfileSchema }, access: 'public',
+  { method: 'get', path: '/nurseries/:id', tag: 'Nurseries', summary: 'Nursery profile with stock; straight-line distance when lat/lng are given', response: { data: r.nurseryProfileSchema }, access: 'public',
     params: id, query: optionalLatLngQuery, success: { status: 200, description: 'The nursery' } },
-  { method: 'get', path: '/nurseries/:id/route', tag: 'Nurseries', summary: 'Driving route from a point to the nursery', response: { data: r.routeSchema }, access: 'public',
-    params: id, query: requiredLatLngQuery, success: { status: 200, description: 'Route line, distance, duration and turn-by-turn steps' },
-    errors: { 503: 'Routing is unavailable (routes never fall back to a straight line)' } },
   { method: 'get', path: '/species', tag: 'Species', summary: 'Digital Tree Library', response: { data: z.array(r.speciesListItemSchema), meta: r.speciesListMetaSchema }, access: 'public',
     query: species.listQuery, success: { status: 200, description: 'Species' } },
   { method: 'get', path: '/species/:slug', tag: 'Species', summary: 'One species', response: { data: r.speciesProfileSchema }, access: 'public',
@@ -136,30 +141,44 @@ export const operations: Operation[] = [
   { method: 'get', path: '/news/:slug', tag: 'News', summary: 'One news post', response: { data: r.newsPostSchema }, access: 'public',
     params: news.slugParams, success: { status: 200, description: 'The post' } },
 
-  // ── Campaigns ────────────────────────────────────────────
-  { method: 'get', path: '/campaigns', tag: 'Campaigns', summary: 'Running free-seedling campaigns', response: { data: z.array(r.campaignSchema), meta: r.pageMetaSchema }, access: 'public',
-    query: campaigns.listQuery, success: { status: 200, description: 'Campaigns with the stock meter' } },
-  { method: 'get', path: '/campaigns/:id', tag: 'Campaigns', summary: 'One campaign (including ended ones)', response: { data: r.campaignSchema }, access: 'public',
-    params: id, success: { status: 200, description: 'The campaign, with is_open' } },
-  { method: 'post', path: '/campaigns/:id/apply', tag: 'Campaigns', summary: 'Apply for free seedlings', response: { data: r.applicationSchema }, access: 'buyer',
+  // ── Giveaways (stored as campaigns) ──────────────────────
+  { method: 'get', path: '/giveaways', tag: 'Giveaways', summary: 'Free and subsidised seedling giveaways', response: { data: z.array(r.campaignSchema), meta: r.pageMetaSchema }, access: 'public',
+    description: 'Giveaways are stored as `campaigns` (the admin API keeps that name). `status=open` (the default) lists giveaways that have not closed, soonest-closing first, including those closing within 14 days; `closing_soon` only those; `closed` the rest, latest first.',
+    query: campaigns.listQuery, success: { status: 200, description: 'Giveaways' } },
+  { method: 'get', path: '/giveaways/:id', tag: 'Giveaways', summary: 'One giveaway (including closed ones)', response: { data: r.campaignSchema }, access: 'public',
+    params: id, success: { status: 200, description: 'The giveaway, with is_open (taking applications on this site)' } },
+  { method: 'post', path: '/giveaways/:id/apply', tag: 'Giveaways', summary: 'Apply through this site', response: { data: r.applicationSchema }, access: 'buyer',
     params: id, body: campaignApplySchema, success: { status: 201, description: 'Application recorded (pending review)' },
-    errors: { 400: 'Answers do not meet the eligibility rules', 409: 'Already applied, campaign closed, or too few seedlings left' } },
-  { method: 'get', path: '/campaigns/applications/me', tag: 'Campaigns', summary: 'My applications', response: { data: z.array(r.applicationSchema), meta: r.pageMetaSchema }, access: 'buyer',
+    errors: { 400: 'Answers do not meet the eligibility rules', 409: 'Already applied, not taking applications here, or too few seedlings left' } },
+  { method: 'get', path: '/giveaways/applications/me', tag: 'Giveaways', summary: 'My applications', response: { data: z.array(r.applicationSchema), meta: r.pageMetaSchema }, access: 'buyer',
     query: paginationQuerySchema, success: { status: 200, description: 'Applications' } },
 
-  // ── Service requests ─────────────────────────────────────
-  { method: 'post', path: '/service-requests', tag: 'Services', summary: 'Ask for a tree-planting service', response: { data: r.serviceRequestSchema }, access: 'buyer',
-    body: serviceRequestCreateSchema, success: { status: 201, description: 'Request recorded; the team phones the buyer back' } },
-  { method: 'post', path: '/feedback', tag: 'Feedback', summary: 'Leave feedback (anyone; signed-in people are linked to their account)', response: { data: r.feedbackReceiptSchema }, access: 'public',
-    body: feedbackCreateSchema, success: { status: 201, description: 'Feedback recorded' } },
+  // ── Site content, enquiries, search ──────────────────────
+  { method: 'get', path: '/tree-categories', tag: 'Species', summary: 'Tree categories (Fruit Trees, Timber Trees…)', response: { data: z.array(r.treeCategorySchema) }, access: 'public',
+    success: { status: 200, description: 'Active categories, in order, with how many trees each has' } },
+  { method: 'get', path: '/news/categories', tag: 'News', summary: 'News & Updates categories', response: { data: z.array(r.newsCategorySchema) }, access: 'public',
+    success: { status: 200, description: 'Active categories, in order, with their published posts counted' } },
+  { method: 'get', path: '/expert-services', tag: 'Content', summary: 'Expert service categories and their services', response: { data: z.array(r.serviceCategorySchema) }, access: 'public',
+    success: { status: 200, description: 'Active categories and services, in order' } },
+  { method: 'get', path: '/partners', tag: 'Content', summary: 'Partner and supporter logos', response: { data: z.array(r.partnerSchema) }, access: 'public',
+    success: { status: 200, description: 'Active partners, in order' } },
+  { method: 'get', path: '/page-content', tag: 'Content', summary: 'Editable site copy (page intros, hero, Donate, contacts)', response: { data: z.array(r.pageContentSchema) }, access: 'public',
+    description: 'Every block of site copy admins can edit, by key (see pageContentKeys). Clients fall back to their own copy for missing keys.',
+    success: { status: 200, description: 'Content blocks' } },
+  { method: 'post', path: '/enquiries', tag: 'Content', summary: 'Request an expert service, or send a donation, partnership or contact enquiry', response: { data: r.enquiryReceiptSchema }, access: 'public',
+    description: 'No account needed. Lands in the admin Inbox; the team is told by email and/or SMS. The `website` field is a spam trap and must be left empty.',
+    body: enquiryCreateSchema, success: { status: 201, description: 'Received' } },
+  { method: 'post', path: '/feedback', tag: 'Content', summary: 'Leave feedback (anyone; signed-in people are linked to their account)', response: { data: r.feedbackReceiptSchema }, access: 'public',
+    body: feedbackCreateSchema, success: { status: 201, description: 'Feedback recorded in the admin Inbox' } },
+  { method: 'get', path: '/search', tag: 'Search', summary: 'Search the whole site', access: 'public',
+    description: 'The best few nurseries (by name, a tree in stock, or district and sub-county), trees, expert services, news posts and open giveaways, each with the site link that opens it. Typo-tolerant.',
+    response: { data: r.searchResultsSchema }, query: search.globalSearchQuery, success: { status: 200, description: 'Results grouped by kind' } },
 
   // ── Assistant ────────────────────────────────────────────
   { method: 'post', path: '/assistant/chat', tag: 'Assistant', summary: 'Ask the site assistant (streams the answer)', access: 'public',
     description: 'Send the recent conversation (the last message is the new question). The answer streams back as server-sent events: one JSON object per `data:` line, `status` while it looks things up, `text` pieces of the Markdown answer, then `done` (or `error`). Signed-in buyers can ask about their own orders. Limited to 12 questions a minute and 300 a day per account or IP, plus a daily total (ASSISTANT_DAILY_LIMIT).',
     body: assistantChatSchema, raw: assistantEventSchema, success: { status: 200, description: 'A stream of assistant events', content: 'event-stream' },
     errors: { 503: 'The assistant is switched off, or its model provider is unavailable' } },
-  { method: 'get', path: '/service-requests/me', tag: 'Services', summary: 'My service requests', response: { data: z.array(r.serviceRequestSchema), meta: r.pageMetaSchema }, access: 'buyer',
-    query: paginationQuerySchema, success: { status: 200, description: 'Requests, newest first' } },
 
   // ── Orders ───────────────────────────────────────────────
   { method: 'post', path: '/orders/quote', tag: 'Orders', summary: 'Price an order (items + delivery by road distance)', response: { data: r.quoteSchema }, access: 'buyer',
@@ -200,6 +219,10 @@ export const operations: Operation[] = [
     params: id, body: nurseryUpdateSchema, success: { status: 200, description: 'Updated' } },
   { method: 'delete', path: '/admin/nurseries/:id', tag: 'Admin: nurseries and stock', summary: 'Delete a nursery with no stock, orders or campaigns', access: 'admin',
     params: id, success: { status: 204, description: 'Deleted' }, errors: { 409: 'Still referenced; deactivate instead' } },
+  { method: 'put', path: '/admin/nurseries/:id/certification', tag: 'Admin: nurseries and stock', summary: 'Record a checked certification (the nursery shows as Certified)', response: { data: r.adminNurserySchema }, access: 'admin',
+    params: id, body: nurseryCertificationSchema, success: { status: 200, description: 'Certified' } },
+  { method: 'delete', path: '/admin/nurseries/:id/certification', tag: 'Admin: nurseries and stock', summary: 'Remove the certification record (the nursery shows as uncertified)', response: { data: r.adminNurserySchema }, access: 'admin',
+    params: id, success: { status: 200, description: 'Uncertified' } },
   { method: 'get', path: '/admin/nurseries/:id/inventory', tag: 'Admin: nurseries and stock', summary: "A nursery's stock lines", response: { data: z.array(r.inventoryLineSchema) }, access: 'admin',
     params: id, success: { status: 200, description: 'Stock lines' } },
   { method: 'post', path: '/admin/inventory', tag: 'Admin: nurseries and stock', summary: 'Add a stock line', response: { data: r.inventoryLineSchema }, access: 'admin',
@@ -238,31 +261,72 @@ export const operations: Operation[] = [
     params: id, success: { status: 204, description: 'Deleted' } },
 
   // ── Admin: campaigns ─────────────────────────────────────
-  { method: 'get', path: '/admin/campaigns', tag: 'Admin: campaigns', summary: 'All campaigns', response: { data: z.array(r.campaignSchema), meta: r.pageMetaSchema }, access: 'admin',
+  { method: 'get', path: '/admin/campaigns', tag: 'Admin: giveaways', summary: 'All giveaways', response: { data: z.array(r.campaignSchema), meta: r.pageMetaSchema }, access: 'admin',
     query: paginationQuerySchema, success: { status: 200, description: 'Campaigns' } },
-  { method: 'get', path: '/admin/campaigns/:id', tag: 'Admin: campaigns', summary: 'One campaign', response: { data: r.campaignSchema }, access: 'admin',
+  { method: 'get', path: '/admin/campaigns/:id', tag: 'Admin: giveaways', summary: 'One campaign', response: { data: r.campaignSchema }, access: 'admin',
     params: id, success: { status: 200, description: 'The campaign' } },
-  { method: 'post', path: '/admin/campaigns', tag: 'Admin: campaigns', summary: 'Create a campaign', response: { data: r.campaignSchema }, access: 'admin',
+  { method: 'post', path: '/admin/campaigns', tag: 'Admin: giveaways', summary: 'Create a campaign', response: { data: r.campaignSchema }, access: 'admin',
     body: campaignCreateSchema, success: { status: 201, description: 'Created; allocation is the sum of its items' } },
-  { method: 'patch', path: '/admin/campaigns/:id', tag: 'Admin: campaigns', summary: 'Update a campaign', response: { data: r.campaignSchema }, access: 'admin',
+  { method: 'patch', path: '/admin/campaigns/:id', tag: 'Admin: giveaways', summary: 'Update a campaign', response: { data: r.campaignSchema }, access: 'admin',
     params: id, body: campaignUpdateSchema, success: { status: 200, description: 'Updated' },
     errors: { 409: 'The change would push remaining stock below zero' } },
-  { method: 'delete', path: '/admin/campaigns/:id', tag: 'Admin: campaigns', summary: 'Delete a campaign with no applications', access: 'admin',
+  { method: 'delete', path: '/admin/campaigns/:id', tag: 'Admin: giveaways', summary: 'Delete a campaign with no applications', access: 'admin',
     params: id, success: { status: 204, description: 'Deleted' }, errors: { 409: 'Has applications; switch it off instead' } },
-  { method: 'get', path: '/admin/campaigns/:id/applications', tag: 'Admin: campaigns', summary: "A campaign's applications", response: { data: z.array(r.adminApplicationSchema), meta: r.pageMetaSchema }, access: 'admin',
+  { method: 'get', path: '/admin/campaigns/:id/applications', tag: 'Admin: giveaways', summary: "A campaign's applications", response: { data: z.array(r.adminApplicationSchema), meta: r.pageMetaSchema }, access: 'admin',
     params: id, query: admin.applicationsQuery, success: { status: 200, description: 'Applications with applicant details' } },
-  { method: 'put', path: '/admin/applications/:id', tag: 'Admin: campaigns', summary: 'Approve, reject, or mark collected', response: { data: r.adminApplicationSchema }, access: 'admin',
+  { method: 'put', path: '/admin/applications/:id', tag: 'Admin: giveaways', summary: 'Approve, reject, or mark collected', response: { data: r.adminApplicationSchema }, access: 'admin',
     description: 'Approval takes the seedlings from the campaign\'s remaining stock in the same transaction.',
     params: id, body: applicationReviewSchema, success: { status: 200, description: 'Reviewed; the applicant is sent an SMS' },
     errors: { 409: 'Not allowed from the current status, or not enough seedlings left' } },
-  { method: 'get', path: '/admin/feedback', tag: 'Admin: feedback', summary: 'Feedback from people using the site', response: { data: z.array(r.adminFeedbackSchema), meta: r.pageMetaSchema }, access: 'admin',
-    query: admin.feedbackQuery, success: { status: 200, description: 'Feedback, newest first' } },
-  { method: 'put', path: '/admin/feedback/:id', tag: 'Admin: feedback', summary: 'Mark feedback new, read or done', response: { data: r.adminFeedbackSchema }, access: 'admin',
-    params: id, body: feedbackUpdateSchema, success: { status: 200, description: 'Updated' } },
-  { method: 'get', path: '/admin/service-requests', tag: 'Admin: service requests', summary: 'Service requests to phone back', response: { data: z.array(r.adminServiceRequestSchema), meta: r.pageMetaSchema }, access: 'admin',
-    query: admin.serviceRequestsQuery, success: { status: 200, description: 'Requests with the requester\'s name and phone, newest first' } },
-  { method: 'put', path: '/admin/service-requests/:id', tag: 'Admin: service requests', summary: 'Mark a request contacted, scheduled, done or cancelled', response: { data: r.adminServiceRequestSchema }, access: 'admin',
-    params: id, body: serviceRequestUpdateSchema, success: { status: 200, description: 'Updated' }, errors: { 409: 'Not a valid next step from its current status' } },
+
+  // ── Admin: inbox ─────────────────────────────────────────
+  { method: 'get', path: '/admin/enquiries', tag: 'Admin: inbox', summary: 'Inbox: service requests, donations, partnerships, contact messages and feedback', response: { data: z.array(r.adminEnquirySchema), meta: r.pageMetaSchema }, access: 'admin',
+    query: admin.enquiriesQuery, success: { status: 200, description: 'Enquiries, newest first' } },
+  { method: 'get', path: '/admin/enquiries/counts', tag: 'Admin: inbox', summary: 'Unread enquiries by type', response: { data: r.enquiryCountsSchema }, access: 'admin',
+    success: { status: 200, description: 'Counts of new enquiries' } },
+  { method: 'get', path: '/admin/enquiries/:id', tag: 'Admin: inbox', summary: 'One enquiry', response: { data: r.adminEnquirySchema }, access: 'admin',
+    params: id, success: { status: 200, description: 'The enquiry' } },
+  { method: 'put', path: '/admin/enquiries/:id', tag: 'Admin: inbox', summary: 'Mark an enquiry new, in progress or closed, with a note', response: { data: r.adminEnquirySchema }, access: 'admin',
+    params: id, body: enquiryUpdateSchema, success: { status: 200, description: 'Updated' } },
+  { method: 'get', path: '/admin/export/enquiries.csv', tag: 'Admin: inbox', summary: 'Inbox as CSV (same filters as the list)', access: 'admin',
+    query: enquiriesQuerySchema, success: { status: 200, description: 'CSV file', content: 'csv' } },
+
+  // ── Admin: site content ──────────────────────────────────
+  ...(['tree', 'news'] as const).flatMap((kind): Operation[] => {
+    const path = `/admin/${kind}-categories`;
+    const tag = 'Admin: content';
+    const what = kind === 'tree' ? 'tree' : 'news';
+    const dto = r.adminCategorySchema;
+    return [
+      { method: 'get', path, tag, summary: `All ${what} categories`, response: { data: z.array(dto) }, access: 'admin', success: { status: 200, description: 'Categories with how often each is used' } },
+      { method: 'post', path, tag, summary: `Add a ${what} category`, response: { data: dto }, access: 'admin', body: categoryCreateSchema, success: { status: 201, description: 'Created' } },
+      { method: 'patch', path: `${path}/:slug`, tag, summary: `Rename, reorder or switch off a ${what} category`, response: { data: dto }, access: 'admin',
+        params: admin.categoryParams, body: categoryUpdateSchema, success: { status: 200, description: 'Updated' } },
+      { method: 'delete', path: `${path}/:slug`, tag, summary: `Delete an unused ${what} category`, access: 'admin',
+        params: admin.categoryParams, success: { status: 204, description: 'Deleted' }, errors: { 409: 'In use; switch it off instead' } },
+    ];
+  }),
+  { method: 'get', path: '/admin/expert-services', tag: 'Admin: content', summary: 'All expert service categories (including switched-off ones)', response: { data: z.array(r.serviceCategorySchema) }, access: 'admin',
+    success: { status: 200, description: 'Categories with their services' } },
+  { method: 'post', path: '/admin/expert-services', tag: 'Admin: content', summary: 'Add an expert service category', response: { data: r.serviceCategorySchema }, access: 'admin',
+    body: serviceCategoryCreateSchema, success: { status: 201, description: 'Created' } },
+  { method: 'patch', path: '/admin/expert-services/:id', tag: 'Admin: content', summary: 'Edit a category and its list of services', response: { data: r.serviceCategorySchema }, access: 'admin',
+    params: id, body: serviceCategoryUpdateSchema, success: { status: 200, description: 'Updated' } },
+  { method: 'delete', path: '/admin/expert-services/:id', tag: 'Admin: content', summary: 'Delete a category (enquiries keep the service names)', access: 'admin',
+    params: id, success: { status: 204, description: 'Deleted' } },
+  { method: 'get', path: '/admin/partners', tag: 'Admin: content', summary: 'All partners', response: { data: z.array(r.partnerSchema) }, access: 'admin',
+    success: { status: 200, description: 'Partners' } },
+  { method: 'post', path: '/admin/partners', tag: 'Admin: content', summary: 'Add a partner logo', response: { data: r.partnerSchema }, access: 'admin',
+    body: partnerCreateSchema, success: { status: 201, description: 'Created' } },
+  { method: 'patch', path: '/admin/partners/:id', tag: 'Admin: content', summary: 'Edit a partner', response: { data: r.partnerSchema }, access: 'admin',
+    params: id, body: partnerUpdateSchema, success: { status: 200, description: 'Updated' } },
+  { method: 'delete', path: '/admin/partners/:id', tag: 'Admin: content', summary: 'Remove a partner', access: 'admin',
+    params: id, success: { status: 204, description: 'Deleted' } },
+  { method: 'get', path: '/admin/page-content', tag: 'Admin: content', summary: 'All editable site copy', response: { data: z.array(r.pageContentSchema) }, access: 'admin',
+    success: { status: 200, description: 'Content blocks' } },
+  { method: 'put', path: '/admin/page-content/:key', tag: 'Admin: content', summary: 'Edit one block of site copy', response: { data: r.pageContentSchema }, access: 'admin',
+    description: 'Title, subtitle and body (Markdown) are free text; `data` must match the key\'s shape (e.g. the four steps of How it works, or the contact numbers).',
+    params: admin.pageContentParams, body: pageContentUpdateSchema, success: { status: 200, description: 'Saved' } },
 
   // ── Admin: media ─────────────────────────────────────────
   { method: 'post', path: '/admin/media', tag: 'Admin: species', summary: 'Upload a photo (stored as 480 and 960 px WebP)', response: { data: r.mediaUploadSchema }, access: 'admin',

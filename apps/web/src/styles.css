@@ -17,56 +17,9 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
-/* Map: custom pins carry their own styling; Leaflet's default div-icon box is removed */
-.nl-pin,
-.nl-cluster {
-  background: none;
-  border: 0;
-}
-.nl-pin:focus-visible,
-.nl-cluster:focus-visible {
+/* Map pins (Google Maps advanced markers) show a clear focus ring for keyboard users */
+gmp-advanced-marker:focus-visible {
   outline: 3px solid var(--color-forest);
   outline-offset: 2px;
   border-radius: 50%;
-}
-.leaflet-tooltip.nl-pin-label {
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  box-shadow: none;
-  color: var(--color-canopy);
-  font: 700 0.8125rem/1.1 var(--font-sans);
-  padding: 2px 6px;
-}
-.leaflet-tooltip.nl-route-label {
-  font-size: 0.875rem;
-  padding: 3px 8px;
-  border-color: var(--color-canopy);
-  /* Long nursery names wrap rather than run off a phone screen */
-  white-space: normal;
-  width: max-content;
-  max-width: 12rem;
-  text-align: center;
-}
-.leaflet-tooltip.nl-route-label-end {
-  color: var(--color-murram);
-  border-color: var(--color-murram);
-}
-.nl-route-end {
-  background: none;
-  border: 0;
-  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
-}
-.leaflet-container {
-  font-family: var(--font-sans);
-  background: var(--color-mist);
-}
-/* Larger zoom buttons: 44 px targets */
-.leaflet-bar a {
-  width: 44px !important;
-  height: 44px !important;
-  line-height: 44px !important;
-}
-/* Phones: keep the map credit clear of the floating search box */
-.nl-map-compact .leaflet-top.leaflet-right {
-  margin-top: 4.5rem;
 }

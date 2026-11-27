@@ -1,5 +1,4 @@
 import { unwrap, type Schemas } from '@nurserylink/api-client';
-import type { SpeciesCategory } from '@nurserylink/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 
@@ -9,7 +8,7 @@ export type SpeciesItem = Schemas['SpeciesListItem'];
  * The whole index (the library is small: tens of trees), fetched 100 at a time so the A–Z
  * index and letter jumps work without paging.
  */
-export const useSpeciesIndex = (category: SpeciesCategory | null, q: string) =>
+export const useSpeciesIndex = (category: string | null, q: string) =>
   useQuery({
     queryKey: ['species', 'index', category, q],
     queryFn: async () => {

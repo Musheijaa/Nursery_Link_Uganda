@@ -22,7 +22,8 @@ const filterQuery = (p: NurseryParams) => ({
   ...(p.district ? { district_id: p.district } : {}),
   ...(p.subCounty ? { sub_county_id: p.subCounty } : {}),
   ...(p.species ? { species: p.species } : {}),
-  ...(p.category ? { category: p.category } : {}),
+  ...(p.categories.length ? { categories: p.categories.join(',') } : {}),
+  ...(p.certified !== null ? { certified: p.certified ? ('true' as const) : ('false' as const) } : {}),
 });
 
 /**
@@ -93,13 +94,6 @@ export const useNurseryProfile = (id: string | null, position: LatLng | null) =>
   });
 
 /** Driving route from the user to a nursery (FR-11). */
-export const useRoute = (id: string | null, position: LatLng | null, enabled: boolean) =>
-  useQuery({
-    queryKey: ['nurseries', 'route', id, position],
-    enabled: enabled && id !== null && position !== null,
-    queryFn: async () => (await unwrap(api.GET('/nurseries/{id}/route', { params: { path: { id: id ?? '' }, query: position ?? { lat: 0, lng: 0 } } }))).data,
-    retry: false,
-  });
 
 /** A Library entry, for the side drawer opened from a nursery's stock list (FR-21). */
 export const useSpecies = (slug: string | null) =>

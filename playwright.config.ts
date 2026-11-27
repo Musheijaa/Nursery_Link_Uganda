@@ -36,6 +36,11 @@ export default defineConfig({
         PAYMENTS: TRIAL ? 'off' : 'on',
         // The first-visit notice would cover every page the suite opens; WelcomeNotice.test.tsx covers it
         DEMO_NOTICE: 'off',
+        // The order journeys stay tested; production defaults to calling the operator instead
+        FEATURE_ORDERS: 'on',
+        // The suite signs the same admin in more than the real 10-per-15-minutes allows;
+        // security.test.ts checks the real limits
+        RATE_LIMIT_SCALE: '10',
         SMS_PROVIDER: 'mock',
         ROUTING_PROVIDER: 'mock',
         EMAIL_PROVIDER: 'mock',

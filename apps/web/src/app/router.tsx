@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import { createBrowserRouter, type RouteObject } from 'react-router';
+import { createBrowserRouter, Navigate, useLocation, useParams, type RouteObject } from 'react-router';
 import { Layout } from '../components/Layout';
 import { RequireAuth } from '../components/RequireAuth';
 import { RouteError } from '../components/RouteError';
@@ -16,6 +16,13 @@ const page = (path: string, load: () => Promise<{ default: ComponentType }>, opt
   },
 });
 
+/** Old addresses (bookmarks, SMS links, search engines) go to their new pages. The servers also send a 301. */
+const Redirect = ({ to }: { to: (params: Record<string, string | undefined>) => string }) => {
+  const params = useParams();
+  const { search, hash } = useLocation();
+  return <Navigate to={`${to(params)}${search}${hash}`} replace />;
+};
+
 export const router = createBrowserRouter([
   {
     element: <Layout />,
@@ -29,9 +36,14 @@ export const router = createBrowserRouter([
       page('/library/:slug', () => import('../routes/Species')),
       page('/news', () => import('../routes/News')),
       page('/news/:slug', () => import('../routes/NewsArticle')),
-      page('/free-seedlings', () => import('../routes/FreeSeedlings')),
-      page('/free-seedlings/:id', () => import('../routes/Campaign')),
-      page('/services', () => import('../routes/Services')),
+      page('/giveaways', () => import('../routes/Giveaways')),
+      page('/giveaways/:id', () => import('../routes/Giveaway')),
+      page('/expert-services', () => import('../routes/ExpertServices')),
+      page('/donate', () => import('../routes/Donate')),
+      page('/search', () => import('../routes/Search')),
+      { path: '/free-seedlings', element: <Redirect to={() => '/giveaways'} /> },
+      { path: '/free-seedlings/:id', element: <Redirect to={p => `/giveaways/${p.id ?? ''}`} /> },
+      { path: '/services', element: <Redirect to={() => '/expert-services'} /> },
       page('/feedback', () => import('../routes/Feedback')),
       page('/survey', () => import('../routes/Survey')),
       page('/orders', () => import('../routes/Orders'), { auth: true }),

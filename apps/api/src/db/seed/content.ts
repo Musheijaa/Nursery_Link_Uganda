@@ -1,4 +1,4 @@
-import type { EligibilityRule, FunderType, NewsCategory, Vehicle } from '@nurserylink/shared';
+import type { EligibilityRule, FunderType, Vehicle } from '@nurserylink/shared';
 
 export const DELIVERY_RATES: { vehicle: Vehicle; maxItems: number; baseFee: number; perKm: number; maxKm: number }[] = [
   // A boda boda carries a few crates of potted seedlings over local distances
@@ -8,11 +8,21 @@ export const DELIVERY_RATES: { vehicle: Vehicle; maxItems: number; baseFee: numb
 ];
 
 // Sample posts for development; the wording makes clear they are not real advisories.
-export const NEWS_POSTS: { slug: string; title: string; category: NewsCategory; body: string; publishedAt: string }[] = [
+/** News & Updates categories (news_categories), from the client's brief. Created once; admins edit them. */
+export const NEWS_CATEGORIES: { slug: string; label: string; description: string }[] = [
+  { slug: 'policy-sector', label: 'Policy & Sector News', description: 'Government policies, forestry news and sector developments.' },
+  { slug: 'weather-seasonal', label: 'Weather & Seasonal Advisories', description: 'Climate updates, seasonal information and nursery-sector warnings.' },
+  { slug: 'planting-restoration', label: 'Planting & Restoration Opportunities', description: 'Tree-growing campaigns and restoration opportunities.' },
+  { slug: 'agroforestry-farming', label: 'Agroforestry & Sustainable Farming', description: 'Practical information on agroforestry and sustainable agricultural practices.' },
+  { slug: 'training-events', label: 'Training, Workshops & Events', description: 'Relevant training opportunities, workshops and events.' },
+  { slug: 'funding-partnerships', label: 'Funding & Partnerships', description: 'Funding opportunities, partnerships, grants and subsidies.' },
+];
+
+export const NEWS_POSTS: { slug: string; title: string; categorySlug: string; body: string; publishedAt: string }[] = [
   {
     slug: 'nfa-seedling-price-guide',
     title: 'What seedlings cost at the National Forestry Authority',
-    category: 'market',
+    categorySlug: 'policy-sector',
     publishedAt: '2026-10-02T08:00:00+03:00',
     body: [
       'The National Forestry Authority (NFA) publishes the prices of the seedlings it sells. Use them as a guide when you compare nurseries: ' +
@@ -34,7 +44,7 @@ export const NEWS_POSTS: { slug: string; title: string; category: NewsCategory; 
       '',
       'Most trees in a large 16-inch pot cost UGX 5,000 at NFA. They are older and establish faster, but cost more to carry and plant.',
       '',
-      'Each tree page in the Tree library shows its NFA price next to what nurseries on Nursery Link charge.',
+      'Each tree page in the Tree Library shows its NFA price next to what nurseries on Nursery Link charge.',
       '',
       '*Source: National Forestry Authority, price list of assorted tree seedlings, January 2024.*',
     ].join('\n'),
@@ -42,7 +52,7 @@ export const NEWS_POSTS: { slug: string; title: string; category: NewsCategory; 
   {
     slug: 'plant-early-in-the-second-rains',
     title: 'Plant early in the second rains',
-    category: 'weather',
+    categorySlug: 'weather-seasonal',
     publishedAt: '2026-09-22T08:00:00+03:00',
     body:
       'Sample post. The September–November rains are the main second planting window in Mukono. ' +
@@ -52,7 +62,7 @@ export const NEWS_POSTS: { slug: string; title: string; category: NewsCategory; 
   {
     slug: 'grafted-avocado-seedling-prices-steady',
     title: 'Grafted avocado seedling prices steady',
-    category: 'market',
+    categorySlug: 'policy-sector',
     publishedAt: '2026-09-15T08:00:00+03:00',
     body:
       'Sample post. Listed prices for grafted Hass avocado seedlings on Nursery Link stay between UGX 6,000 and 6,500. ' +
@@ -61,11 +71,11 @@ export const NEWS_POSTS: { slug: string; title: string; category: NewsCategory; 
   {
     slug: 'shoreline-restoration-seedlings-open',
     title: 'Free seedlings for lakeshore restoration now open',
-    category: 'grant',
+    categorySlug: 'planting-restoration',
     publishedAt: '2026-09-05T08:00:00+03:00',
     body:
       'Sample post. Households and groups along the Lake Victoria shoreline in Ntenjeru can apply for free indigenous seedlings. ' +
-      'See the Free Seedlings page for the eligibility checklist and the pickup nursery.',
+      'See the Giveaways page for the eligibility checklist and the pickup nursery.',
   },
 ];
 

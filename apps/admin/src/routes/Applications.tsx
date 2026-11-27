@@ -75,7 +75,7 @@ const Applications = () => {
 
   return (
     <div>
-      <PageHeader title={en.applications.title(c.title)} actions={<Button asChild size="sm" variant="ghost"><Link to={`/campaigns/${c.id}`}>{en.common.back}</Link></Button>} />
+      <PageHeader title={en.applications.title(c.title)} actions={<Button asChild size="sm" variant="ghost"><Link to={`/giveaways/${c.id}`}>{en.common.back}</Link></Button>} />
       <div className="mb-4 flex flex-wrap items-end justify-between gap-4 rounded-md border-l-4 border-sun bg-paper p-4 ring-1 ring-line">
         <div className="w-72">
           <p className="mb-1 font-bold">{en.applications.remaining(formatCount(c.remaining_stock))}</p>

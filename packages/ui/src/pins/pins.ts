@@ -1,7 +1,8 @@
 /**
- * Map pins as SVG strings, for Leaflet divIcons (Leaflet takes HTML, not React elements).
+ * Map pins as SVG strings, for map marker elements (Google Maps advanced markers take an HTML element).
  * Normal: Forest teardrop with a seedling. Gift: Sun teardrop with a gift box, slightly larger
- * (FR-17). Selected: Canopy fill with a white ring, raised. All outlined in Canopy.
+ * (FR-17). Certified: a white check badge on the pin. Selected: Canopy fill with a white ring,
+ * raised. All outlined in Canopy.
  */
 
 export type PinKind = 'normal' | 'gift';
@@ -34,17 +35,20 @@ export const pinSize = (kind: PinKind, selected = false, base = 1): PinSize => {
   return { width, height, anchor: [width / 2, height] };
 };
 
-export const nurseryPinSvg = (kind: PinKind, selected = false, base = 1): string => {
+/** A white disc with a Canopy check, top right: a verified certification */
+const CERTIFIED = `<circle cx="25.5" cy="6.5" r="5.5" fill="${PAPER}" stroke="${CANOPY}" stroke-width="1.5"/><path d="m23 6.6 1.8 1.8 3.2-3.4" fill="none" stroke="${CANOPY}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+export const nurseryPinSvg = (kind: PinKind, selected = false, base = 1, certified = false): string => {
   const { width, height } = pinSize(kind, selected, base);
   const fill = selected ? CANOPY : kind === 'gift' ? SUN : FOREST;
   const glyph = kind === 'gift' && !selected ? CANOPY : PAPER;
   const ring = selected ? `<circle cx="16" cy="16" r="13.5" fill="none" stroke="${PAPER}" stroke-width="1.5"/>` : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${String(width)}" height="${String(height)}" viewBox="0 0 32 42" aria-hidden="true">
 <path d="M16 41C16 41 2 25.5 2 16a14 14 0 0 1 28 0c0 9.5-14 25-14 25Z" fill="${fill}" stroke="${CANOPY}" stroke-width="2"/>${ring}
-<g stroke="${glyph}">${kind === 'gift' ? GIFT : SEEDLING}</g></svg>`;
+<g stroke="${glyph}">${kind === 'gift' ? GIFT : SEEDLING}</g>${certified ? CERTIFIED : ''}</svg>`;
 };
 
-/** A cluster: Forest disc with the count; a Sun badge when it contains a free-seedlings nursery. */
+/** A cluster: Forest disc with the count; a Sun badge when it contains a giveaway pickup point. */
 export const clusterSize = (count: number): number => (count < 10 ? 32 : count < 100 ? 38 : 44);
 
 export const clusterPinSvg = (count: number, hasGift: boolean): string => {
@@ -60,6 +64,6 @@ export const clusterPinSvg = (count: number, hasGift: boolean): string => {
 <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Open Sans, system-ui, sans-serif" font-weight="700" font-size="${count < 100 ? '14' : '13'}" fill="${PAPER}">${label}</text>${badge}</svg>`;
 };
 
-/** Accessible name for a pin, e.g. "Mukono Town Nursery, 4.2 km by road, free seedlings available". */
-export const pinLabel = (name: string, opts: { distance?: string | undefined; gift?: boolean; selected?: boolean }): string =>
-  [name, opts.distance, opts.gift ? 'free seedlings available' : undefined, opts.selected ? 'selected' : undefined].filter(Boolean).join(', ');
+/** Accessible name for a pin, e.g. "Mukono Town Nursery, certified, approx. 4.2 km, giveaway pickup point". */
+export const pinLabel = (name: string, opts: { distance?: string | undefined; gift?: boolean; certified?: boolean; selected?: boolean }): string =>
+  [name, opts.certified ? 'certified' : undefined, opts.distance, opts.gift ? 'giveaway pickup point' : undefined, opts.selected ? 'selected' : undefined].filter(Boolean).join(', ');

@@ -14,14 +14,14 @@ const app = createApp({ config: testConfig(inject('databaseUrl')), pool, logger:
 beforeAll(async () => {
   await prepareTestDatabase(pool);
   // A draft and a scheduled post must never appear
-  await pool.query(`INSERT INTO news_posts (title, slug, category, body, is_published, published_at) VALUES
-    ('Draft', 'draft-post', 'policy', 'Not ready', false, NULL),
-    ('Scheduled', 'scheduled-post', 'policy', 'Later', true, now() + interval '7 days')
+  await pool.query(`INSERT INTO news_posts (title, slug, category_slug, body, is_published, published_at) VALUES
+    ('Draft', 'draft-post', 'policy-sector', 'Not ready', false, NULL),
+    ('Scheduled', 'scheduled-post', 'policy-sector', 'Later', true, now() + interval '7 days')
     ON CONFLICT (slug) DO NOTHING`);
 });
 afterAll(() => pool.end());
 
-type Post = { slug: string; category: string; excerpt?: string; body?: string; published_at: string };
+type Post = { slug: string; category: { slug: string; label: string }; excerpt?: string; body?: string; published_at: string };
 
 describe('news (FR-22)', () => {
   it('lists published posts newest first with excerpts', async () => {
@@ -35,9 +35,17 @@ describe('news (FR-22)', () => {
   });
 
   it('filters by category', async () => {
-    const body = (await request(app).get('/api/v1/news?category=grant').expect(200)).body as { data: Post[] };
+    const body = (await request(app).get('/api/v1/news?category=planting-restoration').expect(200)).body as { data: Post[] };
     expect(body.data.map(p => p.slug)).toEqual(['shoreline-restoration-seedlings-open']);
-    await request(app).get('/api/v1/news?category=sports').expect(400);
+    expect(body.data[0]?.category).toEqual({ slug: 'planting-restoration', label: 'Planting & Restoration Opportunities' });
+    await request(app).get('/api/v1/news?category=Not_A_Slug').expect(400);
+  });
+
+  it('lists the categories with their published posts counted', async () => {
+    const body = (await request(app).get('/api/v1/news/categories').expect(200)).body as { data: { slug: string; label: string; post_count: number }[] };
+    expect(body.data.map(c => c.slug)).toEqual(['policy-sector', 'weather-seasonal', 'planting-restoration', 'agroforestry-farming', 'training-events', 'funding-partnerships']);
+    // Drafts and scheduled posts are not counted
+    expect(body.data.find(c => c.slug === 'weather-seasonal')?.post_count).toBeGreaterThanOrEqual(1);
   });
 
   it('shows a published post in full and hides drafts and scheduled posts', async () => {

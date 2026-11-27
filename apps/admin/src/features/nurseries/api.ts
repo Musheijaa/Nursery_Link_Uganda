@@ -6,6 +6,8 @@ import { api } from '../../lib/api';
 
 export type AdminNursery = Schemas['AdminNursery'];
 export type NurseryInput = z.output<typeof nurseryCreateSchema>;
+/** A certified nursery's status follows its certification record, so edits leave it out */
+export type NurserySave = NurseryInput | Omit<NurseryInput, 'certification_status'>;
 export const PAGE_SIZE = 25;
 
 export interface NurseryFilters {
@@ -50,10 +52,22 @@ export const useAdminNursery = (id: string | null) =>
 export const useSaveNursery = (id: string | null) => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (body: NurseryInput) =>
+    mutationFn: async (body: NurserySave) =>
       id
         ? (await unwrap(api.PATCH('/admin/nurseries/{id}', { params: { path: { id } }, body }))).data
         : (await unwrap(api.POST('/admin/nurseries', { body }))).data,
+    onSuccess: () => { void client.invalidateQueries({ queryKey: ['admin'] }); },
+  });
+};
+
+/** Records (PUT) or removes (DELETE) the certification an admin checked */
+export const useCertifyNursery = (id: string) => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: { body: string; ref?: string | null } | null) =>
+      body
+        ? (await unwrap(api.PUT('/admin/nurseries/{id}/certification', { params: { path: { id } }, body }))).data
+        : (await unwrap(api.DELETE('/admin/nurseries/{id}/certification', { params: { path: { id } } }))).data,
     onSuccess: () => { void client.invalidateQueries({ queryKey: ['admin'] }); },
   });
 };

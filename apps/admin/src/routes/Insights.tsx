@@ -18,13 +18,15 @@ const STATUS_COLOUR: Record<string, string> = {
   cancelled: CHART.bark,
 };
 const CATEGORY_COLOUR: Record<string, string> = {
-  indigenous: CHART.forest,
   agroforestry: CHART.leafLight,
-  exotic: CHART.sand,
-  ornamental: CHART.murram,
+  fruit: CHART.murram,
+  timber: CHART.bark,
   medicinal: CHART.murramLight,
-  coffee: CHART.bark,
-  cocoa: CHART.lake,
+  ornamental: CHART.lake,
+  indigenous: CHART.forest,
+  shade: CHART.canopy,
+  multipurpose: CHART.sun,
+  other: CHART.sand,
 };
 
 /** Axis and tooltip labels for each bucket: 3 Oct (day), w/c 29 Sep (week), Oct 2026 (month). */
@@ -150,7 +152,7 @@ const Insights = () => {
             <ChartCard title={en.insights.stock} hint={en.insights.stockHint}>
               <Donut
                 centerLabel={en.insights.units.seedlings}
-                segments={a.stock_by_category.map(c => ({ key: c.category, label: en.species.categories[c.category], value: c.seedlings, color: CATEGORY_COLOUR[c.category] ?? CHART.sand }))}
+                segments={a.stock_by_category.map(c => ({ key: c.category.slug, label: c.category.label, value: c.seedlings, color: CATEGORY_COLOUR[c.category.slug] ?? CHART.sand }))}
               />
             </ChartCard>
             <ChartCard title={en.insights.campaigns}>

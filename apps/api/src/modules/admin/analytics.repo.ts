@@ -97,13 +97,16 @@ export const analytics = async (db: DbOrTx, range: AnalyticsRange) => {
       GROUP BY n.id, n.name ORDER BY sales_ugx DESC, n.name LIMIT ${TOP}`)
   ).rows;
 
-  // Stock as it stands today, at active nurseries
+  // Stock as it stands today, at active nurseries. A tree in several categories counts in each.
   const stockByCategory = (
-    await db.execute<{ category: string; seedlings: number; lines: number }>(sql`
-      SELECT sp.category, sum(i.quantity_available)::int AS seedlings, count(*)::int AS lines
-      FROM inventory i JOIN species sp ON sp.id = i.species_id JOIN nurseries n ON n.id = i.nursery_id
+    await db.execute<{ category: { slug: string; label: string }; seedlings: number; lines: number }>(sql`
+      SELECT json_build_object('slug', c.slug, 'label', c.label) AS category, sum(i.quantity_available)::int AS seedlings, count(*)::int AS lines
+      FROM inventory i
+      JOIN nurseries n ON n.id = i.nursery_id
+      JOIN species_categories sc ON sc.species_id = i.species_id
+      JOIN tree_categories c ON c.slug = sc.category_slug
       WHERE n.is_active AND i.quantity_available > 0
-      GROUP BY sp.category ORDER BY seedlings DESC, sp.category`)
+      GROUP BY c.slug, c.label ORDER BY seedlings DESC, c.label`)
   ).rows;
 
   // Campaigns that are switched on or ended within the period

@@ -28,6 +28,10 @@ export class SpeciesService {
     return { items: rows.map(({ total: _total, ...rest }) => rest), meta: paginationMeta(page, total) };
   }
 
+  async categories(): Promise<repo.TreeCategoryRow[]> {
+    return repo.listTreeCategories(this.deps.db, true);
+  }
+
   async profile(slug: string): Promise<repo.SpeciesDetailRow> {
     const row = await repo.findSpeciesBySlug(this.deps.db, slug);
     if (!row) throw new NotFoundError('Species not found');
@@ -36,7 +40,7 @@ export class SpeciesService {
 
   /**
    * Nurseries stocking this species (FR-20), each with its stock line for the species.
-   * With the buyer's location the list is ranked nearest-first by road distance.
+   * With the buyer's location the list is ranked nearest-first (straight line).
    */
   async nurseries(slug: string, point: LatLng | undefined, page: Pagination): Promise<{
     species: { id: string; slug: string; common_name: string };

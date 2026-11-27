@@ -18,9 +18,11 @@ export const certificationStatuses = ['certified', 'pending', 'unverified'] as c
 export const certificationStatusSchema = z.enum(certificationStatuses);
 export type CertificationStatus = z.infer<typeof certificationStatusSchema>;
 
-export const speciesCategories = ['indigenous', 'agroforestry', 'exotic', 'ornamental', 'medicinal', 'coffee', 'cocoa'] as const;
-export const speciesCategorySchema = z.enum(speciesCategories);
-export type SpeciesCategory = z.infer<typeof speciesCategorySchema>;
+/**
+ * Tree and news categories are rows (tree_categories, news_categories) that admins edit, so they are
+ * identified by slug rather than an enum. Slugs are fixed once made, because links use them.
+ */
+export const categorySlugSchema = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Lower-case letters, numbers and single hyphens only').max(60);
 
 export const growthPaces = ['fast', 'moderate', 'slow'] as const;
 export const growthPaceSchema = z.enum(growthPaces);
@@ -67,17 +69,14 @@ export const paymentStatuses = ['pending', 'successful', 'failed'] as const;
 export const paymentStatusSchema = z.enum(paymentStatuses);
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
 
-export const funderTypes = ['government', 'ngo', 'foundation', 'corporate'] as const;
+/** Who runs a giveaway (shown as the organizer type) */
+export const funderTypes = ['government', 'ngo', 'foundation', 'corporate', 'community', 'other'] as const;
 export const funderTypeSchema = z.enum(funderTypes);
 export type FunderType = z.infer<typeof funderTypeSchema>;
 
 export const applicationStatuses = ['pending', 'approved', 'rejected', 'collected'] as const;
 export const applicationStatusSchema = z.enum(applicationStatuses);
 export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
-
-export const newsCategories = ['weather', 'market', 'policy', 'grant'] as const;
-export const newsCategorySchema = z.enum(newsCategories);
-export type NewsCategory = z.infer<typeof newsCategorySchema>;
 
 export const vehicles = ['motorcycle', 'truck'] as const;
 export const vehicleSchema = z.enum(vehicles);
@@ -125,3 +124,22 @@ export type FeedbackKind = z.infer<typeof feedbackKindSchema>;
 export const feedbackStatuses = ['new', 'read', 'done'] as const;
 export const feedbackStatusSchema = z.enum(feedbackStatuses);
 export type FeedbackStatus = z.infer<typeof feedbackStatusSchema>;
+
+/** A giveaway hands seedlings out free, or sells them below the market price (subsidised_price per seedling). */
+export const giveawayOfferTypes = ['free', 'subsidised'] as const;
+export const giveawayOfferTypeSchema = z.enum(giveawayOfferTypes);
+export type GiveawayOfferType = z.infer<typeof giveawayOfferTypeSchema>;
+
+/** Giveaways list filter: open (closing soon included), closing within 14 days, or closed. */
+export const giveawayStatuses = ['open', 'closing_soon', 'closed'] as const;
+export const giveawayStatusSchema = z.enum(giveawayStatuses);
+export type GiveawayStatus = z.infer<typeof giveawayStatusSchema>;
+
+/** Everything people send the team lands in one inbox (admin Inbox), by type. */
+export const enquiryTypes = ['service', 'donation', 'partnership', 'contact', 'feedback'] as const;
+export const enquiryTypeSchema = z.enum(enquiryTypes);
+export type EnquiryType = z.infer<typeof enquiryTypeSchema>;
+
+export const enquiryStatuses = ['new', 'in_progress', 'closed'] as const;
+export const enquiryStatusSchema = z.enum(enquiryStatuses);
+export type EnquiryStatus = z.infer<typeof enquiryStatusSchema>;

@@ -31,9 +31,9 @@ test.describe('accessibility (axe, WCAG 2.1 AA)', () => {
     const found: Found[] = [];
     const species = (await (await page.request.get('/api/v1/species?limit=1')).json()) as { data: { slug: string }[] };
     const news = (await (await page.request.get('/api/v1/news?limit=1')).json()) as { data: { slug: string }[] };
-    const campaigns = (await (await page.request.get('/api/v1/campaigns?limit=1')).json()) as { data: { id: string }[] };
-    const paths = ['/', '/nurseries?view=list', '/nurseries', '/library', `/library/${species.data[0]?.slug ?? ''}`, '/news', '/services', `/news/${news.data[0]?.slug ?? ''}`,
-      '/free-seedlings', `/free-seedlings/${campaigns.data[0]?.id ?? ''}`, '/login', '/register', '/forgot-password', '/credits', '/no-such-page'];
+    const campaigns = (await (await page.request.get('/api/v1/giveaways?limit=1')).json()) as { data: { id: string }[] };
+    const paths = ['/', '/nurseries?view=list', '/nurseries', '/library', `/library/${species.data[0]?.slug ?? ''}`, '/news', '/expert-services', '/donate', '/search', `/news/${news.data[0]?.slug ?? ''}`,
+      '/giveaways', `/giveaways/${campaigns.data[0]?.id ?? ''}`, '/login', '/register', '/forgot-password', '/credits', '/no-such-page'];
     for (const size of WIDTHS) {
       await page.setViewportSize(size);
       const w = String(size.width);
@@ -47,8 +47,9 @@ test.describe('accessibility (axe, WCAG 2.1 AA)', () => {
       await page.getByRole('main').getByRole('list').getByRole('button', { name: /Mukono Town Nursery/ }).click();
       await expect(page.getByRole('heading', { name: 'In stock' })).toBeVisible();
       await scan(page, `nursery card @${w}`, found);
-      await page.getByRole('button', { name: 'Sort by nearest' }).or(page.getByRole('button', { name: 'Get directions' })).last().click();
-      await scan(page, `nursery card action @${w}`, found);
+      // The tree drawer opened from the card's stock list
+      await page.getByRole('button', { name: /: About / }).first().click();
+      await scan(page, `tree drawer @${w}`, found);
     }
     expect(found, report(found)).toEqual([]);
   });
@@ -81,9 +82,9 @@ test.describe('accessibility (axe, WCAG 2.1 AA)', () => {
     const first = async (api: string) => ((await (await page.request.get(api)).json()) as { data: { id: string }[] }).data[0]?.id ?? '';
     const nursery = await first('/api/v1/nurseries?limit=1');
     const species = await first('/api/v1/species?limit=1');
-    const campaign = await first('/api/v1/campaigns?limit=1');
+    const campaign = await first('/api/v1/giveaways?limit=1');
     const paths = ['/', '/insights', '/nurseries', `/nurseries/${nursery}`, '/nurseries/new', `/inventory?nursery=${nursery}`, '/species', `/species/${species}`, '/news', '/news/new', '/service-requests',
-      '/delivery-rates', '/campaigns', `/campaigns/${campaign}`, `/campaigns/${campaign}/applications`, '/orders', '/payouts?status=all', '/audit-log', '/shadow'];
+      '/delivery-rates', '/giveaways', '/inbox', '/categories', '/expert-services', '/partners', '/page-content', `/giveaways/${campaign}`, `/giveaways/${campaign}/applications`, '/orders', '/payouts?status=all', '/audit-log', '/shadow'];
     // Every screen at desktop width (where admins mostly work), and the busiest ones on a phone
     const phone = new Set(['/', '/nurseries', `/nurseries/${nursery}`, '/orders', '/shadow']);
     for (const size of WIDTHS) {

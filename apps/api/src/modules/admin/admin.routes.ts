@@ -7,10 +7,18 @@ import {
   adminRefundSchema,
   applicationReviewSchema,
   applicationsQuerySchema,
-  serviceRequestsQuerySchema,
-  feedbackQuerySchema,
-  feedbackUpdateSchema,
-  serviceRequestUpdateSchema,
+  categoryCreateSchema,
+  categorySlugSchema,
+  categoryUpdateSchema,
+  enquiriesQuerySchema,
+  enquiryUpdateSchema,
+  nurseryCertificationSchema,
+  pageContentKeySchema,
+  pageContentUpdateSchema,
+  partnerCreateSchema,
+  partnerUpdateSchema,
+  serviceCategoryCreateSchema,
+  serviceCategoryUpdateSchema,
   shadowLayerSchema,
   shadowRunCreateSchema,
   campaignCreateSchema,
@@ -21,12 +29,10 @@ import {
   deliveryRateUpdateSchema,
   inventoryCreateSchema,
   inventoryUpdateSchema,
-  newsCategorySchema,
   newsCreateSchema,
   newsUpdateSchema,
   nurseryCreateSchema,
   nurseryUpdateSchema,
-  speciesCategorySchema,
   speciesCreateSchema,
   speciesUpdateSchema,
 } from '@nurserylink/shared';
@@ -50,8 +56,10 @@ import { SpeciesAdminService } from '../species/species.admin.service.js';
 import type { SpeciesService } from '../species/species.service.js';
 import type { OrdersService } from '../orders/orders.service.js';
 import type { ApplicationsService } from '../campaigns/applications.service.js';
-import type { ServiceRequestsService } from '../serviceRequests/serviceRequests.service.js';
-import type { FeedbackService } from '../feedback/feedback.service.js';
+import type { EnquiriesService } from '../enquiries/enquiries.service.js';
+import type { ContentService } from '../content/content.service.js';
+import { CategoriesAdminService } from '../categories/categories.admin.service.js';
+import { categoryListParam } from '../species/species.routes.js';
 import type { ShadowService } from '../shadow/shadow.service.js';
 import { MAX_UPLOAD_BYTES, type MediaService } from '../media/media.service.js';
 import multer from 'multer';
@@ -82,8 +90,15 @@ export const nurseriesQuery = paginationQuerySchema.extend({
   /** Imported nurseries waiting to be checked and switched on */
   to_verify: booleanParam.optional(),
 });
-export const speciesQuery = paginationQuerySchema.extend({ category: speciesCategorySchema.optional(), q: z.string().trim().min(1).max(100).optional() });
-export const newsQuery = paginationQuerySchema.extend({ category: newsCategorySchema.optional(), is_published: booleanParam.optional() });
+export const speciesQuery = paginationQuerySchema.extend({ category: categoryListParam.optional(), q: z.string().trim().min(1).max(100).optional() });
+export const newsQuery = paginationQuerySchema.extend({
+  category: categorySlugSchema.optional(),
+  is_published: booleanParam.optional(),
+  /** Posts whose category was guessed when categories changed */
+  needs_review: booleanParam.optional(),
+});
+export const categoryParams = z.object({ slug: categorySlugSchema });
+export const pageContentParams = z.object({ key: pageContentKeySchema });
 export const auditQuery = paginationQuerySchema.extend({
   entity: z.string().max(50).optional(),
   entity_id: z.string().max(100).optional(),
@@ -97,8 +112,7 @@ export const importQuery = z.object({ commit: booleanParam.default(false) });
 export const ordersQuery = adminOrdersQuerySchema.extend(paginationQuerySchema.shape);
 export const payoutsQuery = paginationQuerySchema.extend({ status: paymentStatusSchema.optional() });
 export const applicationsQuery = applicationsQuerySchema.extend(paginationQuerySchema.shape);
-export const serviceRequestsQuery = serviceRequestsQuerySchema.extend(paginationQuerySchema.shape);
-export const feedbackQuery = feedbackQuerySchema.extend(paginationQuerySchema.shape);
+export const enquiriesQuery = enquiriesQuerySchema.extend(paginationQuerySchema.shape);
 export const layerQuery = z.object({ layer: shadowLayerSchema.default('shadows') });
 export const runIdParams = z.object({ runId: z.uuid() });
 
@@ -107,7 +121,17 @@ export const runIdParams = z.object({ runId: z.uuid() });
  * including paths that do not exist (visitors get 401, buyers 403, admins 404).
  */
 
-export const adminRoutes = (deps: { db: Database; species: SpeciesService; orders: OrdersService; applications: ApplicationsService; serviceRequests: ServiceRequestsService; feedback: FeedbackService; shadow: ShadowService; media: MediaService; limit: Limit }): Router => {
+export const adminRoutes = (deps: {
+  db: Database;
+  species: SpeciesService;
+  orders: OrdersService;
+  applications: ApplicationsService;
+  enquiries: EnquiriesService;
+  content: ContentService;
+  shadow: ShadowService;
+  media: MediaService;
+  limit: Limit;
+}): Router => {
   const { db } = deps;
   const nurseries = new NurseriesAdminService({ db });
   const inventory = new InventoryService({ db });
@@ -116,6 +140,7 @@ export const adminRoutes = (deps: { db: Database; species: SpeciesService; order
   const campaigns = new CampaignsAdminService({ db });
   const rates = new DeliveryRatesService({ db });
   const exportsService = new ExportsService({ db });
+  const categories = new CategoriesAdminService({ db });
 
   const router = Router();
   router.use(requireRole('admin'));
@@ -161,6 +186,14 @@ export const adminRoutes = (deps: { db: Database; species: SpeciesService; order
     await nurseries.remove(actorId(req), parsed<{ params: { id: string } }>(res).params.id);
     res.status(204).end();
   });
+  // Certification: only a recorded, checked certification makes a nursery "Certified"
+  router.put('/nurseries/:id/certification', validate({ params: idParams, body: nurseryCertificationSchema }), async (req, res) => {
+    const { params, body } = parsed<{ params: { id: string }; body: z.output<typeof nurseryCertificationSchema> }>(res);
+    res.json({ data: await nurseries.certify(actorId(req), params.id, body) });
+  });
+  router.delete('/nurseries/:id/certification', validate({ params: idParams }), async (req, res) => {
+    res.json({ data: await nurseries.uncertify(actorId(req), parsed<{ params: { id: string } }>(res).params.id) });
+  });
 
   // ── Inventory ────────────────────────────────────────────
   router.get('/nurseries/:id/inventory', validate({ params: idParams }), async (_req, res) => {
@@ -195,7 +228,7 @@ export const adminRoutes = (deps: { db: Database; species: SpeciesService; order
   // ── Species ──────────────────────────────────────────────
   router.get('/species', validate({ query: speciesQuery }), async (_req, res) => {
     const { query: q } = parsed<{ query: z.output<typeof speciesQuery> }>(res);
-    const { items, meta } = await deps.species.list({ category: q.category, q: q.q }, { page: q.page, limit: q.limit });
+    const { items, meta } = await deps.species.list({ categories: q.category, q: q.q }, { page: q.page, limit: q.limit });
     res.json({ data: items, meta });
   });
   router.get('/species/:id', validate({ params: idParams }), async (_req, res) => {
@@ -216,7 +249,7 @@ export const adminRoutes = (deps: { db: Database; species: SpeciesService; order
   // ── News ─────────────────────────────────────────────────
   router.get('/news', validate({ query: newsQuery }), async (_req, res) => {
     const { query: q } = parsed<{ query: z.output<typeof newsQuery> }>(res);
-    const { items, meta } = await news.list({ category: q.category, isPublished: q.is_published }, { page: q.page, limit: q.limit });
+    const { items, meta } = await news.list({ category: q.category, isPublished: q.is_published, needsReview: q.needs_review }, { page: q.page, limit: q.limit });
     res.json({ data: items, meta });
   });
   router.get('/news/:id', validate({ params: idParams }), async (_req, res) => {
@@ -266,26 +299,80 @@ export const adminRoutes = (deps: { db: Database; species: SpeciesService; order
     res.json({ data: await deps.applications.review(actorId(req), params.id, body) });
   });
 
-  // ── Service requests ─────────────────────────────────────
-  router.get('/service-requests', validate({ query: serviceRequestsQuery }), async (_req, res) => {
-    const { query: q } = parsed<{ query: z.output<typeof serviceRequestsQuery> }>(res);
-    const { items, meta } = await deps.serviceRequests.listAll({ status: q.status, service: q.service }, { page: q.page, limit: q.limit });
-    res.json({ data: items, meta });
+  // ── Categories (trees and news) ──────────────────────────
+  for (const [path, kind] of [['tree-categories', 'tree'], ['news-categories', 'news']] as const) {
+    router.get(`/${path}`, async (_req, res) => {
+      res.json({ data: await categories.list(kind) });
+    });
+    router.post(`/${path}`, validate({ body: categoryCreateSchema }), async (req, res) => {
+      res.status(201).json({ data: await categories.create(actorId(req), kind, parsed<{ body: z.output<typeof categoryCreateSchema> }>(res).body) });
+    });
+    router.patch(`/${path}/:slug`, validate({ params: categoryParams, body: categoryUpdateSchema }), async (req, res) => {
+      const { params, body } = parsed<{ params: { slug: string }; body: z.output<typeof categoryUpdateSchema> }>(res);
+      res.json({ data: await categories.update(actorId(req), kind, params.slug, body) });
+    });
+    router.delete(`/${path}/:slug`, validate({ params: categoryParams }), async (req, res) => {
+      await categories.remove(actorId(req), kind, parsed<{ params: { slug: string } }>(res).params.slug);
+      res.status(204).end();
+    });
+  }
+
+  // ── Expert services ──────────────────────────────────────
+  router.get('/expert-services', async (_req, res) => {
+    res.json({ data: await deps.content.serviceCategories(false) });
   });
-  router.put('/service-requests/:id', validate({ params: idParams, body: serviceRequestUpdateSchema }), async (req, res) => {
-    const { params, body } = parsed<{ params: { id: string }; body: z.output<typeof serviceRequestUpdateSchema> }>(res);
-    res.json({ data: await deps.serviceRequests.update(actorId(req), params.id, body) });
+  router.post('/expert-services', validate({ body: serviceCategoryCreateSchema }), async (req, res) => {
+    res.status(201).json({ data: await deps.content.createServiceCategory(actorId(req), parsed<{ body: z.output<typeof serviceCategoryCreateSchema> }>(res).body) });
+  });
+  router.patch('/expert-services/:id', validate({ params: idParams, body: serviceCategoryUpdateSchema }), async (req, res) => {
+    const { params, body } = parsed<{ params: { id: string }; body: z.output<typeof serviceCategoryUpdateSchema> }>(res);
+    res.json({ data: await deps.content.updateServiceCategory(actorId(req), params.id, body) });
+  });
+  router.delete('/expert-services/:id', validate({ params: idParams }), async (req, res) => {
+    await deps.content.removeServiceCategory(actorId(req), parsed<{ params: { id: string } }>(res).params.id);
+    res.status(204).end();
   });
 
-  // ── Feedback ─────────────────────────────────────────────
-  router.get('/feedback', validate({ query: feedbackQuery }), async (_req, res) => {
-    const { query: q } = parsed<{ query: z.output<typeof feedbackQuery> }>(res);
-    const { items, meta } = await deps.feedback.list({ status: q.status, kind: q.kind }, { page: q.page, limit: q.limit });
+  // ── Partners ─────────────────────────────────────────────
+  router.get('/partners', async (_req, res) => {
+    res.json({ data: await deps.content.partners(false) });
+  });
+  router.post('/partners', validate({ body: partnerCreateSchema }), async (req, res) => {
+    res.status(201).json({ data: await deps.content.createPartner(actorId(req), parsed<{ body: z.output<typeof partnerCreateSchema> }>(res).body) });
+  });
+  router.patch('/partners/:id', validate({ params: idParams, body: partnerUpdateSchema }), async (req, res) => {
+    const { params, body } = parsed<{ params: { id: string }; body: z.output<typeof partnerUpdateSchema> }>(res);
+    res.json({ data: await deps.content.updatePartner(actorId(req), params.id, body) });
+  });
+  router.delete('/partners/:id', validate({ params: idParams }), async (req, res) => {
+    await deps.content.removePartner(actorId(req), parsed<{ params: { id: string } }>(res).params.id);
+    res.status(204).end();
+  });
+
+  // ── Page content (site copy) ─────────────────────────────
+  router.get('/page-content', async (_req, res) => {
+    res.json({ data: await deps.content.pageContent() });
+  });
+  router.put('/page-content/:key', validate({ params: pageContentParams, body: pageContentUpdateSchema }), async (req, res) => {
+    const { params, body } = parsed<{ params: z.output<typeof pageContentParams>; body: z.output<typeof pageContentUpdateSchema> }>(res);
+    res.json({ data: await deps.content.updatePageContent(actorId(req), params.key, body) });
+  });
+
+  // ── Inbox (enquiries) ────────────────────────────────────
+  router.get('/enquiries', validate({ query: enquiriesQuery }), async (_req, res) => {
+    const { query: q } = parsed<{ query: z.output<typeof enquiriesQuery> }>(res);
+    const { items, meta } = await deps.enquiries.list({ type: q.type, status: q.status, q: q.q }, { page: q.page, limit: q.limit });
     res.json({ data: items, meta });
   });
-  router.put('/feedback/:id', validate({ params: idParams, body: feedbackUpdateSchema }), async (req, res) => {
-    const { params, body } = parsed<{ params: { id: string }; body: z.output<typeof feedbackUpdateSchema> }>(res);
-    res.json({ data: await deps.feedback.update(actorId(req), params.id, body) });
+  router.get('/enquiries/counts', async (_req, res) => {
+    res.json({ data: await deps.enquiries.counts() });
+  });
+  router.get('/enquiries/:id', validate({ params: idParams }), async (_req, res) => {
+    res.json({ data: await deps.enquiries.get(parsed<{ params: { id: string } }>(res).params.id) });
+  });
+  router.put('/enquiries/:id', validate({ params: idParams, body: enquiryUpdateSchema }), async (req, res) => {
+    const { params, body } = parsed<{ params: { id: string }; body: z.output<typeof enquiryUpdateSchema> }>(res);
+    res.json({ data: await deps.enquiries.update(actorId(req), params.id, body) });
   });
 
   // ── Nursery Shadow ───────────────────────────────────────
@@ -387,6 +474,12 @@ export const adminRoutes = (deps: { db: Database; species: SpeciesService; order
     res.setHeader('Content-Disposition', `attachment; filename="nurseries-${stamp()}.csv"`);
     // UTF-8 BOM so Excel shows names such as "Kasangalabi" and "–" correctly
     res.send(`\uFEFF${await exportsService.nurseriesCsv()}`);
+  });
+  router.get('/export/enquiries.csv', validate({ query: enquiriesQuerySchema }), async (_req, res) => {
+    const { query: q } = parsed<{ query: z.output<typeof enquiriesQuerySchema> }>(res);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="enquiries-${stamp()}.csv"`);
+    res.send(await deps.enquiries.exportCsv({ type: q.type, status: q.status, q: q.q }));
   });
   router.get('/export/nurseries.geojson', async (_req, res) => {
     res.setHeader('Content-Type', 'application/geo+json; charset=utf-8');

@@ -19,14 +19,14 @@ const approveAsAdmin = async (request: APIRequestContext, buyerPhone: string) =>
   expect(res.ok()).toBe(true);
 };
 
-test.describe('phase 6: free seedlings', () => {
+test.describe('phase 6: giveaways', () => {
   test('directory and campaign page', async ({ page }) => {
     await shoot(page, 'phase-6', 'directory', async p => {
-      await p.goto('/free-seedlings');
-      await expect(p.getByText(/campaigns? running/)).toBeVisible();
+      await p.goto('/giveaways');
+      await expect(p.getByText(/^\d+ giveaways?$/)).toBeVisible();
     });
     await shoot(page, 'phase-6', 'campaign-signed-out', async p => {
-      await p.goto('/free-seedlings');
+      await p.goto('/giveaways');
       await p.getByRole('link', { name: /Coffee shade trees/ }).click();
       await expect(p.getByRole('link', { name: 'Sign in to apply' })).toBeVisible();
       await settle(p, 1000);
@@ -36,12 +36,12 @@ test.describe('phase 6: free seedlings', () => {
   test('buyer applies, admin approves, buyer sees it', async ({ page, request }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     const phone = await registerBuyer(page, 'Namutebi Grace');
-    await page.goto('/free-seedlings?purpose=coffee');
+    await page.goto('/giveaways?q=coffee');
     await page.getByRole('link', { name: /Coffee shade trees/ }).click();
-    await expect(page.getByRole('heading', { name: 'Who can apply' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Apply on Nursery Link' })).toBeVisible();
 
     // The form comes from the campaign's eligibility rules and checks them before sending
-    await page.getByRole('button', { name: 'Apply for free seedlings' }).click();
+    await page.getByRole('button', { name: 'Apply', exact: true }).click();
     await expect(page.getByText(/^Not eligible: "I grow coffee" is required/)).toBeVisible();
     await settle(page, 300);
     await page.screenshot({ path: `${DIR}/apply-errors-mobile.png`, fullPage: true });
@@ -50,7 +50,7 @@ test.describe('phase 6: free seedlings', () => {
     await page.getByLabel(/Number of coffee trees/).fill('450');
     await page.getByLabel('Farmer group (if any) (optional)').or(page.getByLabel(/Farmer group/)).first().fill('Nakisunga Coffee Growers');
     await page.getByLabel(/How many seedlings/).fill('60');
-    await page.getByRole('button', { name: 'Apply for free seedlings' }).click();
+    await page.getByRole('button', { name: 'Apply', exact: true }).click();
     await expect(page.getByText('Application received — waiting for review')).toBeVisible();
     await settle(page);
     await page.screenshot({ path: `${DIR}/applied-mobile.png`, fullPage: true });

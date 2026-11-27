@@ -1,5 +1,4 @@
 import { isApiError } from '@nurserylink/api-client';
-import { newsCategories, type NewsCategory } from '@nurserylink/shared';
 import { Button, EmptyState, ErrorState, SkeletonList, cn } from '@nurserylink/ui';
 import { ArrowRight } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
@@ -9,20 +8,25 @@ import { en } from '../copy/en';
 import { NEWS_PAGE_SIZE, useNewsList } from '../features/news/api';
 import { NewsCard } from '../features/news/NewsCard';
 import { PlantingCalendar } from '../features/news/PlantingCalendar';
-import { PageHero } from '../components/PageHero';
+import { ContentHero } from '../components/ContentHero';
+import { useNewsCategories } from '../features/content/api';
+import { categoryIcon } from '../features/news/photos';
 
 const chip = (on: boolean) =>
   cn('flex min-h-11 shrink-0 items-center rounded-full px-4 font-bold ring-1 transition-colors', on ? 'bg-canopy text-paper ring-canopy' : 'bg-paper text-canopy ring-line shadow-card hover:ring-forest');
 
-/** News and sector advisories, filterable by category (FR-22). */
+/** News & Updates (FR-22): the client's introduction, category chips with icons, and the posts. */
 const News = () => {
-  usePageTitle(en.news.title);
+  usePageTitle(en.nav.news);
   const [params, setParams] = useSearchParams();
-  const category = newsCategories.find(c => c === params.get('category')) ?? null;
+  const raw = params.get('category');
+  const category = raw && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(raw) ? raw : null;
+  const categories = useNewsCategories();
+  const current = categories.data?.find(c => c.slug === category);
   const page = Math.max(1, Number(params.get('page')) || 1);
   const list = useNewsList(category, page);
 
-  const go = (changes: { category?: NewsCategory | null; page?: number }) => {
+  const go = (changes: { category?: string | null; page?: number }) => {
     setParams(prev => {
       const next = new URLSearchParams(prev);
       if ('category' in changes) {
@@ -46,22 +50,32 @@ const News = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHero title={en.news.title} intro={en.news.intro} photo="western-hills" />
+      <ContentHero contentKey="news.intro" photo="western-hills" />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <div className="flex min-w-0 flex-col gap-5">
           <div role="group" aria-label={en.library.filterLabel} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
             <button type="button" aria-pressed={category === null} onClick={() => { go({ category: null }); }} className={chip(category === null)}>
               {en.news.all}
             </button>
-            {newsCategories.map(c => (
-              <button key={c} type="button" aria-pressed={category === c} onClick={() => { go({ category: c }); }} className={chip(category === c)}>
-                {en.news.categories[c]}
-              </button>
-            ))}
+            {categories.data?.map(c => {
+              const Icon = categoryIcon(c.slug);
+              return (
+                <button key={c.slug} type="button" title={c.description ?? undefined} aria-pressed={category === c.slug} onClick={() => { go({ category: c.slug }); }} className={cn(chip(category === c.slug), 'gap-2')}>
+                  <Icon aria-hidden className="size-5" />
+                  {c.label}
+                </button>
+              );
+            })}
           </div>
+          {current && (
+            <div className="flex flex-col gap-1 border-l-4 border-murram pl-4">
+              <h2 className="text-h3">{current.label}</h2>
+              {current.description && <p className="text-bark-muted">{current.description}</p>}
+            </div>
+          )}
 
           {list.data && <CachedNote fromCache={list.data.fromCache} fetchedAt={list.data.fetchedAt} />}
-          {list.isPending && <SkeletonList rows={4} label={en.news.title} />}
+          {list.isPending && <SkeletonList rows={4} label={en.nav.news} />}
           {list.isError && !list.data && (
             <ErrorState title={offline ? en.states.offlineNoCache : en.news.loadFailed} offline={offline} onRetry={() => { void list.refetch(); }} retryLabel={en.states.retry} />
           )}
@@ -95,7 +109,7 @@ const News = () => {
           <PlantingCalendar />
           <nav aria-labelledby="news-links" className="flex flex-col rounded-lg bg-paper p-5 shadow-card ring-1 ring-line">
             <h2 id="news-links" className="mb-1 text-xl">{en.news.links.heading}</h2>
-            {([['/nurseries', en.news.links.nurseries], ['/free-seedlings', en.news.links.free], ['/library', en.news.links.library]] as const).map(([to, label]) => (
+            {([['/nurseries', en.news.links.nurseries], ['/giveaways', en.news.links.giveaways], ['/library', en.news.links.library], ['/expert-services', en.news.links.services]] as const).map(([to, label]) => (
               <Link key={to} to={to} className="flex min-h-11 items-center justify-between gap-2 border-b border-line font-bold no-underline last:border-0 hover:underline">
                 {label}
                 <ArrowRight aria-hidden className="size-5 shrink-0 text-murram" />

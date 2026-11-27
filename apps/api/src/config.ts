@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ugandaPhoneSchema } from '@nurserylink/shared';
 
 const optional = z.string().trim().min(1).optional();
 const secret = (name: string) => z.string().min(32, `${name} must be at least 32 characters (generate with: openssl rand -hex 32)`);
@@ -52,6 +53,14 @@ const schema = z
     PHONE_VERIFICATION: z.enum(['required', 'off']).default('required'),
     PAYMENTS: z.enum(['on', 'off']).default('on'),
     PAYMENT_PROVIDER_MODE: z.enum(['mock', 'live']).default('mock'),
+    /**
+     * In-app ordering (checkout, mobile money escrow, delivery). Off by default: buyers phone or WhatsApp the
+     * nursery operator (client brief). Existing orders stay readable and manageable either way.
+     */
+    FEATURE_ORDERS: z.enum(['on', 'off']).default('off'),
+    /** Who hears about new enquiries (Expert Services, Donate, contact, feedback): an email and/or SMS to the team */
+    ENQUIRY_NOTIFY_EMAIL: z.email().optional(),
+    ENQUIRY_NOTIFY_PHONE: ugandaPhoneSchema.optional(),
     /** The first-visit notice that nursery data is sample data and the site is still being built */
     DEMO_NOTICE: z.enum(['on', 'off']).default('on'),
     /** The needs-assessment survey (e.g. a Google Form link); offered in the first-visit notice and on /survey */
@@ -86,15 +95,6 @@ const schema = z
     OSRM_URL: z.url().default('http://localhost:5000'),
     ORS_API_KEY: optional,
     ORS_URL: z.url().default('https://api.openrouteservice.org'),
-    /**
-     * Turn-by-turn directions: `routing` uses ROUTING_PROVIDER (mock draws a straight line);
-     * `osrm-public` asks the free FOSSGIS OSRM server (real roads, no key, 1 request/s), while
-     * distances and service areas stay on ROUTING_PROVIDER.
-     */
-    DIRECTIONS_PROVIDER: z.enum(['routing', 'osrm-public']).default('routing'),
-    OSRM_PUBLIC_URL: z.url().default('https://routing.openstreetmap.de/routed-car'),
-    /** Contact (email or URL) in the directions User-Agent; defaults to PUBLIC_WEB_URL */
-    DIRECTIONS_CONTACT: optional,
 
     /** Place search by name (villages, landmarks): mock, or OpenStreetMap's Nominatim */
     GEOCODER_PROVIDER: z.enum(['mock', 'nominatim']).default('mock'),

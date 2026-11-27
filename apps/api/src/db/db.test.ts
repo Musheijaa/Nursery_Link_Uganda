@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { speciesCategories } from '@nurserylink/shared';
+import { pageContentKeyList } from '@nurserylink/shared';
 import { createPool } from './client.js';
 import { seed } from './seed/index.js';
 import { SPECIES } from './seed/species.js';
@@ -34,16 +34,18 @@ describe('migrations and seed', () => {
     expect(firstSeed?.news_posts).toBeGreaterThanOrEqual(NEWS_POSTS.length);
     const seeded = await one<{ n: number }>('SELECT count(*)::int AS n FROM news_posts WHERE slug = ANY($1)', [NEWS_POSTS.map(p => p.slug)]);
     expect(seeded.n).toBe(NEWS_POSTS.length);
-    expect(withoutNews(firstSeed)).toEqual({
+    // Other test files add nurseries and campaigns in parallel, so those are "at least"
+    const { nurseries, campaigns, ...exact } = withoutNews(firstSeed);
+    // The sample nurseries plus the 62 from the 2018 certified list (switched off until checked)
+    expect(nurseries).toBeGreaterThanOrEqual(NURSERIES.length + 62);
+    expect(campaigns).toBeGreaterThanOrEqual(2);
+    expect(exact).toEqual({
       // UBOS 2020: 135 districts, 1,520 sub-counties (scripts/boundaries/build.sh)
       districts: 135,
       sub_counties: 1520,
       species: SPECIES.length,
-      // The sample nurseries plus the 62 from the 2018 certified list (switched off until checked)
-      nurseries: NURSERIES.length + 62,
       inventory_rows: NURSERIES.reduce((sum, n) => sum + n.inventory.length, 0) + STOCK_ADDITIONS.reduce((sum, b) => sum + b.lines.length, 0),
       delivery_rates: 2,
-      campaigns: 2,
       admins: 1,
     });
   });
@@ -51,17 +53,35 @@ describe('migrations and seed', () => {
   it('is idempotent: seeding again changes nothing and keeps the admin password', async () => {
     const before = await one<{ password_hash: string }>(`SELECT password_hash FROM users WHERE role = 'admin'`);
     const again = await seed(pool, { admin: { ...TEST_ADMIN, password: 'a-different-password-456' } });
-    expect(withoutNews(again)).toEqual(withoutNews(firstSeed));
+    const stable = ({ nurseries: _n, campaigns: _c, ...rest }: Record<string, number> = {}) => rest;
+    expect(stable(withoutNews(again))).toEqual(stable(withoutNews(firstSeed)));
     const after = await one<{ password_hash: string }>(`SELECT password_hash FROM users WHERE role = 'admin'`);
     expect(after.password_hash).toBe(before.password_hash);
   });
 
-  it('covers every species category, and every nursery has stock', async () => {
-    const { rows } = await pool.query<{ category: string }>('SELECT DISTINCT category FROM species');
-    expect(rows.map(r => r.category).sort()).toEqual([...speciesCategories].sort());
+  it('puts every tree in at least one category, uses every category, and every nursery has stock', async () => {
+    const uncategorised = await one<{ n: number }>('SELECT count(*)::int AS n FROM species s WHERE NOT EXISTS (SELECT 1 FROM species_categories sc WHERE sc.species_id = s.id)');
+    expect(uncategorised.n).toBe(0);
+    const { rows } = await pool.query<{ slug: string; used: boolean }>(
+      'SELECT c.slug, EXISTS (SELECT 1 FROM species_categories sc WHERE sc.category_slug = c.slug) AS used FROM tree_categories c ORDER BY c.sort_order'
+    );
+    expect(rows.map(r => r.slug)).toEqual(['agroforestry', 'fruit', 'timber', 'medicinal', 'ornamental', 'indigenous', 'shade', 'multipurpose', 'other']);
+    expect(rows.every(r => r.used)).toBe(true);
     // Imported nurseries start without stock: an admin adds it when switching them on
     const empty = await one<{ n: number }>('SELECT count(*)::int AS n FROM nurseries WHERE external_ref IS NULL AND NOT EXISTS (SELECT 1 FROM inventory WHERE nursery_id = nurseries.id)');
     expect(empty.n).toBe(0);
+  });
+
+  it('seeds the client brief: news categories, expert services and every page content key', async () => {
+    const news = await pool.query<{ slug: string }>('SELECT slug FROM news_categories ORDER BY sort_order');
+    expect(news.rows.map(r => r.slug)).toEqual(['policy-sector', 'weather-seasonal', 'planting-restoration', 'agroforestry-farming', 'training-events', 'funding-partnerships']);
+    const services = await one<{ categories: number; services: number }>('SELECT (SELECT count(*)::int FROM service_categories) AS categories, (SELECT count(*)::int FROM services) AS services');
+    expect(services).toEqual({ categories: 6, services: 46 });
+    const keys = await pool.query<{ key: string }>('SELECT key FROM page_content ORDER BY key');
+    expect(keys.rows.map(r => r.key)).toEqual([...pageContentKeyList].sort());
+    // "Certified" is never seeded: it needs a verification an admin recorded
+    const certified = await one<{ n: number }>("SELECT count(*)::int AS n FROM nurseries WHERE certification_status = 'certified'");
+    expect(certified.n).toBe(0);
   });
 
   it('stores the admin with a normalised phone, lower-case email and an argon2 hash', async () => {

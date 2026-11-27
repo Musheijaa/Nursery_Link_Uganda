@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { newsCategories, newsCreateSchema } from '@nurserylink/shared';
+import { newsCreateSchema } from '@nurserylink/shared';
 import { Button, Checkbox, ErrorState, Field, Input, Select, SkeletonList, Textarea, cn, toast } from '@nurserylink/ui';
 import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
 import type { z } from 'zod';
 import { PageHeader } from '../components/PageHeader';
+import { useAdminCategories } from '../features/content/api';
 import { en } from '../copy/en';
 import { useAdminNewsOne, useSaveNews } from '../features/news/api';
 import { Markdown } from '../features/news/Markdown';
@@ -29,13 +30,14 @@ const NewsForm = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const { register, control, handleSubmit, reset, setError, formState: { errors } } = useForm<Input, unknown, Output>({
     resolver: zodResolver(newsCreateSchema),
-    defaultValues: { category: 'weather', is_published: false, body: '', cover_url: '' },
+    defaultValues: { category: 'policy-sector', is_published: false, body: '', cover_url: '' },
   });
   const body = useWatch({ control, name: 'body' });
+  const categories = useAdminCategories('news');
 
   useEffect(() => {
     const n = existing.data;
-    if (n) reset({ title: n.title, slug: n.slug, category: n.category, body: n.body, cover_url: n.cover_url ?? '', is_published: n.is_published, published_at: n.published_at ?? undefined });
+    if (n) reset({ title: n.title, slug: n.slug, category: n.category.slug, body: n.body, cover_url: n.cover_url ?? '', is_published: n.is_published, published_at: n.published_at ?? undefined });
   }, [existing.data, reset]);
 
   if (editing && existing.isPending) return <SkeletonList rows={4} />;
@@ -61,7 +63,13 @@ const NewsForm = () => {
         {formError && <p role="alert" className="rounded-sm bg-laterite-tint px-3 py-2 font-bold text-laterite">{formError}</p>}
         <Field label={en.news.postTitle} error={errors.title?.message}>{({ id: f, describedBy, invalid }) => <Input id={f} aria-describedby={describedBy} invalid={invalid} {...register('title')} />}</Field>
         <div className="grid gap-3 md:grid-cols-3">
-          <Field label={en.news.category}>{({ id: f }) => <Select id={f} {...register('category')}>{newsCategories.map(c => <option key={c} value={c}>{en.news.categories[c]}</option>)}</Select>}</Field>
+          <Field label={en.news.category} hint={existing.data?.needs_review ? en.news.needsReviewHint : undefined}>
+            {({ id: f, describedBy }) => (
+              <Select id={f} aria-describedby={describedBy} {...register('category')}>
+                {categories.data?.map(c => <option key={c.slug} value={c.slug}>{c.is_active ? c.label : `${c.label} (${en.common.inactive})`}</option>)}
+              </Select>
+            )}
+          </Field>
           <Field label={en.news.publishAt}>
             {({ id: f }) => <Input id={f} type="datetime-local" {...register('published_at', { setValueAs: (v: string) => fromLocalInput(v) })} defaultValue={toLocalInput(existing.data?.published_at)} />}
           </Field>

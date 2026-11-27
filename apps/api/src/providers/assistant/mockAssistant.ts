@@ -39,7 +39,8 @@ export class MockAssistant implements AssistantProvider {
     const query = words.slice(0, 3).join(' ');
 
     const [tool, input]: [string, Record<string, unknown>] =
-      /\b(free|campaign|bure)\b/.test(question) ? ['list_free_seedling_campaigns', {}]
+      /\b(free|giveaways?|subsidi[sz]ed|campaigns?|bure)\b/.test(question) ? ['list_giveaways', {}]
+      : /\b(services?|expert|consultan\w*|mapping|gis|drone)\b/.test(question) ? ['list_expert_services', {}]
       : /\b(when|season|rain|rains|calendar)\b/.test(question) ? ['planting_calendar', {}]
       : /\border/.test(question) && has('my_orders') ? ['my_orders', {}]
       : /\b(advice|news|tips?)\b/.test(question) ? ['latest_advice', {}]
@@ -62,7 +63,7 @@ export class MockAssistant implements AssistantProvider {
       return { stop: 'complete' };
     }
     const items = linkedItems(outcome.result);
-    write(items.length === 0 ? 'I didn’t find anything for that. Try other words, or browse [Find nurseries](/nurseries).' : `Here is what I found:\n\n${items.map(i => `- [${i.name}](${i.link})`).join('\n')}`);
+    write(items.length === 0 ? 'I didn’t find anything for that. Try other words, or browse [Find Nurseries](/nurseries).' : `Here is what I found:\n\n${items.map(i => `- [${i.name}](${i.link})`).join('\n')}`);
     return { stop: 'complete' };
   }
 }

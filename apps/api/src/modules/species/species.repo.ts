@@ -1,5 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
-import type { GrowthPace, SpeciesCategory } from '@nurserylink/shared';
+import type { GrowthPace, SpeciesProfileField } from '@nurserylink/shared';
 import type { DbOrTx } from '../../db/client.js';
 import { containsPattern } from '../../lib/sqlText.js';
 
@@ -8,7 +8,7 @@ export type SpeciesRow = {
   slug: string;
   common_name: string;
   scientific_name: string;
-  category: SpeciesCategory;
+  categories: CategoryRef[];
   growth_pace: GrowthPace;
   local_names: { language: string; name: string }[];
   thumbnail_url: string | null;
@@ -16,10 +16,10 @@ export type SpeciesRow = {
   total: number;
 };
 
-export type SpeciesDetailRow = Omit<SpeciesRow, 'thumbnail_url' | 'total'> & {
+export type CategoryRef = { slug: string; label: string };
+
+export type SpeciesDetailRow = Omit<SpeciesRow, 'thumbnail_url' | 'total'> & Record<SpeciesProfileField, string | null> & {
   height_timeline: { years: number; height_m: number }[];
-  canopy_notes: string | null;
-  root_notes: string | null;
   ecological_zones: string[];
   media: { url: string; caption: string | null }[];
   min_price: number | null;
@@ -28,10 +28,19 @@ export type SpeciesDetailRow = Omit<SpeciesRow, 'thumbnail_url' | 'total'> & {
 };
 
 export interface SpeciesFilters {
-  category?: SpeciesCategory | undefined;
+  /** In any of these categories (slugs) */
+  categories?: string[] | undefined;
   letter?: string | undefined;
   q?: string | undefined;
 }
+
+/** A species' categories as [{slug, label}], in the categories' order */
+export const speciesCategoriesSql = (speciesId: SQL) => sql`COALESCE((SELECT json_agg(json_build_object('slug', c.slug, 'label', c.label) ORDER BY c.sort_order, c.label)
+  FROM species_categories sc JOIN tree_categories c ON c.slug = sc.category_slug WHERE sc.species_id = ${speciesId}), '[]'::json)`;
+
+const profileColumnsSql = sql.raw(`s.botanical_family, s.appearance_and_identification, s.growth_characteristics, s.distribution_and_origin,
+  s.soil_conditions, s.rainfall_requirements, s.climate_and_ecology, s.propagation_methods, s.planting_requirements,
+  s.recommended_spacing, s.management_practices, s.economic_uses, s.environmental_benefits, s.agroforestry_applications, s.other_uses`);
 
 const localNamesSql = sql`COALESCE((SELECT json_agg(json_build_object('language', l.language, 'name', l.name) ORDER BY l.language)
   FROM species_local_names l WHERE l.species_id = s.id), '[]'::json)`;
@@ -42,7 +51,10 @@ const nurseryCountSql = sql`(SELECT count(DISTINCT i.nursery_id)::int FROM inven
 
 export const listSpecies = async (db: DbOrTx, f: SpeciesFilters, limit: number, offset: number): Promise<SpeciesRow[]> => {
   const conditions: SQL[] = [sql`true`];
-  if (f.category) conditions.push(sql`s.category = ${f.category}`);
+  if (f.categories?.length) {
+    conditions.push(sql`EXISTS (SELECT 1 FROM species_categories sc WHERE sc.species_id = s.id
+      AND sc.category_slug IN (${sql.join(f.categories.map(c => sql`${c}`), sql`, `)}))`);
+  }
   if (f.letter) conditions.push(sql`upper(left(s.common_name, 1)) = ${f.letter.toUpperCase()}`);
   if (f.q) {
     const pattern = containsPattern(f.q);
@@ -50,7 +62,7 @@ export const listSpecies = async (db: DbOrTx, f: SpeciesFilters, limit: number, 
       OR EXISTS (SELECT 1 FROM species_local_names l WHERE l.species_id = s.id AND l.name ILIKE ${pattern}))`);
   }
   const result = await db.execute<SpeciesRow>(sql`
-    SELECT s.id, s.slug, s.common_name, s.scientific_name, s.category, s.growth_pace,
+    SELECT s.id, s.slug, s.common_name, s.scientific_name, ${speciesCategoriesSql(sql`s.id`)} AS categories, s.growth_pace,
            ${localNamesSql} AS local_names,
            (SELECT m.url FROM species_media m WHERE m.species_id = s.id ORDER BY m.sort_order LIMIT 1) AS thumbnail_url,
            ${nurseryCountSql} AS nursery_count,
@@ -67,8 +79,8 @@ export const countSpecies = async (db: DbOrTx): Promise<number> =>
 
 const findSpeciesWhere = async (db: DbOrTx, where: SQL): Promise<SpeciesDetailRow | undefined> => {
   const result = await db.execute<SpeciesDetailRow>(sql`
-    SELECT s.id, s.slug, s.common_name, s.scientific_name, s.category, s.growth_pace,
-           s.height_timeline, s.canopy_notes, s.root_notes, s.ecological_zones,
+    SELECT s.id, s.slug, s.common_name, s.scientific_name, ${speciesCategoriesSql(sql`s.id`)} AS categories, s.growth_pace,
+           s.height_timeline, ${profileColumnsSql}, s.ecological_zones,
            ${localNamesSql} AS local_names,
            COALESCE((SELECT json_agg(json_build_object('url', m.url, 'caption', m.caption) ORDER BY m.sort_order)
                      FROM species_media m WHERE m.species_id = s.id), '[]'::json) AS media,
@@ -99,3 +111,25 @@ export const countSpeciesReferences = async (db: DbOrTx, id: string): Promise<Sp
              (SELECT count(*) FROM order_items WHERE species_id = ${id})::int AS orders,
              (SELECT count(*) FROM campaign_items WHERE species_id = ${id})::int AS campaigns`)
   ).rows[0] ?? { inventory: 0, orders: 0, campaigns: 0 };
+
+export type TreeCategoryRow = { slug: string; label: string; description: string | null; sort_order: number; is_active: boolean; species_count: number };
+
+export const listTreeCategories = async (db: DbOrTx, activeOnly: boolean): Promise<TreeCategoryRow[]> =>
+  (
+    await db.execute<TreeCategoryRow>(sql`
+      SELECT c.slug, c.label, c.description, c.sort_order, c.is_active,
+             (SELECT count(*) FROM species_categories sc WHERE sc.category_slug = c.slug)::int AS species_count
+      FROM tree_categories c
+      ${activeOnly ? sql`WHERE c.is_active` : sql``}
+      ORDER BY c.sort_order, c.label`)
+  ).rows;
+
+export const findTreeCategory = async (db: DbOrTx, slug: string): Promise<TreeCategoryRow | undefined> =>
+  (await listTreeCategories(db, false)).find(c => c.slug === slug);
+
+/** The slugs among these that don't exist */
+export const unknownTreeCategories = async (db: DbOrTx, slugs: string[]): Promise<string[]> => {
+  if (!slugs.length) return [];
+  const found = (await db.execute<{ slug: string }>(sql`SELECT slug FROM tree_categories WHERE slug IN (${sql.join(slugs.map(c => sql`${c}`), sql`, `)})`)).rows;
+  return slugs.filter(c => !found.some(f => f.slug === c));
+};

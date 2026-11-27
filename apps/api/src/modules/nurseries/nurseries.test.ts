@@ -15,7 +15,7 @@ const pool = createPool(inject('databaseUrl'));
 const config = testConfig(inject('databaseUrl'));
 const logger = pino({ level: 'silent' });
 const app = createApp({ config, pool, logger, providers: mockProviders(), queue: new RecordingQueue() });
-const appWithoutRouting = createApp({ config, pool, logger, providers: { ...mockProviders(), routing: new DownRouting(), directions: new DownRouting() }, queue: new RecordingQueue() });
+const appWithoutRouting = createApp({ config, pool, logger, providers: { ...mockProviders(), routing: new DownRouting() }, queue: new RecordingQueue() });
 
 beforeAll(() => prepareTestDatabase(pool));
 afterAll(() => pool.end());
@@ -86,11 +86,25 @@ describe('GET /nurseries', () => {
     expect(byTree).toEqual(names(await list('?species=mvule')));
   });
 
-  it('filters by seedling category, so one nursery can appear under several', async () => {
-    expect(names(await list('?category=coffee'))).toEqual(["Kasawo Farmers' Nursery", 'Kyampisi Agroforestry Group', 'Nabbaale Tree Hub']);
-    expect(names(await list('?category=cocoa'))).toEqual(['Kyampisi Agroforestry Group', 'Nabbaale Tree Hub']);
-    expect(names(await list('?category=medicinal'))).toContain('Nabbaale Tree Hub');
-    await request(app).get('/api/v1/nurseries?category=fruit').expect(400);
+  it('filters by tree categories (any of several), so one nursery can appear under several', async () => {
+    const agroforestry = names(await list('?categories=agroforestry'));
+    // Coffee and cocoa are agroforestry trees
+    expect(agroforestry).toEqual(expect.arrayContaining(["Kasawo Farmers' Nursery", 'Kyampisi Agroforestry Group', 'Nabbaale Tree Hub']));
+    const medicinal = names(await list('?categories=medicinal'));
+    expect(medicinal).toContain('Nabbaale Tree Hub');
+    const either = names(await list('?categories=agroforestry,medicinal'));
+    expect(new Set(either)).toEqual(new Set([...agroforestry, ...medicinal]));
+    expect(names(await list('?categories=no-such-category'))).toEqual([]);
+    await request(app).get('/api/v1/nurseries?categories=Not_A_Slug').expect(400);
+  });
+
+  it('filters by certification: only a verified record counts as certified', async () => {
+    const all = (await list('')).meta.total;
+    // Nothing is seeded as certified; the 'pending' seed nurseries count as uncertified
+    expect((await list('?certified=true')).meta.total).toBe(0);
+    expect((await list('?certified=false')).meta.total).toBe(all);
+    const first = (await list('?limit=1')).data[0];
+    expect(first).toMatchObject({ certified: false, certification: null });
   });
 
   it('filters by active campaign and combines filters', async () => {
@@ -137,18 +151,15 @@ describe('GET /nurseries', () => {
 describe('GET /nurseries?sort=nearest', () => {
   const nearestQuery = `?sort=nearest&lat=${String(MUKONO_TOWN.lat)}&lng=${String(MUKONO_TOWN.lng)}`;
 
-  it('ranks by road distance and returns both distances', async () => {
+  it('ranks by straight-line distance (PostGIS), with no road routing involved', async () => {
     const body = await list(nearestQuery);
-    expect(body.meta.distance_mode).toBe('road');
+    expect(body.meta.distance_mode).toBe('straight_line');
     expect(body.data[0]?.name).toBe('Mukono Town Nursery');
-    const road = body.data.map(n => n.road_km ?? Infinity);
-    expect(road).toEqual([...road].sort((a, b) => a - b));
-    // Mock road distance = spherical distance × 1.3; straight_km is PostGIS's ellipsoidal distance (≈0.5% apart)
-    for (const n of body.data.filter(x => (x.straight_km ?? 0) > 0)) {
-      const ratio = (n.road_km ?? 0) / (n.straight_km ?? 1);
-      expect(ratio).toBeGreaterThan(1.28);
-      expect(ratio).toBeLessThan(1.32);
-    }
+    expect(body.data.every(n => n.road_km === undefined)).toBe(true);
+    const straight = body.data.map(n => n.straight_km ?? 0);
+    expect(straight).toEqual([...straight].sort((a, b) => a - b));
+    // The same with the routing provider down: nearest-first never depends on it
+    expect(names(await list(nearestQuery, appWithoutRouting))).toEqual(names(body));
   });
 
   it('considers at most 20 candidates and respects limit', async () => {
@@ -162,13 +173,6 @@ describe('GET /nurseries?sort=nearest', () => {
     expect(names(body).sort()).toEqual(['Kimenyedde Green Nursery', 'Mukono Town Nursery', 'Nabbaale Tree Hub', 'Seeta Fruit & Tree Seedlings']);
   });
 
-  it('falls back to straight-line order when routing is down', async () => {
-    const body = await list(nearestQuery, appWithoutRouting);
-    expect(body.meta.distance_mode).toBe('straight_line');
-    expect(body.data.every(n => n.road_km === undefined)).toBe(true);
-    const straight = body.data.map(n => n.straight_km ?? 0);
-    expect(straight).toEqual([...straight].sort((a, b) => a - b));
-  });
 });
 
 describe('GET /nurseries/:id', () => {
@@ -181,23 +185,21 @@ describe('GET /nurseries/:id', () => {
   it('returns the full profile with an inventory linked to the tree library (FR-10, FR-21)', async () => {
     const res = await request(app).get(`/api/v1/nurseries/${await katosiId()}`).expect(200);
     const profile = (res.body as { data: NurseryProfile }).data;
-    expect(profile).toMatchObject({ name: 'Katosi Lakeshore Seedlings', type: 'private', certification_status: 'unverified', seed_source: expect.any(String) as string });
+    expect(profile).toMatchObject({ name: 'Katosi Lakeshore Seedlings', type: 'private', certified: false, certification: null, seed_source: expect.any(String) as string });
     expect(profile.inventory.map(i => i.species.slug)).toEqual(['bottlebrush', 'musizi', 'mutuba', 'mvule', 'nsambya']);
-    expect(profile.inventory[0]).toMatchObject({ quantity_available: 400, unit_price: 3000, species: { common_name: 'Bottlebrush', category: 'ornamental' } });
-    expect(profile.stock_categories).toEqual(['indigenous', 'ornamental']);
+    expect(profile.inventory[0]).toMatchObject({ quantity_available: 400, unit_price: 3000, species: { common_name: 'Bottlebrush', categories: [{ slug: 'ornamental', label: 'Ornamental Trees' }] } });
+    expect(profile.stock_categories.map(c => c.slug)).toEqual(['agroforestry', 'timber', 'ornamental', 'indigenous', 'shade', 'multipurpose']);
     expect(profile.active_campaigns.map(c => c.title)).toEqual(['Lake Victoria shoreline restoration']);
     expect(profile).not.toHaveProperty('distance_km');
   });
 
-  it('includes road distance from the buyer, falling back to straight line', async () => {
+  it('includes the straight-line distance from the person (directions open Google Maps)', async () => {
     const id = await katosiId();
-    const road = (await request(app).get(`/api/v1/nurseries/${id}?lat=0.358&lng=32.757`).expect(200)).body as { data: NurseryProfile };
-    expect(road.data).toMatchObject({ distance_mode: 'road' });
-    const straight = (await request(appWithoutRouting).get(`/api/v1/nurseries/${id}?lat=0.358&lng=32.757`).expect(200)).body as { data: NurseryProfile };
-    expect(straight.data.distance_mode).toBe('straight_line');
-    const ratio = (road.data.distance_km ?? 0) / (straight.data.distance_km ?? 1);
-    expect(ratio).toBeGreaterThan(1.28);
-    expect(ratio).toBeLessThan(1.32);
+    const res = (await request(app).get(`/api/v1/nurseries/${id}?lat=0.358&lng=32.757`).expect(200)).body as { data: NurseryProfile };
+    expect(res.data.distance_mode).toBe('straight_line');
+    // About 17.6 km from Mukono town to Katosi as the crow flies
+    expect(res.data.distance_km).toBeGreaterThan(17);
+    expect(res.data.distance_km).toBeLessThan(18.5);
   });
 
   it('404s for unknown or inactive nurseries and 400s for malformed ids', async () => {
@@ -206,25 +208,9 @@ describe('GET /nurseries/:id', () => {
   });
 });
 
-describe('GET /nurseries/:id/route', () => {
-  it('returns route geometry and steps (FR-11)', async () => {
+describe('directions', () => {
+  it('has no in-app route: directions are a Google Maps link', async () => {
     const [n] = (await list('?q=katosi')).data;
-    const res = await request(app).get(`/api/v1/nurseries/${n?.id ?? ''}/route?lat=0.358&lng=32.757`).expect(200);
-    expect(res.body).toMatchObject({
-      data: {
-        nursery: { name: 'Katosi Lakeshore Seedlings', location: { lat: 0.205, lng: 32.8 } },
-        // The mock draws a straight line and must say so, so the map doesn't pass it off as a road
-        distance_mode: 'straight_line',
-        geometry: { type: 'LineString', coordinates: [[32.757, 0.358], [32.8, 0.205]] },
-        steps: [{ instruction: 'Head towards the nursery' }, { instruction: 'Arrive at the nursery' }],
-      },
-    });
-  });
-
-  it('needs the buyer location, and reports routing outages as 503', async () => {
-    const [n] = (await list('?q=katosi')).data;
-    await request(app).get(`/api/v1/nurseries/${n?.id ?? ''}/route`).expect(400);
-    const res = await request(appWithoutRouting).get(`/api/v1/nurseries/${n?.id ?? ''}/route?lat=0.358&lng=32.757`).expect(503);
-    expect(errorOf(res).code).toBe('provider_unavailable');
+    await request(app).get(`/api/v1/nurseries/${n?.id ?? ''}/route?lat=0.358&lng=32.757`).expect(404);
   });
 });

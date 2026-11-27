@@ -14,6 +14,8 @@ export const baseTestEnv = (databaseUrl: string): NodeJS.ProcessEnv => ({
   RATE_LIMIT_SCALE: '1000',
   // Every response in the suite is checked against its OpenAPI schema
   VALIDATE_RESPONSES: 'true',
+  // The order flow stays tested; ordering-off behaviour has its own test
+  FEATURE_ORDERS: 'on',
 });
 
 export const testConfig = (databaseUrl: string, overrides: NodeJS.ProcessEnv = {}): Config =>

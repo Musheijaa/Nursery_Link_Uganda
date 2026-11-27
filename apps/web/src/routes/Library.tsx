@@ -1,5 +1,4 @@
 import '@nurserylink/ui/library-fonts.css';
-import { speciesCategories, type SpeciesCategory } from '@nurserylink/shared';
 import { EmptyState, ErrorState, SkeletonList, cn } from '@nurserylink/ui';
 import { isApiError } from '@nurserylink/api-client';
 import { useMemo } from 'react';
@@ -11,7 +10,8 @@ import { en } from '../copy/en';
 import { useSpeciesIndex, type SpeciesItem } from '../features/library/api';
 import { CorrectedNote } from '../components/CorrectedNote';
 import { SearchBox } from '../components/SearchBox';
-import { PageHero } from '../components/PageHero';
+import { ContentHero } from '../components/ContentHero';
+import { useTreeCategories } from '../features/content/api';
 import { SpeciesPill } from '../components/Pills';
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -19,19 +19,22 @@ const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const chip = (on: boolean) =>
   cn('flex min-h-11 shrink-0 items-center rounded-full px-4 font-bold ring-1 transition-colors', on ? 'bg-canopy text-paper ring-canopy' : 'bg-paper text-canopy ring-line shadow-card hover:ring-forest');
 
-/** The category filter: a short label on every option. */
-const CategoryChips = ({ value, onChange }: { value: SpeciesCategory | null; onChange: (c: SpeciesCategory | null) => void }) => (
-  <div role="group" aria-label={en.library.filterLabel} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
-    <button type="button" aria-pressed={value === null} onClick={() => { onChange(null); }} className={chip(value === null)}>
-      {en.library.all}
-    </button>
-    {speciesCategories.map(c => (
-      <button key={c} type="button" aria-pressed={value === c} onClick={() => { onChange(c); }} className={chip(value === c)}>
-        {en.categories[c]}
+/** The nine categories (admin-editable), each with how many trees it has. */
+const CategoryChips = ({ value, onChange }: { value: string | null; onChange: (c: string | null) => void }) => {
+  const categories = useTreeCategories();
+  return (
+    <div role="group" aria-label={en.library.filterLabel} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
+      <button type="button" aria-pressed={value === null} onClick={() => { onChange(null); }} className={chip(value === null)}>
+        {en.library.all}
       </button>
-    ))}
-  </div>
-);
+      {categories.data?.map(c => (
+        <button key={c.slug} type="button" aria-pressed={value === c.slug} onClick={() => { onChange(c.slug); }} className={chip(value === c.slug)}>
+          {c.label}
+        </button>
+      ))}
+    </div>
+  );
+};
 
 const Entry = ({ s }: { s: SpeciesItem }) => (
   <li>
@@ -48,7 +51,7 @@ const Entry = ({ s }: { s: SpeciesItem }) => (
         <span className="font-display text-lg font-semibold text-canopy group-hover:underline">{s.common_name}</span>
         <span className="font-serif text-bark-muted italic">{s.scientific_name}</span>
         <span className="mt-1 flex flex-wrap items-center gap-2 text-sm text-bark-muted">
-          <SpeciesPill category={s.category} />
+          {s.categories.slice(0, 2).map(c => <SpeciesPill key={c.slug} category={c} />)}
           {en.library.atNurseries(s.nursery_count)}
         </span>
       </span>
@@ -56,13 +59,15 @@ const Entry = ({ s }: { s: SpeciesItem }) => (
   </li>
 );
 
-/** The Digital Tree Library index: A–Z with jump links and category filters (FR-18). */
+/** The Digital Tree Library index: the client's introduction, then A–Z with jump links and category filters (FR-18). */
 const Library = () => {
-  usePageTitle(en.library.title);
+  usePageTitle(en.nav.library);
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const raw = params.get('category');
-  const category = speciesCategories.find(c => c === raw) ?? null;
+  const category = raw && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(raw) ? raw : null;
+  const categories = useTreeCategories();
+  const categoryLabel = categories.data?.find(c => c.slug === category)?.label;
   const q = params.get('q') ?? '';
   const index = useSpeciesIndex(category, q.trim());
 
@@ -86,7 +91,7 @@ const Library = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHero title={en.library.title} intro={en.library.intro} photo="mabira-forest" />
+      <ContentHero contentKey="library.intro" photo="mabira-forest" />
 
       <div className="flex flex-col gap-3">
         <SearchBox
@@ -115,7 +120,7 @@ const Library = () => {
 
       {index.data && <CachedNote fromCache={index.data.fromCache} fetchedAt={index.data.fetchedAt} />}
       {index.data?.correctedQ && <CorrectedNote typed={q} corrected={index.data.correctedQ} />}
-      {index.isPending && <SkeletonList rows={6} label={en.library.title} />}
+      {index.isPending && <SkeletonList rows={6} label={en.nav.library} />}
       {index.isError && !index.data && (
         <ErrorState
           title={isApiError(index.error) && index.error.isOffline ? en.states.offlineNoCache : en.library.loadFailed}
@@ -133,7 +138,7 @@ const Library = () => {
         <div className="flex flex-col gap-6">
           <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-bark-muted">
             <span aria-live="polite">{en.library.count(index.data.items.length)}</span>
-            {category && <Link to={`/nurseries?category=${category}`} className="font-bold text-forest">{en.library.nurseriesFor(en.categories[category])}</Link>}
+            {category && categoryLabel && <Link to={`/nurseries?categories=${category}`} className="font-bold text-forest">{en.library.nurseriesFor(categoryLabel)}</Link>}
           </p>
           {[...groups.entries()].map(([letter, items]) => (
             <section key={letter} aria-labelledby={`letter-${letter}`} className="flex scroll-mt-32 flex-col gap-2">

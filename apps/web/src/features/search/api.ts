@@ -27,3 +27,15 @@ export const usePlaces = (q: string | null) =>
     queryFn: async () => unwrap(api.GET('/places', { params: { query: { q: q ?? '' } } })),
     staleTime: 60 * 60_000,
   });
+
+export type SearchResults = Schemas['SearchResults'];
+
+/** The site-wide search: the best few nurseries, trees, expert services, news posts and giveaways. */
+export const useSiteSearch = (q: string) =>
+  useQuery({
+    queryKey: ['search', 'site', q],
+    enabled: q.length >= 2,
+    queryFn: async () => unwrap(api.GET('/search', { params: { query: { q } } })),
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60_000,
+  });

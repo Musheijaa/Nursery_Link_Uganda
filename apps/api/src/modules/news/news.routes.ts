@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { newsCategorySchema } from '@nurserylink/shared';
+import { categorySlugSchema } from '@nurserylink/shared';
 import type { Database } from '../../db/client.js';
 import { NotFoundError } from '../../lib/errors.js';
 import { paginationMeta, paginationQuerySchema, toOffset } from '../../lib/pagination.js';
 import { validate } from '../../middleware/validate.js';
 import * as repo from './news.repo.js';
 
-export const listQuery = paginationQuerySchema.extend({ category: newsCategorySchema.optional() });
+export const listQuery = paginationQuerySchema.extend({ category: categorySlugSchema.optional() });
 export const slugParams = z.object({ slug: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Not a valid slug') });
 
 const iso = (d: Date) => new Date(d).toISOString();
@@ -23,6 +23,10 @@ export const newsRoutes = (db: Database): Router => {
       data: rows.map(({ total: _total, published_at, ...rest }) => ({ ...rest, published_at: iso(published_at) })),
       meta: paginationMeta(q, rows[0]?.total ?? 0),
     });
+  });
+
+  router.get('/categories', async (_req, res) => {
+    res.json({ data: await repo.listNewsCategories(db) });
   });
 
   router.get('/:slug', validate({ params: slugParams }), async (_req, res) => {

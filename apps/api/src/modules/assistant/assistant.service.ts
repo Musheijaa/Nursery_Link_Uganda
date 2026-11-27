@@ -39,7 +39,7 @@ export class AssistantService {
     private readonly deps: {
       provider: AssistantProvider | null;
       tools: ToolDeps;
-      config: Pick<Config, 'PAYMENTS' | 'PHONE_VERIFICATION' | 'DEMO_NOTICE' | 'ASSISTANT_DAILY_LIMIT'>;
+      config: Pick<Config, 'PAYMENTS' | 'PHONE_VERIFICATION' | 'DEMO_NOTICE' | 'FEATURE_ORDERS' | 'ASSISTANT_DAILY_LIMIT'>;
       logger: Logger;
       now?: () => Date;
     }

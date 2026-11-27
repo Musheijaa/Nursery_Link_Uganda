@@ -19,6 +19,11 @@
 		-Server
 	}
 
+	# Renamed pages (client content brief): old links and bookmarks get a permanent redirect
+	redir /free-seedlings /giveaways 301
+	redir /free-seedlings/* /giveaways/{path.1} 301
+	redir /services /expert-services 301
+
 	@api path /api/* /media/*
 	handle @api {
 		reverse_proxy {$API_UPSTREAM} {

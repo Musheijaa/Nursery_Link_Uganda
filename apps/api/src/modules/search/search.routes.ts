@@ -18,6 +18,11 @@ export const suggestQuery = z.object({
   limit: z.coerce.number().int().min(1).max(20).default(8),
 });
 
+export const globalSearchQuery = z.object({
+  q: z.string().trim().min(2).max(100),
+  limit: z.coerce.number().int().min(1).max(10).default(5),
+});
+
 export const placesQuery = z.object({
   q: z.string().trim().min(2).max(100),
   limit: z.coerce.number().int().min(1).max(10).default(6),
@@ -34,6 +39,11 @@ export const searchRoutes = (service: SearchService, limit: Limit): Router => {
   router.get('/search/suggest', suggestLimit, validate({ query: suggestQuery }), async (_req, res) => {
     const { query } = res.locals.validated as { query: z.output<typeof suggestQuery> };
     res.json({ data: await service.suggest(query.q, query.types ?? [...kinds], query.limit) });
+  });
+
+  router.get('/search', suggestLimit, validate({ query: globalSearchQuery }), async (_req, res) => {
+    const { query } = res.locals.validated as { query: z.output<typeof globalSearchQuery> };
+    res.json({ data: await service.global(query.q, query.limit) });
   });
 
   router.get('/places', placesLimit, validate({ query: placesQuery }), async (_req, res) => {

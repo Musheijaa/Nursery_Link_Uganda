@@ -1,5 +1,5 @@
 import type { Logger } from 'pino';
-import type { PlaceDto, SuggestionDto } from '@nurserylink/shared';
+import type { PlaceDto, SearchResultsDto, SuggestionDto } from '@nurserylink/shared';
 import type { Database } from '../../db/client.js';
 import { ProviderUnavailableError } from '../../lib/errors.js';
 import type { GeocodingProvider } from '../../providers/geocoding/geocoding.js';
@@ -16,6 +16,34 @@ const MAX_CORRECTION_SCORE = 0.9;
  */
 export class SearchService {
   constructor(private readonly deps: { db: Database; geocoding: GeocodingProvider; logger: Logger }) {}
+
+  /**
+   * The site-wide search: the best few nurseries, trees, expert services, news posts and giveaways,
+   * each with the site link that opens it.
+   */
+  async global(q: string, perGroup: number): Promise<SearchResultsDto> {
+    const { db } = this.deps;
+    const [nurseries, species, services, news, giveaways] = await Promise.all([
+      repo.searchNurseries(db, q, perGroup),
+      repo.suggestSpecies(db, q, perGroup),
+      repo.searchServices(db, q, perGroup),
+      repo.searchNews(db, q, perGroup),
+      repo.searchGiveaways(db, q, perGroup),
+    ]);
+    const hit = (link: (key: string) => string) => (r: repo.SearchHitRow) => ({ id: r.id, title: r.title, subtitle: r.subtitle, link: link(r.link_key) });
+    return {
+      nurseries: nurseries.map(hit(id => `/nurseries?nursery=${id}`)),
+      species: species.map(r => ({
+        id: r.slug,
+        title: r.common_name,
+        subtitle: r.matched === r.common_name ? r.scientific_name : `${r.scientific_name} · ${r.matched}`,
+        link: `/library/${r.slug}`,
+      })),
+      services: services.map(hit(slug => `/expert-services#${slug}`)),
+      news: news.map(r => ({ id: r.link_key, title: r.title, subtitle: r.subtitle, link: `/news/${r.link_key}` })),
+      giveaways: giveaways.map(hit(id => `/giveaways/${id}`)),
+    };
+  }
 
   /** Suggestions as the person types, best first across the requested kinds. */
   async suggest(q: string, kinds: repo.SuggestionKind[], limit: number): Promise<SuggestionDto[]> {

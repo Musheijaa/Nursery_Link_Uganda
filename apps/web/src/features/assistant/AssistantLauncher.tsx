@@ -39,7 +39,8 @@ export const AssistantHeaderButton = () => {
       aria-haspopup="dialog"
       aria-expanded={open}
       onClick={() => { setOpen(true); }}
-      className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-sm px-2.5 font-label text-label whitespace-nowrap text-paper hover:bg-paper/10"
+      // 1280–1536 px: the full menu needs the room; the floating "Ask Nursery Link" button is there instead
+      className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-sm px-2.5 font-label text-label whitespace-nowrap text-paper hover:bg-paper/10 xl:hidden 2xl:flex"
     >
       <MessageCircleQuestion aria-hidden className="size-6 xl:size-5" />
       <span className="sr-only sm:not-sr-only">{en.assistant.openShort}</span>
@@ -64,7 +65,7 @@ export const AssistantLauncher = ({ floating }: { floating: boolean }) => {
           onClick={() => { setOpen(true); }}
           className={cn(
             'fixed right-4 z-30 flex min-h-13 items-center gap-2 rounded-full bg-murram py-3 pr-5 pl-4 font-bold text-paper shadow-float',
-            'bottom-[max(1rem,env(safe-area-inset-bottom))] hover:bg-[color-mix(in_srgb,var(--color-murram),black_14%)] md:right-6 md:bottom-6'
+            'bottom-[calc(4.5rem+env(safe-area-inset-bottom))] hover:bg-[color-mix(in_srgb,var(--color-murram),black_14%)] md:right-6 md:bottom-6'
           )}
         >
           <MessageCircleQuestion aria-hidden className="size-6" />

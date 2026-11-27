@@ -13,16 +13,23 @@ import {
   campaigns,
   deliveryRates,
   inventory,
+  newsCategoryTable,
   newsPosts,
   nurseries,
+  pageContent,
+  serviceCategories,
+  services,
   species,
   speciesLocalNames,
   speciesMedia,
+  speciesTreeCategories,
+  treeCategories,
   users,
 } from '../schema.js';
-import { NFA_PRICES, SPECIES } from './species.js';
+import { BOTANICAL_FAMILIES, LIBRARY_BATCH, NFA_PRICES, SPECIES, SPECIES_CATEGORIES, TREE_CATEGORIES } from './species.js';
 import { NURSERIES, PREVIOUS_SEED_LOCATIONS, STOCK_ADDITIONS } from './nurseries.js';
-import { CAMPAIGNS, DELIVERY_RATES, NEWS_POSTS } from './content.js';
+import { CAMPAIGNS, DELIVERY_RATES, NEWS_CATEGORIES, NEWS_POSTS } from './content.js';
+import { PAGE_CONTENT, SERVICE_CATEGORIES } from './siteContent.js';
 
 export interface SeedOptions {
   admin: { fullName: string; phone: string; email?: string | undefined; password: string };
@@ -137,39 +144,66 @@ const seedBoundaries = async (tx: Tx) => {
   return district.id;
 };
 
+const PACE_TEXT = { fast: 'Grows fast.', moderate: 'Grows at a moderate pace.', slow: 'Grows slowly.' } as const;
+
+/**
+ * Trees are created once. Admins own the Tree Library from then on, so later seeds never overwrite
+ * their edits; only the NFA reference price (a published price list) is kept current.
+ */
 const seedSpecies = async (tx: Tx) => {
+  await tx
+    .insert(treeCategories)
+    .values(TREE_CATEGORIES.map((c, i) => ({ slug: c.slug, label: c.label, sortOrder: i + 1 })))
+    .onConflictDoNothing();
+
   const ids = new Map<string, string>();
   for (const s of SPECIES) {
-    const values = {
-      slug: s.slug,
-      scientificName: s.scientificName,
-      commonName: s.commonName,
-      category: s.category,
-      growthPace: s.growthPace,
-      heightTimeline: s.heightTimeline,
-      canopyNotes: s.canopyNotes,
-      rootNotes: s.rootNotes,
-      ecologicalZones: s.ecologicalZones,
-      referencePriceUgx: NFA_PRICES[s.slug]?.[0] ?? null,
-      referencePotInches: NFA_PRICES[s.slug]?.[1] ?? null,
-    };
+    const prices = { referencePriceUgx: NFA_PRICES[s.slug]?.[0] ?? null, referencePotInches: NFA_PRICES[s.slug]?.[1] ?? null };
+    const [existing] = await tx.select({ id: species.id }).from(species).where(eq(species.slug, s.slug));
+    if (existing) {
+      await tx.update(species).set(prices).where(eq(species.id, existing.id));
+      ids.set(s.slug, existing.id);
+      continue;
+    }
     const [row] = await tx
       .insert(species)
-      .values(values)
-      .onConflictDoUpdate({ target: species.slug, set: values })
+      .values({
+        slug: s.slug,
+        scientificName: s.scientificName,
+        commonName: s.commonName,
+        growthPace: s.growthPace,
+        heightTimeline: s.heightTimeline,
+        canopyNotes: s.canopyNotes,
+        rootNotes: s.rootNotes,
+        ecologicalZones: s.ecologicalZones,
+        ...prices,
+        // The same mapping as migration 0011 gives older databases
+        appearanceAndIdentification: s.canopyNotes,
+        managementPractices: s.rootNotes,
+        growthCharacteristics: PACE_TEXT[s.growthPace],
+        climateAndEcology: s.ecologicalZones.length ? `Grows well in: ${s.ecologicalZones.join(', ')}.` : null,
+      })
       .returning({ id: species.id });
-    if (!row) throw new Error(`Species upsert returned no row: ${s.slug}`);
+    if (!row) throw new Error(`Species insert returned no row: ${s.slug}`);
     ids.set(s.slug, row.id);
-
-    // Local names and media are owned by the seed for seeded species: replace them wholesale
-    await tx.delete(speciesLocalNames).where(eq(speciesLocalNames.speciesId, row.id));
-    if (s.localNames.length) {
-      await tx.insert(speciesLocalNames).values(s.localNames.map(l => ({ speciesId: row.id, ...l })));
-    }
-    await tx.delete(speciesMedia).where(eq(speciesMedia.speciesId, row.id));
+    if (s.localNames.length) await tx.insert(speciesLocalNames).values(s.localNames.map(l => ({ speciesId: row.id, ...l })));
     if (s.media.length) {
       await tx.insert(speciesMedia).values(s.media.map((m, i) => ({ speciesId: row.id, url: m.url, caption: m.caption, sortOrder: i })));
     }
+  }
+
+  // Categories and botanical families, applied once per database so admin edits stick afterwards
+  const applied = await tx.execute(sql`SELECT 1 FROM audit_log WHERE action = 'seed.library_content' AND after->>'key' = ${LIBRARY_BATCH} LIMIT 1`);
+  if (!applied.rows.length) {
+    for (const [slug, categories] of Object.entries(SPECIES_CATEGORIES)) {
+      const speciesId = ids.get(slug);
+      if (!speciesId) throw new Error(`Unknown species "${slug}" in SPECIES_CATEGORIES`);
+      await tx.insert(speciesTreeCategories).values(categories.map(categorySlug => ({ speciesId, categorySlug }))).onConflictDoNothing();
+      const family = BOTANICAL_FAMILIES[slug];
+      if (family) await tx.execute(sql`UPDATE species SET botanical_family = ${family} WHERE id = ${speciesId} AND botanical_family IS NULL`);
+    }
+    await tx.execute(sql`INSERT INTO audit_log (actor_id, action, entity, entity_id, after)
+                         VALUES (NULL, 'seed.library_content', 'species', NULL, ${JSON.stringify({ key: LIBRARY_BATCH })}::jsonb)`);
   }
   return ids;
 };
@@ -245,6 +279,11 @@ const seedContent = async (tx: Tx, districtId: string, speciesIds: Map<string, s
     if (!existing) await tx.insert(deliveryRates).values(rate);
   }
 
+  await tx
+    .insert(newsCategoryTable)
+    .values(NEWS_CATEGORIES.map((c, i) => ({ ...c, sortOrder: i + 1 })))
+    .onConflictDoNothing();
+
   for (const post of NEWS_POSTS) {
     await tx
       .insert(newsPosts)
@@ -292,6 +331,22 @@ const seedContent = async (tx: Tx, districtId: string, speciesIds: Map<string, s
       })
     );
   }
+};
+
+/**
+ * Expert service categories and the page copy from the client's brief. Created once (by slug or key);
+ * admins edit them afterwards, so later seeds never overwrite them.
+ */
+const seedSiteContent = async (tx: Tx) => {
+  for (const [i, c] of SERVICE_CATEGORIES.entries()) {
+    const [created] = await tx
+      .insert(serviceCategories)
+      .values({ slug: c.slug, title: c.title, intro: c.intro, icon: c.icon, sortOrder: i + 1 })
+      .onConflictDoNothing()
+      .returning({ id: serviceCategories.id });
+    if (created) await tx.insert(services).values(c.services.map((title, j) => ({ categoryId: created.id, title, sortOrder: j + 1 })));
+  }
+  await tx.insert(pageContent).values(PAGE_CONTENT).onConflictDoNothing();
 };
 
 interface CertifiedNursery2018 {
@@ -376,6 +431,7 @@ export const seed = async (pool: pg.Pool, options: SeedOptions) => {
     const nurseryIds = await seedNurseries(tx, speciesIds);
     await seedStockAdditions(tx, speciesIds, nurseryIds);
     await seedContent(tx, districtId, speciesIds, nurseryIds);
+    await seedSiteContent(tx);
     await seedCertified2018(tx);
     await seedAdmin(tx, options.admin);
   });

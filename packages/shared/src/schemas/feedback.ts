@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { feedbackKindSchema, feedbackStatusSchema } from '../enums.js';
+import { feedbackKindSchema } from '../enums.js';
 
 /**
  * Feedback from anyone, signed in or not. Name and contact are optional: they are only for the team
@@ -15,13 +15,3 @@ export const feedbackCreateSchema = z.object({
 });
 export type FeedbackCreate = z.input<typeof feedbackCreateSchema>;
 
-/** Admin marks feedback read or done, with an optional note for the team. */
-export const feedbackUpdateSchema = z.object({
-  status: feedbackStatusSchema,
-  note: z.string().trim().max(500).optional(),
-});
-
-export const feedbackQuerySchema = z.object({
-  status: feedbackStatusSchema.optional(),
-  kind: feedbackKindSchema.optional(),
-});

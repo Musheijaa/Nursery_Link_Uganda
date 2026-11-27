@@ -96,7 +96,9 @@ export const loadDemoNurseries = async (pool: pg.Pool, nurseries = readDemoNurse
        )
        INSERT INTO nurseries (external_ref, is_demo, name, type, operator_name, location, district_id, sub_county_id,
                               contact_phone, payout_phone, annual_capacity, certification_status, seed_source, is_active)
-       SELECT ref, true, name, type, operator, pt, district_id, sub_county_id, phone, phone, capacity, certification, seed_source, true FROM placed
+       SELECT ref, true, name, type, operator, pt, district_id, sub_county_id, phone, phone, capacity,
+              -- "Certified" needs a verification an admin recorded, which invented data never has
+              CASE WHEN certification = 'certified' THEN 'pending'::certification_status ELSE certification END, seed_source, true FROM placed
        ON CONFLICT (external_ref) DO UPDATE SET
          is_demo = true, name = EXCLUDED.name, type = EXCLUDED.type, operator_name = EXCLUDED.operator_name, location = EXCLUDED.location,
          district_id = EXCLUDED.district_id, sub_county_id = EXCLUDED.sub_county_id, contact_phone = EXCLUDED.contact_phone,

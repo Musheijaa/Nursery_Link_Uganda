@@ -36,7 +36,7 @@ const markFromCache: WorkboxPlugin = {
 };
 
 // Public catalogue data only. Never auth, orders, applications or admin: those are personal.
-const PUBLIC_API = /^\/api\/v1\/(nurseries|species|boundaries|news|campaigns|stats)(\/|$|\?)/;
+const PUBLIC_API = /^\/api\/v1\/(nurseries|species|tree-categories|boundaries|news|giveaways|stats|expert-services|partners|page-content)(\/|$|\?)/;
 const PRIVATE = /\/applications\//;
 
 registerRoute(
@@ -53,17 +53,13 @@ registerRoute(
   })
 );
 
-// Map tiles the user has already looked at (no prefetching, per the OSM tile usage policy).
-// Tiles are fetched with CORS, so cached copies are real responses rather than padded opaque ones.
-registerRoute(
-  ({ request, url }) => request.destination === 'image' && /\/\d+\/\d+\/\d+\.png$/.test(url.pathname),
-  new CacheFirst({
-    cacheName: 'map-tiles',
-    plugins: [new CacheableResponsePlugin({ statuses: [200] }), new ExpirationPlugin({ maxEntries: 400, maxAgeSeconds: 30 * DAY, purgeOnQuotaError: true })],
-  })
-);
+// Map tiles are Google's: never cached (Google Maps Platform terms). Offline, the nursery list is shown
+// from the cached API answers instead of the map. Clear the old OpenStreetMap tile cache once.
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.delete('map-tiles'));
+});
 
-// Photos (species, campaigns): small WebP files, kept after the first view
+// Photos (trees, giveaways, partner logos): small WebP files, kept after the first view
 registerRoute(
   ({ url }) => url.pathname.startsWith('/images/') || url.pathname.startsWith('/media/'),
   new CacheFirst({

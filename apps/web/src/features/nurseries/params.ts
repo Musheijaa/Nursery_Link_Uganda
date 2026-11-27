@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
-import { speciesCategories, type SpeciesCategory } from '@nurserylink/shared';
 
 /**
  * Every /nurseries filter lives in the URL, so any view can be shared or bookmarked, and the
@@ -11,8 +10,10 @@ export interface NurseryParams {
   district: string | null;
   subCounty: string | null;
   species: string | null;
-  /** Nurseries with a tree of this category in stock (Coffee, Cocoa, Indigenous…) */
-  category: SpeciesCategory | null;
+  /** Nurseries stocking a tree in any of these categories (?categories=fruit,timber) */
+  categories: string[];
+  /** Certified (verified by an admin) or uncertified nurseries only (?certified=true|false) */
+  certified: boolean | null;
   sort: 'name' | 'nearest';
   view: 'map' | 'list';
   /** The open nursery card */
@@ -21,14 +22,16 @@ export interface NurseryParams {
   directions: boolean;
 }
 
-const KEYS = { q: 'q', district: 'district', subCounty: 'sub_county', species: 'species', category: 'category', sort: 'sort', view: 'view', nursery: 'nursery', directions: 'directions' } as const;
+const KEYS = { q: 'q', district: 'district', subCounty: 'sub_county', species: 'species', categories: 'categories', certified: 'certified', sort: 'sort', view: 'view', nursery: 'nursery', directions: 'directions' } as const;
 
 export const parseParams = (p: URLSearchParams): NurseryParams => ({
   q: p.get(KEYS.q) ?? '',
   district: p.get(KEYS.district),
   subCounty: p.get(KEYS.district) ? p.get(KEYS.subCounty) : null,
   species: p.get(KEYS.species),
-  category: speciesCategories.find(c => c === p.get(KEYS.category)) ?? null,
+  // Older links used ?category= (one seedling type); slugs only, so a hand-edited URL can't break the request
+  categories: (p.get(KEYS.categories) ?? p.get('category') ?? '').split(',').filter(c => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(c)),
+  certified: p.get(KEYS.certified) === 'true' ? true : p.get(KEYS.certified) === 'false' ? false : null,
   sort: p.get(KEYS.sort) === 'nearest' ? 'nearest' : 'name',
   view: p.get(KEYS.view) === 'list' ? 'list' : 'map',
   nursery: p.get(KEYS.nursery),
@@ -55,7 +58,11 @@ export const useNurseryParams = () => {
             // Defaults are left out of the URL to keep links short
             if (field === 'sort' && value === 'name') next.delete(KEYS.sort);
             else if (field === 'view' && value === 'map') next.delete(KEYS.view);
-            else set(KEYS[field], value);
+            else if (field === 'categories') {
+              next.delete('category');
+              set(KEYS.categories, Array.isArray(value) ? value.join(',') : null);
+            } else if (field === 'certified') set(KEYS.certified, value === null ? null : String(value));
+            else if (!Array.isArray(value)) set(KEYS[field], value);
           }
           // A new district invalidates the sub-county; closing the card ends directions
           if ('district' in changes && !('subCounty' in changes)) next.delete(KEYS.subCounty);

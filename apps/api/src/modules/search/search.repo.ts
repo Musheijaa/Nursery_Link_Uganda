@@ -95,3 +95,80 @@ export const suggestPlaces = async (db: DbOrTx, q: string, limit: number): Promi
     LIMIT ${limit}`);
   return result.rows;
 };
+
+// ── Global search (GET /search): the top few of each kind of content ──
+
+export type SearchHitRow = { id: string; title: string; subtitle: string | null; link_key: string; score: number };
+
+/** Active nurseries by name, by a tree they have in stock, or by their district or sub-county */
+export const searchNurseries = async (db: DbOrTx, q: string, limit: number): Promise<SearchHitRow[]> =>
+  (
+    await db.execute<SearchHitRow>(sql`
+      SELECT * FROM (
+        SELECT n.id, n.name AS title, sc.name || ', ' || d.name AS subtitle, n.id::text AS link_key,
+               GREATEST(
+                 ${scoreSql(q, sql`n.name`)},
+                 0.95 * COALESCE((SELECT max(${scoreSql(q, sql`s.common_name`)}) FROM inventory i JOIN species s ON s.id = i.species_id
+                                  WHERE i.nursery_id = n.id AND i.quantity_available > 0), 0),
+                 0.9 * GREATEST(${scoreSql(q, sql`sc.name`)}, ${scoreSql(q, sql`d.name`)})
+               )::float8 AS score
+        FROM nurseries n
+        JOIN admin_boundaries sc ON sc.id = n.sub_county_id
+        JOIN admin_boundaries d ON d.id = n.district_id
+        WHERE n.is_active
+      ) m
+      WHERE m.score >= ${MIN_SCORE}
+      ORDER BY m.score DESC, lower(m.title)
+      LIMIT ${limit}`)
+  ).rows;
+
+/** Expert services by service or category title; the link opens the category */
+export const searchServices = async (db: DbOrTx, q: string, limit: number): Promise<SearchHitRow[]> =>
+  (
+    await db.execute<SearchHitRow>(sql`
+      SELECT * FROM (
+        SELECT DISTINCT ON (c.id) c.id, c.title, best.title AS subtitle, c.slug AS link_key, GREATEST(best.score, ${scoreSql(q, sql`c.title`)})::float8 AS score
+        FROM service_categories c
+        LEFT JOIN LATERAL (
+          SELECT s.title, ${scoreSql(q, sql`s.title`)} AS score FROM services s
+          WHERE s.category_id = c.id AND s.is_active ORDER BY score DESC LIMIT 1
+        ) best ON true
+        WHERE c.is_active
+        ORDER BY c.id
+      ) m
+      WHERE m.score >= ${MIN_SCORE}
+      ORDER BY m.score DESC, lower(m.title)
+      LIMIT ${limit}`)
+  ).rows;
+
+/** Published news by title (typo-tolerant) or full text of the article */
+export const searchNews = async (db: DbOrTx, q: string, limit: number): Promise<SearchHitRow[]> =>
+  (
+    await db.execute<SearchHitRow>(sql`
+      SELECT * FROM (
+        SELECT p.id, p.title, c.label AS subtitle, p.slug AS link_key,
+               GREATEST(${scoreSql(q, sql`p.title`)},
+                        CASE WHEN to_tsvector('english', p.title || ' ' || p.body) @@ websearch_to_tsquery('english', ${q}) THEN 0.8 ELSE 0 END)::float8 AS score,
+               p.published_at
+        FROM news_posts p JOIN news_categories c ON c.slug = p.category_slug
+        WHERE p.is_published AND p.published_at <= now()
+      ) m
+      WHERE m.score >= ${MIN_SCORE}
+      ORDER BY m.score DESC, m.published_at DESC
+      LIMIT ${limit}`)
+  ).rows;
+
+/** Giveaways that haven't closed, by title, organizer or purpose */
+export const searchGiveaways = async (db: DbOrTx, q: string, limit: number): Promise<SearchHitRow[]> =>
+  (
+    await db.execute<SearchHitRow>(sql`
+      SELECT * FROM (
+        SELECT c.id, c.title, c.funder_name AS subtitle, c.id::text AS link_key,
+               GREATEST(${scoreSql(q, sql`c.title`)}, 0.9 * ${scoreSql(q, sql`c.funder_name`)}, 0.9 * ${scoreSql(q, sql`c.purpose`)})::float8 AS score
+        FROM campaigns c
+        WHERE c.is_active AND now() <= LEAST(COALESCE(c.application_deadline, c.ends_at), c.ends_at)
+      ) m
+      WHERE m.score >= ${MIN_SCORE}
+      ORDER BY m.score DESC, lower(m.title)
+      LIMIT ${limit}`)
+  ).rows;

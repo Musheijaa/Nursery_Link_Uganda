@@ -8,8 +8,11 @@ import {
   deliveryTypeSchema,
   eligibilityRuleSchema,
   funderTypeSchema,
+  enquiryStatusSchema,
+  enquiryTypeSchema,
+  giveawayOfferTypeSchema,
+  giveawayStatusSchema,
   growthPaceSchema,
-  newsCategorySchema,
   nurseryTypeSchema,
   orderStatusSchema,
   paymentKindSchema,
@@ -17,12 +20,7 @@ import {
   paymentProviderSchema,
   paymentStatusSchema,
   roleSchema,
-  serviceRequestStatusSchema,
-  feedbackKindSchema,
-  feedbackStatusSchema,
-  serviceTypeSchema,
   shadowRunStatusSchema,
-  speciesCategorySchema,
   vehicleSchema,
 } from '../enums.js';
 
@@ -37,6 +35,17 @@ const isoDate = z.string().describe('ISO 8601 date-time');
 const ref = s({ id: z.uuid(), name: z.string() });
 const latLng = s({ lat: z.number(), lng: z.number() });
 const position = z.tuple([z.number(), z.number()]);
+/** A tree or news category as shown: its slug (for links and filters) and label */
+const categoryRef = s({ slug: z.string(), label: z.string() });
+/** A tree or news category in the admin console, with how many trees or posts use it */
+export const adminCategorySchema = s({
+  slug: z.string(),
+  label: z.string(),
+  description: z.string().nullable(),
+  sort_order: z.number().int(),
+  is_active: z.boolean(),
+  uses: z.number().int(),
+});
 
 // ── Envelope meta ──────────────────────────────────────────
 
@@ -55,11 +64,15 @@ export const healthSchema = s({
   db: z.enum(['ok', 'down']),
   version: z.string(),
   commit: z.string().nullable().describe('The deployed Git commit, when the host provides it'),
-  providers: s({ payment: z.enum(['mock', 'live']), sms: z.string(), routing: z.string(), directions: z.string(), email: z.string(), assistant: z.enum(['off', 'mock', 'anthropic']) }),
+  providers: s({ payment: z.enum(['mock', 'live']), sms: z.string(), routing: z.string().describe('Road routing for the Nursery Shadow and delivery quotes'), email: z.string(), assistant: z.enum(['off', 'mock', 'anthropic']) }),
   /** Which payment methods buyers can use right now (Airtel Money is not integrated in live mode yet) */
   payment_methods: s({ mtn_momo: z.boolean(), airtel_money: z.boolean() }),
   /** Trial switches: while off, there is no SMS code at sign-up and no payment step at checkout */
-  features: s({ phone_verification: z.boolean(), payments: z.boolean(), assistant: z.boolean().describe('The site assistant (chat) is switched on') }),
+  features: s({
+    phone_verification: z.boolean(),
+    payments: z.boolean(),
+    orders: z.boolean().describe('Online ordering (checkout); when off, buyers call or WhatsApp the nursery operator'),
+    assistant: z.boolean().describe('The site assistant (chat) is switched on') }),
   site: s({
     demo_notice: z.boolean().describe('Show the "sample data, still being built" notice on first visit'),
     survey_url: z.url().nullable().describe('The needs-assessment survey (e.g. a Google Form), or null when there is none'),
@@ -108,7 +121,10 @@ const nurseryCore = {
   id: z.uuid(),
   name: z.string(),
   type: nurseryTypeSchema,
-  certification_status: certificationStatusSchema,
+  certified: z.boolean().describe('Only when an admin recorded a verified certification'),
+  certification: s({ body: z.string(), ref: z.string().nullable(), verified_at: isoDate })
+    .nullable()
+    .describe('The recorded certification (for the badge tooltip), or null'),
   operator_name: z.string(),
   contact_phone: z.string().nullable().describe('Null for sample nurseries, which have no real number'),
   annual_capacity: z.number().int(),
@@ -139,7 +155,7 @@ export const nurseryFeatureCollectionSchema = s({
 });
 export const nurseryGeoJsonMetaSchema = s({ total: z.number().int(), distance_mode: distanceModeSchema.optional(), corrected_q: correctedQ });
 
-const speciesRef = s({ id: z.uuid(), slug: z.string(), common_name: z.string(), scientific_name: z.string(), category: speciesCategorySchema });
+const speciesRef = s({ id: z.uuid(), slug: z.string(), common_name: z.string(), scientific_name: z.string(), categories: z.array(categoryRef) });
 
 export const inventoryItemSchema = s({
   inventory_id: z.uuid(),
@@ -152,32 +168,59 @@ export const inventoryItemSchema = s({
 export const nurseryProfileSchema = s({
   ...nurserySummarySchema.shape,
   inventory: z.array(inventoryItemSchema),
-  stock_categories: z.array(speciesCategorySchema),
+  stock_categories: z.array(categoryRef).describe('Categories of the trees it has in stock'),
   active_campaigns: z.array(s({ id: z.uuid(), title: z.string(), remaining_stock: z.number().int(), allocated_stock: z.number().int(), ends_at: isoDate })),
   distance_km: z.number().optional(),
   distance_mode: distanceModeSchema.optional(),
 });
 
-export const routeSchema = s({
-  nursery: s({ id: z.uuid(), name: z.string(), location: latLng }),
-  distance_km: z.number(),
-  /** `straight_line` when no road routing is configured (the mock): the line shows the direction only */
-  distance_mode: distanceModeSchema,
-  duration_min: z.number().int(),
-  geometry: s({ type: z.literal('LineString'), coordinates: z.array(position) }),
-  steps: z.array(s({ instruction: z.string(), road: z.string().nullable(), distance_m: z.number().int(), duration_s: z.number().int() })),
-});
 
 // ── Species ────────────────────────────────────────────────
 
 const localName = s({ language: z.string(), name: z.string() });
+const t = z.string().nullable();
+/** The Tree Library's five-section profile (see speciesProfileSections); null when not written yet */
+const profileFields = {
+  botanical_family: t,
+  appearance_and_identification: t,
+  growth_characteristics: t,
+  distribution_and_origin: t,
+  soil_conditions: t,
+  rainfall_requirements: t,
+  climate_and_ecology: t,
+  propagation_methods: t,
+  planting_requirements: t,
+  recommended_spacing: t,
+  management_practices: t,
+  economic_uses: t,
+  environmental_benefits: t,
+  agroforestry_applications: t,
+  other_uses: t,
+};
+
+export const treeCategorySchema = s({
+  slug: z.string(),
+  label: z.string(),
+  description: z.string().nullable(),
+  sort_order: z.number().int(),
+  is_active: z.boolean(),
+  species_count: z.number().int().describe('Trees in this category'),
+});
+export const newsCategorySchema = s({
+  slug: z.string(),
+  label: z.string(),
+  description: z.string().nullable(),
+  sort_order: z.number().int(),
+  is_active: z.boolean(),
+  post_count: z.number().int().describe('Published posts in this category'),
+});
 
 export const speciesListItemSchema = s({
   id: z.uuid(),
   slug: z.string(),
   common_name: z.string(),
   scientific_name: z.string(),
-  category: speciesCategorySchema,
+  categories: z.array(categoryRef),
   growth_pace: growthPaceSchema,
   local_names: z.array(localName),
   thumbnail_url: z.string().nullable(),
@@ -189,11 +232,10 @@ export const speciesProfileSchema = s({
   slug: z.string(),
   common_name: z.string(),
   scientific_name: z.string(),
-  category: speciesCategorySchema,
+  categories: z.array(categoryRef),
   growth_pace: growthPaceSchema,
   height_timeline: z.array(s({ years: z.number(), height_m: z.number() })),
-  canopy_notes: z.string().nullable(),
-  root_notes: z.string().nullable(),
+  ...profileFields,
   ecological_zones: z.array(z.string()),
   local_names: z.array(localName),
   media: z.array(s({ url: z.string(), caption: z.string().nullable() })),
@@ -263,7 +305,7 @@ export const newsListItemSchema = s({
   id: z.uuid(),
   title: z.string(),
   slug: z.string(),
-  category: newsCategorySchema,
+  category: categoryRef,
   cover_url: z.string().nullable(),
   excerpt: z.string(),
   published_at: isoDate,
@@ -272,7 +314,7 @@ export const newsPostSchema = s({
   id: z.uuid(),
   title: z.string(),
   slug: z.string(),
-  category: newsCategorySchema,
+  category: categoryRef,
   body: z.string().describe('Markdown'),
   cover_url: z.string().nullable(),
   published_at: isoDate,
@@ -280,12 +322,22 @@ export const newsPostSchema = s({
 
 // ── Campaigns and applications ─────────────────────────────
 
+/** A giveaway (stored as a campaign): free or subsidised seedlings. */
 export const campaignSchema = s({
   id: z.uuid(),
   title: z.string(),
-  funder_name: z.string(),
-  funder_type: funderTypeSchema,
+  funder_name: z.string().describe('Organizer or programme'),
+  funder_type: funderTypeSchema.describe('Organizer type'),
   purpose: z.string(),
+  offer_type: giveawayOfferTypeSchema,
+  subsidised_price: z.number().int().nullable().describe('UGX per seedling, for subsidised giveaways'),
+  eligibility_requirements: z.string().nullable(),
+  application_procedure: z.string().nullable(),
+  application_deadline: isoDate.nullable(),
+  closes_at: isoDate.describe('When applications close: the deadline, or the end date'),
+  contact: s({ phone: z.string().nullable(), email: z.string().nullable(), website: z.string().nullable() }),
+  distribution_locations: z.string().nullable(),
+  accepts_platform_applications: z.boolean().describe('Apply on this site; otherwise follow the organizer\'s instructions'),
   allocated_stock: z.number().int(),
   remaining_stock: z.number().int(),
   remaining_pct: z.number().int(),
@@ -293,16 +345,17 @@ export const campaignSchema = s({
   starts_at: isoDate,
   ends_at: isoDate,
   is_active: z.boolean(),
-  is_open: z.boolean().describe('Accepting applications: switched on, within its dates, stock left'),
+  status: giveawayStatusSchema.describe('open, closing_soon (within 14 days) or closed'),
+  is_open: z.boolean().describe('Accepting applications on this site: switched on, within its dates, stock left'),
   species: z.array(s({ species_id: z.uuid(), slug: z.string(), common_name: z.string(), quantity: z.number().int() })),
-  sub_county: ref,
-  pickup_nursery: s({ id: z.uuid(), name: z.string(), location: latLng }),
+  sub_county: ref.nullable(),
+  pickup_nursery: s({ id: z.uuid(), name: z.string(), location: latLng }).nullable(),
 });
 
 const answers = z.record(z.string(), z.union([z.boolean(), z.number(), z.string()]));
 const applicationCore = {
   id: z.uuid(),
-  campaign: s({ id: z.uuid(), title: z.string(), pickup_nursery: z.string() }),
+  campaign: s({ id: z.uuid(), title: z.string(), pickup_nursery: z.string().nullable() }),
   answers,
   quantity_requested: z.number().int(),
   status: applicationStatusSchema,
@@ -316,42 +369,81 @@ export const adminApplicationSchema = s({
   reviewed_by: z.uuid().nullable(),
 });
 
-// ── Service requests ───────────────────────────────────────
+// ── Expert services, enquiries, partners, page content ─────
 
-const serviceRequestCore = {
+export const serviceCategorySchema = s({
   id: z.uuid(),
-  service: serviceTypeSchema,
-  location: z.string(),
-  land_acres: z.number().nullable(),
-  notes: z.string().nullable(),
-  status: serviceRequestStatusSchema,
-  admin_note: z.string().nullable().describe('Latest note from the team, e.g. the agreed date'),
-  created_at: isoDate,
-  updated_at: isoDate,
-};
-export const serviceRequestSchema = s(serviceRequestCore);
-export const adminServiceRequestSchema = s({
-  ...serviceRequestCore,
-  requester: s({ id: z.uuid(), full_name: z.string(), phone: z.string() }),
-  handled_by: z.uuid().nullable(),
+  slug: z.string(),
+  title: z.string(),
+  intro: z.string(),
+  icon: z.string(),
+  sort_order: z.number().int(),
+  is_active: z.boolean(),
+  services: z.array(s({ id: z.uuid(), title: z.string(), sort_order: z.number().int(), is_active: z.boolean() })),
 });
 
-// ── Feedback ───────────────────────────────────────────────
+/** What a public form gets back: enough to say "received". */
+export const enquiryReceiptSchema = s({ id: z.uuid(), created_at: isoDate });
+/** Site feedback goes to the same inbox */
+export const feedbackReceiptSchema = enquiryReceiptSchema;
 
-export const feedbackReceiptSchema = s({ id: z.uuid(), created_at: isoDate });
-export const adminFeedbackSchema = s({
+export const adminEnquirySchema = s({
   id: z.uuid(),
-  kind: feedbackKindSchema,
+  type: enquiryTypeSchema,
+  status: enquiryStatusSchema,
+  name: z.string().nullable(),
+  phone: z.string().nullable(),
+  email: z.string().nullable(),
+  organization: z.string().nullable(),
+  district: z.string().nullable(),
   message: z.string(),
-  name: z.string().nullable().describe("The account's name when signed in, else what they typed"),
-  contact: z.string().nullable().describe("The account's phone when signed in, else what they typed"),
-  page: z.string().nullable(),
+  consent: z.boolean(),
+  service_category: s({ id: z.uuid(), title: z.string() }).nullable(),
+  services: z.array(z.string()),
+  details: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).describe('Extra details by type, e.g. feedback kind and page'),
   user_id: z.uuid().nullable(),
-  status: feedbackStatusSchema,
   admin_note: z.string().nullable(),
   handled_by: z.uuid().nullable(),
   created_at: isoDate,
   updated_at: isoDate,
+});
+export const enquiryCountsSchema = s({
+  new_by_type: s({ service: z.number().int(), donation: z.number().int(), partnership: z.number().int(), contact: z.number().int(), feedback: z.number().int() }),
+  new_total: z.number().int(),
+});
+
+export const partnerSchema = s({
+  id: z.uuid(),
+  name: z.string(),
+  logo_url: z.string().nullable(),
+  website_url: z.string().nullable(),
+  sort_order: z.number().int(),
+  is_active: z.boolean(),
+});
+
+export const pageContentSchema = s({
+  key: z.string(),
+  title: z.string().nullable(),
+  subtitle: z.string().nullable(),
+  body: z.string().nullable().describe('Markdown'),
+  data: z.record(z.string(), z.unknown()),
+  updated_at: isoDate,
+});
+
+// ── Global search ──────────────────────────────────────────
+
+const searchHit = s({
+  id: z.string().describe('The record id, or slug for trees and news'),
+  title: z.string(),
+  subtitle: z.string().nullable(),
+  link: z.string().describe('Site path to open'),
+});
+export const searchResultsSchema = s({
+  nurseries: z.array(searchHit),
+  species: z.array(searchHit),
+  services: z.array(searchHit),
+  news: z.array(searchHit),
+  giveaways: z.array(searchHit),
 });
 
 // ── Orders ─────────────────────────────────────────────────
@@ -428,6 +520,9 @@ export const adminNurserySchema = s({
   name: z.string(),
   type: nurseryTypeSchema,
   certification_status: certificationStatusSchema,
+  certification: s({ body: z.string(), ref: z.string().nullable(), verified_at: isoDate, verified_by: z.uuid().nullable() })
+    .nullable()
+    .describe('The recorded verification; the nursery shows as Certified only with one'),
   operator_name: z.string(),
   contact_phone: z.string(),
   payout_phone: z.string(),
@@ -476,7 +571,8 @@ export const adminNewsSchema = s({
   id: z.uuid(),
   title: z.string(),
   slug: z.string(),
-  category: newsCategorySchema,
+  category: categoryRef,
+  needs_review: z.boolean().describe('The category was guessed when categories changed: check it'),
   body: z.string(),
   cover_url: z.string().nullable(),
   is_published: z.boolean(),
@@ -536,6 +632,9 @@ export const dashboardSchema = s({
   stale_stock: section(s({ id: z.uuid(), name: z.string(), stock_updated_at: isoDate.nullable() })),
   pending_applications: section(s({ id: z.uuid(), campaign_id: z.uuid(), campaign_title: z.string(), applicant_name: z.string(), quantity_requested: z.number().int(), created_at: isoDate })),
   nurseries_to_verify: section(s({ id: z.uuid(), name: z.string(), district_name: z.string(), created_at: isoDate })).describe('Imported nurseries waiting for an admin to check them and switch them on'),
+  new_enquiries: section(s({ id: z.uuid(), type: enquiryTypeSchema, name: z.string().nullable(), message: z.string(), created_at: isoDate }))
+    .describe('Unread messages in the inbox (service requests, donations, partnerships, contact, feedback)'),
+  news_to_review: section(s({ id: z.uuid(), title: z.string(), category: categoryRef })).describe('Posts whose category was guessed when categories changed'),
   unparsed_sms: section(s({ id: z.string(), sender: z.string().nullable(), text: z.string().nullable(), reason: z.string().nullable(), created_at: isoDate })),
   thresholds: s({ stuck_escrow_hours: z.number().int(), stale_stock_days: z.number().int(), sms_window_days: z.number().int() }),
 });
@@ -554,7 +653,7 @@ export const analyticsSchema = s({
     seedlings_sold: kpi,
     avg_order_ugx: kpi,
     new_buyers: kpi,
-    free_seedlings: kpi.describe('Free seedlings approved through campaigns'),
+    free_seedlings: kpi.describe('Seedlings approved through giveaways'),
   }),
   series: z.array(s({ date: z.string().describe('Start of the day, week or month (YYYY-MM-DD, Kampala)'), sales_ugx: z.number(), orders: z.number().int() })),
   order_status: z.array(s({ status: orderStatusSchema, count: z.number().int() })),
@@ -562,7 +661,7 @@ export const analyticsSchema = s({
   payment_methods: z.array(s({ method: paymentMethodSchema, count: z.number().int(), sales_ugx: z.number() })),
   top_species: z.array(s({ species_id: z.uuid(), common_name: z.string(), seedlings: z.number().int(), sales_ugx: z.number() })),
   top_nurseries: z.array(s({ nursery_id: z.uuid(), name: z.string(), orders: z.number().int(), sales_ugx: z.number() })),
-  stock_by_category: z.array(s({ category: speciesCategorySchema, seedlings: z.number().int(), lines: z.number().int() })),
+  stock_by_category: z.array(s({ category: categoryRef, seedlings: z.number().int(), lines: z.number().int() }).describe('A tree in several categories counts in each')),
   campaigns: z.array(s({ id: z.uuid(), title: z.string(), allocated: z.number().int(), remaining: z.number().int(), applications: z.number().int() })),
 });
 
@@ -608,16 +707,19 @@ export type SuggestionDto = z.infer<typeof suggestionSchema>;
 export type PlaceDto = z.infer<typeof placeSchema>;
 export type NurseryProfileDto = z.infer<typeof nurseryProfileSchema>;
 export type InventoryItemDto = z.infer<typeof inventoryItemSchema>;
-export type RouteDto = z.infer<typeof routeSchema>;
 export type SpeciesListItemDto = z.infer<typeof speciesListItemSchema>;
 export type SpeciesProfileDto = z.infer<typeof speciesProfileSchema>;
 export type CampaignDto = z.infer<typeof campaignSchema>;
 export type ApplicationDtoShape = z.infer<typeof applicationSchema>;
 export type AdminApplicationDto = z.infer<typeof adminApplicationSchema>;
-export type ServiceRequestDtoShape = z.infer<typeof serviceRequestSchema>;
-export type AdminServiceRequestDto = z.infer<typeof adminServiceRequestSchema>;
-export type FeedbackReceiptDto = z.infer<typeof feedbackReceiptSchema>;
-export type AdminFeedbackDto = z.infer<typeof adminFeedbackSchema>;
+export type EnquiryReceiptDto = z.infer<typeof enquiryReceiptSchema>;
+export type AdminEnquiryDto = z.infer<typeof adminEnquirySchema>;
+export type ServiceCategoryDto = z.infer<typeof serviceCategorySchema>;
+export type PartnerDto = z.infer<typeof partnerSchema>;
+export type PageContentDto = z.infer<typeof pageContentSchema>;
+export type TreeCategoryDto = z.infer<typeof treeCategorySchema>;
+export type NewsCategoryDto = z.infer<typeof newsCategorySchema>;
+export type SearchResultsDto = z.infer<typeof searchResultsSchema>;
 export type QuoteDto = z.infer<typeof quoteSchema>;
 export type OrderDtoShape = z.infer<typeof orderSchema>;
 export type OrderMapDto = z.infer<typeof orderMapSchema>;
@@ -641,7 +743,6 @@ export const namedResponseSchemas = {
   NurseryFeatureCollection: nurseryFeatureCollectionSchema,
   InventoryItem: inventoryItemSchema,
   NurseryProfile: nurseryProfileSchema,
-  Route: routeSchema,
   SpeciesListItem: speciesListItemSchema,
   SpeciesProfile: speciesProfileSchema,
   SpeciesNursery: speciesNurserySchema,
@@ -654,10 +755,16 @@ export const namedResponseSchemas = {
   Campaign: campaignSchema,
   Application: applicationSchema,
   AdminApplication: adminApplicationSchema,
-  ServiceRequest: serviceRequestSchema,
-  AdminServiceRequest: adminServiceRequestSchema,
-  FeedbackReceipt: feedbackReceiptSchema,
-  AdminFeedback: adminFeedbackSchema,
+  TreeCategory: treeCategorySchema,
+  AdminCategory: adminCategorySchema,
+  NewsCategory: newsCategorySchema,
+  ServiceCategory: serviceCategorySchema,
+  EnquiryReceipt: enquiryReceiptSchema,
+  AdminEnquiry: adminEnquirySchema,
+  EnquiryCounts: enquiryCountsSchema,
+  Partner: partnerSchema,
+  PageContent: pageContentSchema,
+  SearchResults: searchResultsSchema,
   Quote: quoteSchema,
   Order: orderSchema,
   OrderMap: orderMapSchema,

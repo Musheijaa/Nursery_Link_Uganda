@@ -12,6 +12,22 @@ import * as repo from './campaigns.repo.js';
 type CreateInput = z.output<typeof campaignCreateSchema>;
 type UpdateInput = z.output<typeof campaignUpdateSchema>;
 
+/** The giveaway fields present in the input, as column values */
+const giveawayFields = (input: Partial<CreateInput>): Partial<typeof campaigns.$inferInsert> => {
+  const set: Partial<typeof campaigns.$inferInsert> = {};
+  if (input.offer_type !== undefined) set.offerType = input.offer_type;
+  if (input.subsidised_price !== undefined) set.subsidisedPrice = input.subsidised_price;
+  if (input.eligibility_requirements !== undefined) set.eligibilityRequirements = input.eligibility_requirements;
+  if (input.application_procedure !== undefined) set.applicationProcedure = input.application_procedure;
+  if (input.application_deadline !== undefined) set.applicationDeadline = input.application_deadline ? new Date(input.application_deadline) : null;
+  if (input.contact_phone !== undefined) set.contactPhone = input.contact_phone;
+  if (input.contact_email !== undefined) set.contactEmail = input.contact_email;
+  if (input.website_url !== undefined) set.websiteUrl = input.website_url;
+  if (input.distribution_locations !== undefined) set.distributionLocations = input.distribution_locations;
+  if (input.accepts_platform_applications !== undefined) set.acceptsPlatformApplications = input.accepts_platform_applications;
+  return set;
+};
+
 export class CampaignsAdminService {
   constructor(private readonly deps: { db: Database }) {}
 
@@ -26,7 +42,7 @@ export class CampaignsAdminService {
 
   async create(actorId: string, input: CreateInput): Promise<repo.CampaignRow> {
     return this.deps.db.transaction(async tx => {
-      await this.checkReferences(tx, input.nursery_id, input.sub_county_id, input.items.map(i => i.species_id));
+      await this.checkReferences(tx, input.nursery_id ?? undefined, input.sub_county_id ?? undefined, input.items.map(i => i.species_id));
       const allocated = input.items.reduce((sum, i) => sum + i.quantity, 0);
       const [created] = await tx
         .insert(campaigns)
@@ -43,10 +59,11 @@ export class CampaignsAdminService {
           startsAt: new Date(input.starts_at),
           endsAt: new Date(input.ends_at),
           isActive: input.is_active,
+          ...giveawayFields(input),
         })
         .returning({ id: campaigns.id });
       if (!created) throw new Error('Campaign insert returned no row');
-      await tx.insert(campaignItems).values(input.items.map(i => ({ campaignId: created.id, speciesId: i.species_id, quantity: i.quantity })));
+      if (input.items.length) await tx.insert(campaignItems).values(input.items.map(i => ({ campaignId: created.id, speciesId: i.species_id, quantity: i.quantity })));
       const after = await this.mustFind(tx, created.id);
       await writeAudit(tx, { actorId, action: 'campaign.create', entity: 'campaign', entityId: created.id, after });
       return after;
@@ -61,7 +78,7 @@ export class CampaignsAdminService {
     return this.deps.db.transaction(async tx => {
       await tx.execute(sql`SELECT 1 FROM campaigns WHERE id = ${id} FOR UPDATE`);
       const before = await this.mustFind(tx, id);
-      await this.checkReferences(tx, input.nursery_id, input.sub_county_id, input.items?.map(i => i.species_id));
+      await this.checkReferences(tx, input.nursery_id ?? undefined, input.sub_county_id ?? undefined, input.items?.map(i => i.species_id));
 
       const startsAt = input.starts_at ? new Date(input.starts_at) : new Date(before.starts_at);
       const endsAt = input.ends_at ? new Date(input.ends_at) : new Date(before.ends_at);
@@ -76,6 +93,8 @@ export class CampaignsAdminService {
       if (input.sub_county_id !== undefined) set.subCountyId = input.sub_county_id;
       if (input.eligibility_rules !== undefined) set.eligibilityRules = input.eligibility_rules;
       if (input.is_active !== undefined) set.isActive = input.is_active;
+      Object.assign(set, giveawayFields(input));
+      this.checkMerged(before, input);
 
       if (input.items) {
         const allocated = input.items.reduce((sum, i) => sum + i.quantity, 0);
@@ -88,7 +107,7 @@ export class CampaignsAdminService {
         set.allocatedStock = allocated;
         set.remainingStock = remaining;
         await tx.delete(campaignItems).where(eq(campaignItems.campaignId, id));
-        await tx.insert(campaignItems).values(input.items.map(i => ({ campaignId: id, speciesId: i.species_id, quantity: i.quantity })));
+        if (input.items.length) await tx.insert(campaignItems).values(input.items.map(i => ({ campaignId: id, speciesId: i.species_id, quantity: i.quantity })));
       }
 
       await tx.update(campaigns).set(set).where(eq(campaigns.id, id));
@@ -103,11 +122,28 @@ export class CampaignsAdminService {
       await tx.execute(sql`SELECT 1 FROM campaigns WHERE id = ${id} FOR UPDATE`);
       const before = await this.mustFind(tx, id);
       if ((await repo.countApplications(tx, id)) > 0) {
-        throw new ConflictError('People have applied to this campaign. Deactivate it instead (is_active: false).');
+        throw new ConflictError('People have applied to this giveaway. Deactivate it instead (is_active: false).');
       }
       await tx.delete(campaigns).where(eq(campaigns.id, id));
       await writeAudit(tx, { actorId, action: 'campaign.delete', entity: 'campaign', entityId: id, before });
     });
+  }
+
+  /** The rules a whole giveaway must follow, checked on the result of a partial update */
+  private checkMerged(before: repo.CampaignRow, input: UpdateInput) {
+    const pick = <T,>(value: T | undefined, current: T): T => (value === undefined ? current : value);
+    const platform = pick(input.accepts_platform_applications, before.accepts_platform_applications);
+    const offer = pick(input.offer_type, before.offer_type);
+    const price = pick(input.subsidised_price, before.subsidised_price);
+    const problems: { path: string; message: string }[] = [];
+    if ((offer === 'subsidised') !== (price !== null)) {
+      problems.push({ path: 'subsidised_price', message: 'A subsidised giveaway needs a price per seedling; a free one has none' });
+    }
+    const items = input.items ? input.items.length : before.species.length;
+    if (platform && (!pick(input.nursery_id, before.nursery_id) || !pick(input.sub_county_id, before.sub_county_id) || items === 0)) {
+      problems.push({ path: 'accepts_platform_applications', message: 'Applications on this site need a pickup nursery, a sub-county and at least one tree' });
+    }
+    if (problems.length) throw new ValidationError('Some fields are not valid', problems);
   }
 
   private async checkReferences(tx: DbOrTx, nurseryId?: string, subCountyId?: string, speciesIds?: string[]) {
@@ -117,7 +153,7 @@ export class CampaignsAdminService {
 
   private async mustFind(db: DbOrTx, id: string): Promise<repo.CampaignRow> {
     const row = await repo.findCampaign(db, id);
-    if (!row) throw new NotFoundError('Campaign not found');
+    if (!row) throw new NotFoundError('Giveaway not found');
     return row;
   }
 }
